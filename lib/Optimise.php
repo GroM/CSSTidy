@@ -102,7 +102,7 @@ class Optimise
         '-moz-border-radius' => 0
     );
     
-    public static $replaceColors = array (
+    public static $replaceColors = array(
         'aliceblue' => '#f0f8ff',
         'antiquewhite' => '#faebd7',
         'aquamarine' => '#7fffd4',
@@ -231,7 +231,7 @@ class Optimise
         'yellowgreen' => '#9acd32'
     );
 
-    public static $backgroundPropDefault = array (
+    public static $backgroundPropDefault = array(
         'background-image' => 'none',
         'background-size' => 'auto',
         'background-repeat' => 'repeat',
@@ -242,7 +242,7 @@ class Optimise
         'background-color' => 'transparent'
     );
 
-    public static $fontPropDefault = array (
+    public static $fontPropDefault = array(
         'font-style' => 'normal',
         'font-variant' => 'normal',
         'font-weight' => 'normal',
@@ -252,10 +252,9 @@ class Optimise
     );
 
 	/**
-	 * Constructor
-	 * @param CSSTidy $css contains the class csstidy
-	 * @version 1.0
-	 */
+     * @param Logger $logger
+     * @param Configuration $configuration
+     */
 	public function __construct(Logger $logger, Configuration $configuration)
     {
 		$this->logger = $logger;
@@ -264,10 +263,9 @@ class Optimise
 
 	/**
 	 * Optimises $css after parsing
-	 * @access public
-	 * @version 1.0
+	 * @param array $css
 	 */
-	public function postparse(&$css)
+	public function postparse(array &$css)
     {
 		if ($this->configuration->preserveCss) {
 			return;
@@ -310,10 +308,11 @@ class Optimise
 	}
 
 	/**
-	 * Optimises values
-	 * @access public
-	 * @version 1.0
-	 */
+     * Optimises values
+     * @param string $property
+     * @param string $value
+     * @return string
+     */
 	public function value($property, $value)
     {
 		// optimise shorthand properties
@@ -334,10 +333,13 @@ class Optimise
 	}
 
 	/**
-	 * Optimises shorthands
-	 * @access public
-	 * @version 1.0
-	 */
+     * Optimize shorhands
+     * @param Parsed $parsed
+     * @param string $at
+     * @param string $selector
+     * @param string $property
+     * @param string $value
+     */
 	public function shorthands(Parsed $parsed, $at, $selector, $property, $value)
     {
 		if (!$this->configuration->optimiseShorthands || $this->configuration->preserveCss) {
@@ -373,7 +375,7 @@ class Optimise
     {
 		$subValue = trim($subValue);
 		if ($subValue == '') { // caution : '0'
-			return;
+			return '';
 		}
 
 		$important = '';
@@ -415,6 +417,7 @@ class Optimise
 				$subValue = $temp;
 			}
 		}
+
 		return $subValue . $important;
 	}
 
@@ -511,20 +514,27 @@ class Optimise
 		if (strtolower(substr($color, 0, 4)) === 'rgb(') {
 			$color_tmp = substr($color, 4, strlen($color) - 5);
 			$color_tmp = explode(',', $color_tmp);
-			for ($i = 0; $i < count($color_tmp); $i++) {
-				$color_tmp[$i] = trim($color_tmp[$i]);
-				if (substr($color_tmp[$i], -1) === '%') {
-					$color_tmp[$i] = round((255 * $color_tmp[$i]) / 100);
+
+            $color = '#';
+			foreach ($color_tmp as $i => $colorPart) {
+                if ($i > 2) {
+                    break;
+                }
+
+				$colorPart = trim($colorPart);
+
+				if (substr($colorPart, -1) === '%') {
+					$colorPart = round((255 * $colorPart) / 100);
 				}
-				if ($color_tmp[$i] > 255)
-					$color_tmp[$i] = 255;
-			}
-			$color = '#';
-			for ($i = 0; $i < 3; $i++) {
-				if ($color_tmp[$i] < 16) {
-					$color .= '0' . dechex($color_tmp[$i]);
+
+				if ($colorPart > 255) {
+					$colorPart = 255;
+                }
+
+                if ($colorPart < 16) {
+					$color .= '0' . dechex($colorPart);
 				} else {
-					$color .= dechex($color_tmp[$i]);
+					$color .= dechex($colorPart);
 				}
 			}
 		}
@@ -552,9 +562,9 @@ class Optimise
 
 	/**
 	 * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1 )
-	 * @param string $subvalue
+	 * @param string $property
+     * @param string $subvalue
 	 * @return string
-	 * @version 1.2
 	 */
 	protected function compressNumbers($property, $subvalue)
     {
@@ -687,15 +697,15 @@ class Optimise
      * @param array $array
 	 */
 	protected function discardInvalidSelectors(&$array) {
-		$invalid = array('+' => true, '~' => true, ',' => true, '>' => true);
 		foreach ($array as $selector => $decls) {
 			$ok = true;
 			$selectors = array_map('trim', explode(',', $selector));
 			foreach ($selectors as $s) {
 				$simple_selectors = preg_split('/\s*[+>~\s]\s*/', $s);
 				foreach ($simple_selectors as $ss) {
-					if ($ss === '')
+					if ($ss === '') {
 						$ok = false;
+                    }
 					// could also check $ss for internal structure,
 					// but that probably would be too slow
 				}

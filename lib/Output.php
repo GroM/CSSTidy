@@ -49,11 +49,13 @@ class Output
 	 * @var string
 	 */
 	protected $inputCss;
+
 	/**
 	 * Saves the formatted CSS string
 	 * @var string
 	 */
 	protected $outputCss;
+
 	/**
 	 * Saves the formatted CSS string (plain text)
 	 * @var string
@@ -275,16 +277,16 @@ html;
 					break;
 
 				case CSSTidy::SEL_START:
-					if ($this->configuration->lowerCaseSelectors)
+					if ($this->configuration->lowerCaseSelectors) {
 						$token[1] = strtolower($token[1]);
-					$out .= ( $token[1]{0} !== '@') ? $template[2] . $this->htmlsp($token[1], $plain) : $template[0] . $this->htmlsp($token[1], $plain);
-					$out .= $template[3];
+                    }
+					$out .= $template[ $token[1]{0} !== '@' ? 2: 0 ] . $this->htmlsp($token[1], $plain) . $template[3];
 					break;
 
 				case CSSTidy::PROPERTY:
-					if ($this->configuration->caseProperties === 2) {
+					if ($this->configuration->caseProperties === Configuration::UPPERCASE) {
 						$token[1] = strtoupper($token[1]);
-					} elseif ($this->configuration->caseProperties === 1) {
+					} elseif ($this->configuration->caseProperties === Configuration::LOWERCASE) {
 						$token[1] = strtolower($token[1]);
 					}
 					$out .= $template[4] . $this->htmlsp($token[1], $plain) . ':' . $template[5];
@@ -292,7 +294,7 @@ html;
 
 				case CSSTidy::VALUE:
 					$out .= $this->htmlsp($token[1], $plain);
-					if ($this->_seeknocomment($key, 1) == CSSTidy::SEL_END && $this->configuration->removeLastSemicolon) {
+					if ($this->_seeknocomment($key, 1) === CSSTidy::SEL_END && $this->configuration->removeLastSemicolon) {
 						$out .= str_replace(';', '', $template[6]);
 					} else {
 						$out .= $template[6];
@@ -301,7 +303,7 @@ html;
 
 				case CSSTidy::SEL_END:
 					$out .= $template[7];
-					if ($this->_seeknocomment($key, 1) != CSSTidy::AT_END)
+					if ($this->_seeknocomment($key, 1) !== CSSTidy::AT_END)
 						$out .= $template[8];
 					break;
 
