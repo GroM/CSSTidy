@@ -1,4 +1,4 @@
-CSSTidy
+CSSTidy for PHP 5.3
 ---
 
 CSSTidy is a CSS minifier 
@@ -17,7 +17,7 @@ CSSTidy
 Original Tracker : 
 http://sourceforge.net/tracker/?group_id=148404&atid=771415
 
-css_optimiser.php is the web-interface, css_parser.php contains the PHP class (CSSTidy).
+css_optimiser.php is the web-interface, lib folder contains the PHP class (CSSTidy).
 
 This class represents a CSS parser which reads CSS code and saves it in an array.
 In opposite to most other CSS parsers, it does not use regular expressions and
