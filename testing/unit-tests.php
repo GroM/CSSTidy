@@ -18,7 +18,7 @@ $simpletest_location = 'simpletest/';
 if (file_exists('../test-settings.php')) include_once '../test-settings.php';
 
 // Includes
-require_once '../class.csstidy.php';
+require_once '../lib/CSSTidy.php';
 require_once 'Text/Diff.php';
 require_once 'Text/Diff/Renderer.php';
 require_once $simpletest_location . 'unit_tester.php';

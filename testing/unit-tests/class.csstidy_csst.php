@@ -90,15 +90,15 @@ class csstidy_csst extends SimpleExpectation
      */
     function test($filename = false) {
         if ($filename) $this->load($filename);
-        $css = new csstidy();
-        $css->set_cfg($this->settings);
-        $css->parse($this->css);
-				if ($this->print){
-					$this->actual = $css->print->plain();
-				}
-				else{
-					$this->actual = $css->css;
-				}
+        $configure = new CSSTidy\Configuration($this->settings);
+        $css = new CSSTidyTest($configure);
+        $output = $css->parse($this->css);
+
+        if ($this->print) {
+            $this->actual = $output->plain();
+        } else {
+            $this->actual = $css->getParsed()->css;
+        }
         return $this->expect === $this->actual;
     }
     
@@ -127,5 +127,13 @@ class csstidy_csst extends SimpleExpectation
         $renderer->final    = 'Actual';
         $message .= $renderer->render($diff);
         return $message;
+    }
+}
+
+class CSSTidyTest extends CSSTidy\CSSTidy
+{
+    public function getParsed()
+    {
+        return $this->parsed;
     }
 }
