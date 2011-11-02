@@ -581,7 +581,7 @@ class CSSTidy
 							}
 
 							// case settings
-							if ($this->configuration->lowerCaseS) {
+							if ($this->configuration->lowerCaseSelectors) {
 								$this->selector = strtolower($this->selector);
 							}
 							$this->property = strtolower($this->property);

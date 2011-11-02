@@ -1,5 +1,4 @@
 <?php
-
 /**
  * CSSTidy - CSS Parser and Optimiser
  *
@@ -19,7 +18,7 @@
  *   but WITHOUT ANY WARRANTY; without even the implied warranty of
  *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *   GNU Lesser General Public License for more details.
- * 
+ *
  *   You should have received a copy of the GNU Lesser General Public License
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
@@ -276,7 +275,7 @@ html;
 					break;
 
 				case CSSTidy::SEL_START:
-					if ($this->configuration->lowerCaseS)
+					if ($this->configuration->lowerCaseSelectors)
 						$token[1] = strtolower($token[1]);
 					$out .= ( $token[1]{0} !== '@') ? $template[2] . $this->htmlsp($token[1], $plain) : $template[0] . $this->htmlsp($token[1], $plain);
 					$out .= $template[3];

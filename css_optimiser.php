@@ -112,7 +112,7 @@ if($is_custom)
 rmdirr('temp');
 
 if(isset($_REQUEST['case_properties'])) $css->configuration->caseProperties = (int) $_REQUEST['case_properties'];
-if(isset($_REQUEST['lowercase'])) $css->configuration->lowerCaseS = true;
+if(isset($_REQUEST['lowercase'])) $css->configuration->lowerCaseSelectors = true;
 if(!isset($_REQUEST['compress_c']) && isset($_REQUEST['post'])) $css->configuration->compressColors = false;
 if(!isset($_REQUEST['compress_fw']) && isset($_REQUEST['post'])) $css->configuration->compressFontWeight = false;
 if(isset($_REQUEST['merge_selectors'])) $css->configuration->mergeSelectors = (int) $_REQUEST['merge_selectors'];
@@ -154,7 +154,7 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
 		if (window.clipboardData) { // Feature testing
 			window.clipboardData.setData('Text',document.getElementById("copytext").innerText);
 		}
-		else if (navigator.userAgent.indexOf('Gecko') != -1 
+		else if (navigator.userAgent.indexOf('Gecko') != -1
 					&& navigator.userAgent.indexOf('Apple') == -1
 					) {
 			try {
@@ -256,7 +256,7 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
 
 
             <input type="checkbox" name="lowercase" id="lowercase" value="lowercase"
-                   <?php if($css->configuration->lowerCaseS) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->lowerCaseSelectors) echo 'checked="checked"'; ?>>
             <label title="<?php echo $lang[$l][30]; ?>" class="help" for="lowercase"><?php echo $lang[$l][25]; ?></label><br>
 
 
@@ -290,7 +290,7 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
             <input type="checkbox" id="timestamp" name="timestamp"
                    <?php if($css->configuration->timestamp) echo 'checked="checked"'; ?>>
    			<label for="timestamp"><?php echo $lang[$l][57]; ?></label><br>
-			
+
 			<input type="checkbox" id="whole_file" name="whole_file"
                    <?php if(isset($_REQUEST['whole_file'])) echo 'checked="checked"'; ?>>
    			<label for="whole_file"><?php echo $lang[$l][63]; ?></label><br>
@@ -344,34 +344,35 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
 		{
 			$_REQUEST['url'] = 'http://'.$_REQUEST['url'];
 		}
-        $ouput = $css->parseFromUrl($_REQUEST['url']);
+        $output = $css->parseFromUrl($_REQUEST['url']);
     } elseif(isset($_REQUEST['css_text']) && strlen($_REQUEST['css_text'])>5)
     {
         $output = $css->parse($_REQUEST['css_text']);
     }
 
-    $ratio = $output->getRatio();
-    $diff = $output->getDiff();
+    if (isset($output) && $output) {
+        $ratio = $output->getRatio();
+        $diff = $output->getDiff();
 
-    if(isset($_REQUEST['file_output']))
-    {
-        $filename = md5(mt_rand().time().mt_rand());
-        if (!is_dir('temp')) {
-            $madedir = mkdir('temp');
-            if (!$madedir) {
-                print 'Could not make directory "temp" in '.dirname(__FILE__);
-                exit;
+        if(isset($_REQUEST['file_output']))
+        {
+            $filename = md5(mt_rand().time().mt_rand());
+            if (!is_dir('temp')) {
+                $madedir = mkdir('temp');
+                if (!$madedir) {
+                    print 'Could not make directory "temp" in '.dirname(__FILE__);
+                    exit;
+                }
             }
-        }
-        $handle = fopen('temp/'.$filename.'.css','w');
-        if($handle) {
-            if(fwrite($handle, $output->plain()))
-            {
-                $file_ok = true;
+            $handle = fopen('temp/'.$filename.'.css','w');
+            if($handle) {
+                if(fwrite($handle, $output->plain()))
+                {
+                    $file_ok = true;
+                }
             }
+            fclose($handle);
         }
-        fclose($handle);
-    }
         if($ratio>0) $ratio = '<span style="color:green;">'.$ratio.'%</span>
     ('.$diff.' Bytes)'; else $ratio = '<span
     style="color:red;">'.$ratio.'%</span> ('.$diff.' Bytes)';
@@ -400,12 +401,12 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
         echo ' - <a href="javascript:ClipBoard()">',$lang[$l][58],'</a>';
         echo '</legend>';
         echo '<code id="copytext">';
-        echo $css->output->formatted();
+        echo $output->formatted();
         echo '</code></fieldset><div><br></div>';
-		
+
 		echo '<fieldset class="code_output"><legend>',$lang[$l][64],'</legend>';
         echo '<textarea rows="10" cols="80">';
-		
+
 		if(isset($_REQUEST['whole_file'])) {
 			echo htmlspecialchars($output->formattedPage('xhtml1.1', false, '', 'en'), ENT_QUOTES, 'utf-8');
 		}
@@ -416,15 +417,15 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
 		echo '</textarea></fieldset>';
 		echo '<fieldset class="code_output"><legend>',$lang[$l][65],'</legend>';
 		echo '<textarea rows="10" cols="30">';
-		
+
 		echo file_get_contents('cssparsed.css');
 		echo '</textarea>';
-		
+
 		echo '</fieldset><p><a href="javascript:scrollTo(0,0)">&#8593; ',$lang[$l][59],'</a></p>';
 
-     /*elseif(isset($_REQUEST['css_text']) || isset($_REQUEST['url'])) {
+    } elseif(isset($_REQUEST['css_text']) || isset($_REQUEST['url'])) {
         echo '<p class="important">',$lang[$l][28],'</p>';
-     }*/
+     }
      ?>
     <p style="text-align:center;font-size:.8em;clear:both;">
       <?php echo $lang[$l][61] ?> <a
