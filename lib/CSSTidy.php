@@ -325,6 +325,7 @@ class CSSTidy
 	 */
 	public function parse($string)
     {
+        $original = $string;
 		// Temporarily set locale to en_US in order to handle floats properly
 		$old = @setlocale(LC_ALL, 0);
 		@setlocale(LC_ALL, 'C');
@@ -664,11 +665,42 @@ class CSSTidy
 		@setlocale(LC_ALL, $old); // Set locale back to original setting
 
 		if (!(empty($parsed->css) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->tokens) && empty($parsed->namespace))) {
-            return new Output($this->configuration, $this->logger, $string, $parsed);
+            return new Output($this->configuration, $this->logger, $original, $parsed);
         } else {
             throw new \Exception("Invalid CSS");
         }
 	}
+
+    /**
+     * @param string $string
+     * @param string $fileDirectory
+     * @return string
+     */
+    public function mergeImports($string, $fileDirectory = '')
+    {
+        preg_match_all('~@import[ \t\r\n\f]*(url\()?("[^\n\r\f\\"]+"|\'[^\n\r\f\\"]+\')(\))?([^;]*);~si', $string, $matches);
+
+        $notResolvedImports = array();
+        foreach ($matches[2] as $i => $fileName) {
+
+            if (trim($matches[4][$i]) !== '') {
+                $notResolvedImports[] = $matches[0][$i];
+                continue; // Import is for other media
+            }
+
+            $fileName = trim($fileName, " \t\r\n\f'\"");
+
+            $content = file_get_contents($fileDirectory . $fileName);
+
+            $string = str_replace($matches[0][$i], $content ? $content : '', $string);
+
+            if (!$content) {
+                $notResolvedImports[] = $matches[0][$i];
+            }
+        }
+
+        return implode('', $notResolvedImports) . $string;
+    }
 
 	/**
 	 * Explodes selectors
