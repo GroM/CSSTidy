@@ -26,7 +26,7 @@ array (
 '.form-suggest' =>
     array (
       'height' => '200px',
-      'background' => '#DEE2D0',
+      'background' => '#dee2d0',
       'vertical-align' => 'top',
     ),
 

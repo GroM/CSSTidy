@@ -508,56 +508,126 @@ class Optimise
 			'#808080' => 'gray',
 			'#f00' => 'red',
         );
-        
+
 		// rgb(0,0,0) -> #000000 (or #000 in this case later)
-		if (strtolower(substr($color, 0, 4)) === 'rgb(') {
-			$color_tmp = substr($color, 4, strlen($color) - 5);
-			$color_tmp = explode(',', $color_tmp);
+        $type = strtolower(substr($color, 0, 4));
+		if ($type === 'rgb(' || $type === 'hsl(') {
+			$colorTmp = substr($color, 4, strlen($color) - 5);
+			$colorTmp = explode(',', $colorTmp);
+
+            if ($type === 'rgb(') {
+                $parts = $this->convertRgbToHex($colorTmp);
+            } else {
+                $parts = $this->convertHslToHex($colorTmp);
+            }
 
             $color = '#';
-			foreach ($color_tmp as $i => $colorPart) {
-                if ($i > 2) {
-                    break;
-                }
 
-				$colorPart = trim($colorPart);
-
-				if (substr($colorPart, -1) === '%') {
-					$colorPart = round((255 * $colorPart) / 100);
-				}
-
-				if ($colorPart > 255) {
-					$colorPart = 255;
-                }
-
-                if ($colorPart < 16) {
-					$color .= '0' . dechex($colorPart);
+            foreach ($parts as $part) {
+                if ($part < 16) {
+					$color .= '0' . dechex($part);
 				} else {
-					$color .= dechex($colorPart);
+                    if ($part > 255) {
+                        $part = 255;
+                    }
+					$color .= dechex($part);
 				}
 			}
-		}
-        
-        $lowerColor = strtolower($color);
+		} else {
+            // Fix bad color names
+            if (isset(self::$replaceColors[strtolower($color)])) {
+                $color = self::$replaceColors[strtolower($color)];
+            }
+        }
 
-		// Fix bad color names
-		if (isset(self::$replaceColors[$lowerColor])) {
-			$color = self::$replaceColors[$lowerColor];
-		}
+        if ($color{0} === '#' && strlen($color) === 7) {
+            $color = strtolower($color); // Lower hex color for better gziping
 
-		// #aabbcc -> #abc
-		if (strlen($color) == 7) {
-			if ($lowerColor{0} === '#' && $lowerColor{1} == $lowerColor{2} && $lowerColor{3} == $lowerColor{4} && $lowerColor{5} == $lowerColor{6}) {
-				$color = '#' . $color{1} . $color{3} . $color{5};
-			}
-		}
+            // #aabbcc -> #abc
+            if ($color{1} === $color{2} && $color{3} === $color{4} && $color{5} === $color{6}) {
+                $color = '#' . $color{1} . $color{3} . $color{5};
+            }
+        }
 
-		if (isset($shorterNames[$lowerColor])) {
-            $color = $shorterNames[$lowerColor];
+		if (isset($shorterNames[strtolower($color)])) {
+            $color = $shorterNames[strtolower($color)];
         }
 
 		return $color;
 	}
+
+    /**
+     * @param array $parts
+     * @return array
+     */
+    protected function convertRgbToHex(array $parts)
+    {
+        $output = array();
+        foreach ($parts as $i => $part) {
+            if ($i > 2) {
+                break;
+            }
+
+            $part = (int) trim($part);
+
+            if (substr($part, -1) === '%') {
+                $part = round((255 * $part) / 100);
+            }
+
+            $output[] = $part;
+        }
+
+        return $output;
+    }
+
+    /**
+     * Convert color from HSL to RGB
+     * @param array $parts (H, S, L)
+     * @return array (R, G, B)
+     */
+    protected function convertHslToHex(array $parts)
+    {
+        // Normalize parts from 90% -> 0.9 and from 255 -> 1
+        foreach ($parts as &$part) {
+            if (substr($part, -1) === '%') {
+                $part = (int) $part / 100;
+            } else {
+                $part /= 255;
+            }
+        }
+
+        list ($h, $s, $l) = $parts;
+
+        $m2 = ($l <= 0.5) ? $l * ($s + 1) : ($l + $s - $l * $s);
+        $m1 = $l * 2 - $m2;
+
+        $output = array();
+
+        foreach (array($h + 1/3, $h, $h - 1/3) as $mH) {
+            if ($mH < 0) {
+                ++$mH;
+            } else if ($mH > 1) {
+                --$mH;
+            }
+
+            if ($mH * 6 < 1) {
+                $output[] = $m1 + ($m2 - $m1) * $mH * 6;
+            } else if ($mH * 2 < 1) {
+                $output[] = $m2;
+            } else if ($h * 3 < 2) {
+                $output[] = $m1 + ($m2 - $m1) * (2/3 - $mH) * 6;
+            } else {
+                $output[] = $m1;
+            }
+        }
+
+        // Convert back to 1 -> 255
+        foreach ($output as &$rgb) {
+            $rgb *= 255;
+        }
+
+        return $output;
+    }
 
 	/**
 	 * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1 )

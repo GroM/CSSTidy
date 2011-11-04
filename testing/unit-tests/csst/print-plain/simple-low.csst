@@ -48,7 +48,7 @@ Edited by Daz  - http://www.forumimages.com - last updated 26-06-03 */
 .form-suggest
 {
 	height:200px;
-	background:#DEE2D0;
+	background:#dee2d0;
 	vertical-align:top
 }
 
@@ -71,7 +71,7 @@ Edited by Daz  - http://www.forumimages.com - last updated 26-06-03 */
 	padding-right:10px;
 	text-align:right;
 	width:100px;
-	color:#39738F
+	color:#39738f
 }
 
 .font-9

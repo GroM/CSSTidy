@@ -8,6 +8,7 @@ a {
     qux:#f00;
     quux:blanchedalmond;
     quuux:rgb(0,0,1);
+    acci:hsl(0, 100%, 50%);
 }
 --EXPECT--
 array (
@@ -19,5 +20,6 @@ array (
     'qux' => 'red',
     'quux' => '#ffebcd',
     'quuux' => '#000001',
+    'acci' => 'red',
   ),
 )
