@@ -99,7 +99,15 @@ class CSSTidy
      * @var array
      * @version 1.0
      */
-    public static $atRules = array('page' => 'is','font-face' => 'is','charset' => 'iv', 'import' => 'iv','namespace' => 'iv','media' => 'at');
+    public static $atRules = array(
+        'page' => 'is',
+        'font-face' => 'is',
+        'charset' => 'iv',
+        'import' => 'iv',
+        'namespace' => 'iv',
+        'media' => 'at',
+        //'font-feature-values ' => 'at', // Not fully supported yet
+    );
 
 
     /**
@@ -242,6 +250,17 @@ class CSSTidy
         'border-bottom-right-radius' => 'CSS3.0',
         'border-bottom-left-radius' => 'CSS3.0',
         'box-shadow' => 'CSS3.0',
+        // Font module
+        'src' => 'CSS3.0', // inside @font-face
+        'font-variant-east-asian' => 'CSS3.0',
+        'font-variant-numeric' => 'CSS3.0',
+        'font-variant-ligatures' => 'CSS3.0',
+        'font-feature-settings' => 'CSS3.0',
+        'font-language-override' => 'CSS3.0',
+        'font-kerning' => 'CSS3.0',
+        // Color Module
+        'opacity' => 'CSS3.0',
+
     );
 
 	/** @var \CSSTidy\Optimise */
@@ -780,7 +799,7 @@ class CSSTidy
 	 */
 	protected function propertyIsNext($istring, $pos)
     {
-		$istring = substr($istring, $pos, strlen($istring) - $pos);
+		$istring = substr($istring, $pos);
 		$pos = strpos($istring, ':');
 		if ($pos === false) {
 			return false;
