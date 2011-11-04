@@ -249,18 +249,21 @@ html;
 			$output .= $template[0] . '@charset ' . $template[5] . $this->parsed->charset . $template[6];
 		}
 
-        foreach ($this->parsed->import as &$import) {
-            if (substr($import, 0, 4) === 'url(' && substr($import, -1, 1) === ')') {
-                $import = '\'' . substr($import, 4, -1) . '\'';
-                $this->logger->log('Optimised @import : Removed "url("', 'Information');
+        foreach ($this->parsed->import as $import) {
+            // Replace url('abc.css') with 'abc.css'
+            $replaced = preg_replace('~url\(["\']?([^\)\'"]*)["\']?\)~', '"$1"', $import);
+            if ($replaced !== $import) {
+                $import = $replaced;
+                $this->logger->log('Optimised @import: Removed "url("', 'Information');
             }
-            $output .= $template[0] . '@import ' . $template[5] . $import . $template[6];
+
+            $output .= $template[0] . '@import' . $template[5] . $import . $template[6];
         }
 
 		if (!empty($this->parsed->namespace)) {
 			if (substr($this->parsed->namespace, 0, 4) === 'url(' && substr($this->parsed->namespace, -1, 1) === ')') {
 				$this->parsed->namespace = '\'' . substr($this->parsed->namespace, 4, -1) . '\'';
-				$this->logger->log('Optimised @namespace : Removed "url("', 'Information');
+				$this->logger->log('Optimised @namespace: Removed "url("', 'Information');
 			}
 			$output .= $template[0] . '@namespace ' . $template[5] . $this->parsed->namespace . $template[6];
 		}

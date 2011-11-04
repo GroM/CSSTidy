@@ -260,7 +260,14 @@ class CSSTidy
         'font-kerning' => 'CSS3.0',
         // Color Module
         'opacity' => 'CSS3.0',
-
+        // Box module
+        'overflow-x' => 'CSS3.0',
+        'overflow-y' => 'CSS3.0',
+        // UI module
+        'pointer-events' => 'CSS3.0',
+        'user-select' => 'CSS3.0',
+        // Images
+        'image-rendering' => 'CSS3.0',
     );
 
 	/** @var \CSSTidy\Optimise */
@@ -500,8 +507,11 @@ class CSSTidy
 							$subValue .= $this->unicode($string, $i);
 						} elseif ($current === ';' || $pn) {
 							if ($selector{0} === '@' && isset(self::$atRules[substr($selector, 1)]) && self::$atRules[substr($selector, 1)] === 'iv') {
-								/* Add quotes to charset, import, namespace */
-								$subValues[] = '"' . trim($subValue) . '"';
+                                $subValues[] = trim($subValue);
+
+                                if (substr($subValues[0], 0, 4) !== 'url(') {
+                                    $subValues[0] = '"' . $subValues[0] . '"';
+                                }
 
 								$status = 'is';
 
