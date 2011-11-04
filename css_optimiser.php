@@ -1,5 +1,4 @@
 <?php
-
 /**
  * CSSTidy - CSS Optimiser Interface
  * This file produces an XHTML interface for optimising CSS code
@@ -25,6 +24,7 @@
  * @package csstidy
  * @author Florian Schmitz (floele at gmail dot com) 2005-2007
  * @author Brett Zamir (brettz9 at yahoo dot com) 2007
+ * @author Jakub Onderka (acci at acci dot cz) 2011
  */
 
 
