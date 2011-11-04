@@ -6,7 +6,7 @@ Since the original project (http://csstidy.sourceforge.net/index.php) has been s
 here is the import of https://csstidy.svn.sourceforge.net/svnroot/csstidy on 2010-11-14
 
 master branch corresponds to the trunk of svn repository and shoul be stabilized
-v1.3 branch corresponds to the last stable relase published by the author.
+v1.3 branch corresponds to the last stable release published by the author.
 It integrates some bugfixes and a 1.3.1 version has been taged
 Only PHP version is here maintained
 
@@ -17,7 +17,7 @@ CSSTidy
 Original Tracker : 
 http://sourceforge.net/tracker/?group_id=148404&atid=771415
 
-css_optimiser.php is the web-interface, lib folder contains the PHP class (CSSTidy).
+css_optimiser.php is the web-interface, lib folder contains the PHP classes (CSSTidy).
 
 This class represents a CSS parser which reads CSS code and saves it in an array.
 In opposite to most other CSS parsers, it does not use regular expressions and
