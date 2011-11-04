@@ -18,6 +18,7 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 ! Some invalid selectors are now removed during optimization, this can
   be turned off by setting 'discard_invalid_selectors' to false
 ! All HTML outputs uses HTML 5
+! Gzipped original and minified size are showed
 - Added localizations for css_optimiser.php
 - Fixed bug with cookie setting for custom templates
 - Minor security problem in css_optimiser.php fixed
