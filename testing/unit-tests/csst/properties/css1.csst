@@ -146,4 +146,4 @@ array (
 --SETTINGS--
 discard_invalid_properties=true
 optimise_shorthands=0
-css_level='CSS1'
+css_level='CSS1.0'

@@ -21,4 +21,4 @@ array (
 --SETTINGS--
 discard_invalid_properties=false
 optimise_shorthands=0
-css_level='CSS21'
+css_level='CSS2.1'
