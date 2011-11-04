@@ -271,7 +271,7 @@ class Optimise
 			return;
 		}
 
-		if ($this->configuration->getMergeSelectors() === 2) {
+		if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
 			foreach ($css as $medium => $value) {
 				$this->mergeSelectors($css[$medium]);
 			}
@@ -283,18 +283,18 @@ class Optimise
 			}
 		}
 
-		if ($this->configuration->getOptimiseShorthands() > 0) {
+		if ($this->configuration->getOptimiseShorthands() > Configuration::NOTHING) {
 			foreach ($css as $medium => $value) {
 				foreach ($value as $selector => $value1) {
-					$css[$medium][$selector] = $this->merge_4value_shorthands($css[$medium][$selector]);
+					$css[$medium][$selector] = $this->mergeFourValueShorthands($css[$medium][$selector]);
 
-					if ($this->configuration->getOptimiseShorthands() < 2) {
+					if ($this->configuration->getOptimiseShorthands() < Configuration::FONT) {
 						continue;
 					}
 
 					$css[$medium][$selector] = $this->mergeFont($css[$medium][$selector]);
 
-					if ($this->configuration->getOptimiseShorthands() < 3) {
+					if ($this->configuration->getOptimiseShorthands() < Configuration::BACKGROUND) {
 						continue;
 					}
 
@@ -346,19 +346,19 @@ class Optimise
 			return;
 		}
 
-		if ($property === 'font' && $this->configuration->getOptimiseShorthands() > 1) {
+		if ($property === 'font' && $this->configuration->getOptimiseShorthands() > Configuration::COMMON) {
 			$parsed->css[$at][$selector]['font'] = '';
 			$parsed->mergeCssBlocks($at, $selector, $this->dissolveShortFont($value));
 		}
 
-		if ($property === 'background' && $this->configuration->getOptimiseShorthands() > 2) {
+		if ($property === 'background' && $this->configuration->getOptimiseShorthands() > Configuration::FONT) {
 			$parsed->css[$at][$selector]['background'] = '';
 			$parsed->mergeCssBlocks($at, $selector, $this->dissolveShortBackground($value));
 		}
 
 		if (isset(self::$shorthands[$property])) {
-			$parsed->mergeCssBlocks($at, $selector, $this->dissolve_4value_shorthands($property, $value));
-			if (is_array(self::$shorthands[$property])) {
+			$parsed->mergeCssBlocks($at, $selector, $this->dissolveFourValueShorthands($property, $value));
+			if (is_array(self::$shorthands[$property])) { // TODO: Optimize
 				$parsed->css[$at][$selector][$property] = '';
 			}
 		}
@@ -386,13 +386,12 @@ class Optimise
 
 		// Compress font-weight
 		if ($property === 'font-weight' && $this->configuration->getCompressFontWeight()) {
-			if ($subValue === 'bold') {
-				$subValue = '700';
-				$this->logger->log('Optimised font-weight: Changed "bold" to "700"', 'Information');
-			} else if ($subValue === 'normal') {
-				$subValue = '400';
-				$this->logger->log('Optimised font-weight: Changed "normal" to "400"', 'Information');
-			}
+            static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
+            if (isset($optimizedFontWeight[$subValue])) {
+                $optimized = $optimizedFontWeight[$subValue];
+                $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", 'Information');
+                $subValue = $optimized;
+            }
 		}
 
 		$temp = $this->compressNumbers($property, $subValue);
@@ -696,15 +695,17 @@ class Optimise
 	 * @version 1.4
      * @param array $array
 	 */
-	protected function discardInvalidSelectors(&$array) {
+	protected function discardInvalidSelectors(array &$array) {
 		foreach ($array as $selector => $decls) {
 			$ok = true;
 			$selectors = array_map('trim', explode(',', $selector));
+
 			foreach ($selectors as $s) {
-				$simple_selectors = preg_split('/\s*[+>~\s]\s*/', $s);
-				foreach ($simple_selectors as $ss) {
+				$simpleSelectors = preg_split('/\s*[+>~\s]\s*/', $s);
+				foreach ($simpleSelectors as $ss) {
 					if ($ss === '') {
 						$ok = false;
+                        break 2;
                     }
 					// could also check $ss for internal structure,
 					// but that probably would be too slow
@@ -725,7 +726,7 @@ class Optimise
 	 * @version 1.0
 	 * @see merge_4value_shorthands()
 	 */
-	protected function dissolve_4value_shorthands($property, $value)
+	protected function dissolveFourValueShorthands($property, $value)
     {
 		$shorthands = self::$shorthands;
 		if (!is_array($shorthands[$property])) {
@@ -822,9 +823,8 @@ class Optimise
 	 * @param array $array
 	 * @return array
 	 * @version 1.2
-	 * @see dissolve_4value_shorthands()
 	 */
-	function merge_4value_shorthands($array)
+	function mergeFourValueShorthands(array $array)
     {
 		$return = $array;
 
@@ -1109,20 +1109,20 @@ class Optimise
 
 	/**
 	 * Merges all fonts properties
-	 * @param array $input_css
+	 * @param array $inputCss
 	 * @return array
 	 * @version 1.3
 	 * @see dissolve_short_font()
 	 */
-	protected function mergeFont($input_css)
+	protected function mergeFont($inputCss)
     {
 		$new_font_value = '';
 		$important = '';
 		// Skip if not font-family and font-size set
-		if (isset($input_css['font-family']) && isset($input_css['font-size'])) {
+		if (isset($inputCss['font-family']) && isset($inputCss['font-size'])) {
 			// fix several words in font-family - add quotes
-			if (isset($input_css['font-family'])) {
-				$families = explode(",", $input_css['font-family']);
+			if (isset($inputCss['font-family'])) {
+				$families = explode(",", $inputCss['font-family']);
 				$result_families = array();
 				foreach ($families as $family) {
 					$family = trim($family);
@@ -1134,17 +1134,17 @@ class Optimise
 					}
 					$result_families[] = $family;
 				}
-				$input_css['font-family'] = implode(",", $result_families);
+				$inputCss['font-family'] = implode(",", $result_families);
 			}
 
 			foreach (self::$fontPropDefault as $font_property => $default_value) {
 
 				// Skip if property does not exist
-				if (!isset($input_css[$font_property])) {
+				if (!isset($inputCss[$font_property])) {
 					continue;
 				}
 
-				$cur_value = $input_css[$font_property];
+				$cur_value = $inputCss[$font_property];
 
 				// Skip if default value is used
 				if ($cur_value === $default_value) {
@@ -1160,7 +1160,7 @@ class Optimise
 				$new_font_value .= $cur_value;
 				// Add delimiter
 				$new_font_value .= ( $font_property === 'font-size' &&
-								isset($input_css['line-height'])) ? '/' : ' ';
+								isset($inputCss['line-height'])) ? '/' : ' ';
 			}
 
 			$new_font_value = trim($new_font_value);
@@ -1168,15 +1168,15 @@ class Optimise
 			// Delete all font-properties
 			foreach (self::$fontPropDefault as $font_property => $default_value) {
 				if ($font_property !== 'font' || !$new_font_value)
-					unset($input_css[$font_property]);
+					unset($inputCss[$font_property]);
 			}
 
 			// Add new font property
 			if ($new_font_value !== '') {
-				$input_css['font'] = $new_font_value . $important;
+				$inputCss['font'] = $new_font_value . $important;
 			}
 		}
 
-		return $input_css;
+		return $inputCss;
 	}
 }
