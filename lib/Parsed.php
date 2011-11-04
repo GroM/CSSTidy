@@ -218,7 +218,7 @@ class Parsed
         }
 
 		while (isset($this->css[$media][$selector][$property])) {
-			$property .= " ";
+			$property .= ' ';
         }
 
 		return $property;

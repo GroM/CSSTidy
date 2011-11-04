@@ -540,7 +540,7 @@ class Optimise
             }
         }
 
-        if ($color{0} === '#' && strlen($color) === 7) {
+        if (strlen($color) === 7 && $color{0} === '#') {
             $color = strtolower($color); // Lower hex color for better gziping
 
             // #aabbcc -> #abc
