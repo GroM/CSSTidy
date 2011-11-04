@@ -69,6 +69,8 @@ class Configuration
         LOWERCASE = 1,
         UPPERCASE = 2;
 
+    const TEMPLATE_ITEMS = 13;
+
     /** @var bool */
     protected $preserveCss = false;
 
@@ -438,6 +440,12 @@ class Configuration
      */
     public function setTemplate(array $template)
     {
+        $count = count($template);
+
+        if ($count !== self::TEMPLATE_ITEMS) {
+            throw new \InvalidArgumentException('Template must contains ' . self::TEMPLATE_ITEMS . " items, $count given");
+        }
+
         $this->template = $template;
         $this->predefinedTemplateName = null;
     }
