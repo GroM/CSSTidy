@@ -502,7 +502,7 @@ class CSSTidy
 					if ($this->isToken($string, $i)) {
 						if (($string{$i} === ':' || $string{$i} === '=') && $this->property != '') {
 							$this->status = 'iv';
-							if (!$this->configuration->discardInvalidProperties || $this->propertyIsValid($this->property)) {
+							if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($this->property)) {
 								$this->property = $this->parsed->newProperty($this->at,$this->selector,$this->property);
 								$parsed->addToken(self::PROPERTY, $this->property);
 							}
@@ -581,7 +581,7 @@ class CSSTidy
 							}
 
 							// case settings
-							if ($this->configuration->lowerCaseSelectors) {
+							if ($this->configuration->getLowerCaseSelectors()) {
 								$this->selector = strtolower($this->selector);
 							}
 							$this->property = strtolower($this->property);
@@ -603,16 +603,16 @@ class CSSTidy
 							$this->value = $this->optimise->value($this->property, $this->value);
 
 							$valid = $this->propertyIsValid($this->property);
-							if ((!$this->invalid_at || $this->configuration->preserveCss) && (!$this->configuration->discardInvalidProperties || $valid)) {
+							if ((!$this->invalid_at || $this->configuration->getPreserveCss()) && (!$this->configuration->getDiscardInvalidProperties() || $valid)) {
 								$this->parsed->addProperty($this->at, $this->selector, $this->property, $this->value);
 								$parsed->addToken(self::VALUE, $this->value);
 								$this->optimise->shorthands($parsed, $this->at, $this->selector, $this->property, $this->value);
 							}
 							if (!$valid) {
-								if ($this->configuration->discardInvalidProperties) {
+								if ($this->configuration->getDiscardInvalidProperties()) {
 									$this->logger->log('Removed invalid property: ' . $this->property, 'Warning');
 								} else {
-									$this->logger->log('Invalid property in ' . $this->configuration->cssLevel . ': ' . $this->property, 'Warning');
+									$this->logger->log('Invalid property in ' . $this->configuration->getCssLevel() . ': ' . $this->property, 'Warning');
 								}
 							}
 
@@ -722,21 +722,21 @@ class CSSTidy
 	protected function explodeSelectors()
     {
 		// Explode multiple selectors
-		if ($this->configuration->mergeSelectors === Configuration::SEPARATE_SELECTORS) {
-			$new_sels = array();
-			$lastpos = 0;
+		if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
+			$newSelectors = array();
+			$lastPosition = 0;
 			$this->sel_separate[] = strlen($this->selector);
 			foreach ($this->sel_separate as $num => $pos) {
 				if ($num == count($this->sel_separate) - 1) {
 					$pos += 1;
 				}
 
-				$new_sels[] = substr($this->selector, $lastpos, $pos - $lastpos - 1);
-				$lastpos = $pos;
+				$newSelectors[] = substr($this->selector, $lastPosition, $pos - $lastPosition - 1);
+				$lastPosition = $pos;
 			}
 
-			if (count($new_sels) > 1) {
-				foreach ($new_sels as $selector) {
+			if (count($newSelectors) > 1) {
+				foreach ($newSelectors as $selector) {
 					if (isset($this->parsed->css[$this->at][$this->selector])) {
 						$this->parsed->mergeCssBlocks($this->at, $selector, $this->parsed->css[$this->at][$this->selector]);
 					}
@@ -784,7 +784,7 @@ class CSSTidy
 			$i--;
 		}
 
-		if ($add !== '\\' || !$this->configuration->removeBackSlash || strpos(self::$tokensList, $string{$i + 1}) !== false) {
+		if ($add !== '\\' || !$this->configuration->getRemoveBackSlash() || strpos(self::$tokensList, $string{$i + 1}) !== false) {
 			return $add;
 		}
 
@@ -884,7 +884,8 @@ class CSSTidy
 	 */
 	protected function propertyIsValid($property)
     {
-		return (isset(self::$allProperties[$property]) && strpos(self::$allProperties[$property], $this->configuration->cssLevel) !== false);
+		return (isset(self::$allProperties[$property]) &&
+            strpos(self::$allProperties[$property], $this->configuration->getCssLevel()) !== false);
 	}
 
     /**

@@ -59,8 +59,8 @@ class Parsed
      */
     public function __construct(Configuration $configuration)
     {
-        $this->preserveCss = $configuration->preserveCss;
-        $this->mergeSelectors = $configuration->mergeSelectors;
+        $this->preserveCss = $configuration->getPreserveCss();
+        $this->mergeSelectors = $configuration->getMergeSelectors();
     }
 
     /**
@@ -174,7 +174,7 @@ class Parsed
 
 		$selector = trim($selector);
 		if (strncmp($selector, "@font-face", 10) != 0) {
-			if ($this->mergeSelectors != false) // WTF? mergeSelector and false?
+			if ($this->mergeSelectors != Configuration::DO_NOT_CHANGE)
 				return $selector;
 
 			if (!$this->css || !isset($this->css[$media]) || !$this->css[$media]) {

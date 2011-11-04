@@ -267,34 +267,34 @@ class Optimise
 	 */
 	public function postparse(array &$css)
     {
-		if ($this->configuration->preserveCss) {
+		if ($this->configuration->getPreserveCss()) {
 			return;
 		}
 
-		if ($this->configuration->mergeSelectors === 2) {
+		if ($this->configuration->getMergeSelectors() === 2) {
 			foreach ($css as $medium => $value) {
 				$this->mergeSelectors($css[$medium]);
 			}
 		}
 
-		if ($this->configuration->discardInvalidSelectors) {
+		if ($this->configuration->getDiscardInvalidSelectors()) {
 			foreach ($css as $medium => $value) {
 				$this->discardInvalidSelectors($css[$medium]);
 			}
 		}
 
-		if ($this->configuration->optimiseShorthands > 0) {
+		if ($this->configuration->getOptimiseShorthands() > 0) {
 			foreach ($css as $medium => $value) {
 				foreach ($value as $selector => $value1) {
 					$css[$medium][$selector] = $this->merge_4value_shorthands($css[$medium][$selector]);
 
-					if ($this->configuration->optimiseShorthands < 2) {
+					if ($this->configuration->getOptimiseShorthands() < 2) {
 						continue;
 					}
 
 					$css[$medium][$selector] = $this->mergeFont($css[$medium][$selector]);
 
-					if ($this->configuration->optimiseShorthands < 3) {
+					if ($this->configuration->getOptimiseShorthands() < 3) {
 						continue;
 					}
 
@@ -342,16 +342,16 @@ class Optimise
      */
 	public function shorthands(Parsed $parsed, $at, $selector, $property, $value)
     {
-		if (!$this->configuration->optimiseShorthands || $this->configuration->preserveCss) {
+		if (!$this->configuration->getOptimiseShorthands() || $this->configuration->getPreserveCss()) {
 			return;
 		}
 
-		if ($property === 'font' && $this->configuration->optimiseShorthands > 1) {
+		if ($property === 'font' && $this->configuration->getOptimiseShorthands() > 1) {
 			$parsed->css[$at][$selector]['font'] = '';
 			$parsed->mergeCssBlocks($at, $selector, $this->dissolveShortFont($value));
 		}
 
-		if ($property === 'background' && $this->configuration->optimiseShorthands > 2) {
+		if ($property === 'background' && $this->configuration->getOptimiseShorthands() > 2) {
 			$parsed->css[$at][$selector]['background'] = '';
 			$parsed->mergeCssBlocks($at, $selector, $this->dissolveShortBackground($value));
 		}
@@ -385,7 +385,7 @@ class Optimise
 		$subValue = CSSTidy::removeImportant($subValue);
 
 		// Compress font-weight
-		if ($property === 'font-weight' && $this->configuration->compressFontWeight) {
+		if ($property === 'font-weight' && $this->configuration->getCompressFontWeight()) {
 			if ($subValue === 'bold') {
 				$subValue = '700';
 				$this->logger->log('Optimised font-weight: Changed "bold" to "700"', 'Information');
@@ -406,7 +406,7 @@ class Optimise
 			$subValue = $temp;
 		}
 
-		if ($this->configuration->compressColors) {
+		if ($this->configuration->getCompressColors()) {
 			$temp = $this->cutColor($subValue);
 			if ($temp !== $subValue) {
 				if (isset(self::$replaceColors[$subValue])) {

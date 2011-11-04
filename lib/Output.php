@@ -231,7 +231,7 @@ html;
 		}
 
 		$output = '';
-		if (!$this->configuration->preserveCss) {
+		if (!$this->configuration->getPreserveCss()) {
 			$this->convertRawCss($default_media);
 		}
 
@@ -241,7 +241,7 @@ html;
 			$template = array_map('strip_tags', $template);
 		}
 
-		if ($this->configuration->timestamp) {
+		if ($this->configuration->getAddTimestamp()) {
 			array_unshift($this->parsed->tokens, array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' '));
 		}
 
@@ -277,16 +277,16 @@ html;
 					break;
 
 				case CSSTidy::SEL_START:
-					if ($this->configuration->lowerCaseSelectors) {
+					if ($this->configuration->getLowerCaseSelectors()) {
 						$token[1] = strtolower($token[1]);
                     }
 					$out .= $template[ $token[1]{0} !== '@' ? 2: 0 ] . $this->htmlsp($token[1], $plain) . $template[3];
 					break;
 
 				case CSSTidy::PROPERTY:
-					if ($this->configuration->caseProperties === Configuration::UPPERCASE) {
+					if ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
 						$token[1] = strtoupper($token[1]);
-					} elseif ($this->configuration->caseProperties === Configuration::LOWERCASE) {
+					} elseif ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
 						$token[1] = strtolower($token[1]);
 					}
 					$out .= $template[4] . $this->htmlsp($token[1], $plain) . ':' . $template[5];
@@ -294,7 +294,7 @@ html;
 
 				case CSSTidy::VALUE:
 					$out .= $this->htmlsp($token[1], $plain);
-					if ($this->_seeknocomment($key, 1) === CSSTidy::SEL_END && $this->configuration->removeLastSemicolon) {
+					if ($this->seekNoComment($key, 1) === CSSTidy::SEL_END && $this->configuration->getRemoveLastSemicolon()) {
 						$out .= str_replace(';', '', $template[6]);
 					} else {
 						$out .= $template[6];
@@ -303,7 +303,7 @@ html;
 
 				case CSSTidy::SEL_END:
 					$out .= $template[7];
-					if ($this->_seeknocomment($key, 1) !== CSSTidy::AT_END)
+					if ($this->seekNoComment($key, 1) !== CSSTidy::AT_END)
 						$out .= $template[8];
 					break;
 
@@ -331,51 +331,53 @@ html;
 		}
 	}
 
-	/**
+    /**
 	 * Gets the next token type which is $move away from $key, excluding comments
 	 * @param integer $key current position
 	 * @param integer $move move this far
-	 * @return mixed a token type
+	 * @return int a token type
 	 * @version 1.0
 	 */
-	protected function _seeknocomment($key, $move)
+	protected function seekNoComment($key, $move)
     {
 		$go = ($move > 0) ? 1 : -1;
 		for ($i = $key + 1; abs($key - $i) - 1 < abs($move); $i += $go) {
 			if (!isset($this->parsed->tokens[$i])) {
 				return;
 			}
-			if ($this->parsed->tokens[$i][0] == CSSTidy::COMMENT) {
-				$move += 1;
+
+			if ($this->parsed->tokens[$i][0] === CSSTidy::COMMENT) {
+				++$move;
 				continue;
 			}
+
 			return $this->parsed->tokens[$i][0];
 		}
 	}
 
 	/**
 	 * Converts $this->css array to a raw array ($this->tokens)
-	 * @param string $default_media default @media to add to selectors without any @media
+	 * @param string $defaultMedia default @media to add to selectors without any @media
 	 * @access private
 	 * @version 1.0
 	 */
-	protected function convertRawCss($default_media = '')
+	protected function convertRawCss($defaultMedia = '')
     {
 		$this->parsed->tokens = array();
 
 		foreach ($this->parsed->css as $medium => $val) {
-			if ($this->configuration->sortSelectors) {
+			if ($this->configuration->getSortSelectors()) {
 				ksort($val);
             }
 
-			if (intval($medium) < CSSTidy::DEFAULT_AT) {
+			if ($medium < CSSTidy::DEFAULT_AT) {
 				$this->parsed->addToken(CSSTidy::AT_START, $medium, true);
-			} elseif ($default_media) {
-				$this->parsed->addToken(CSSTidy::AT_START, $default_media, true);
+			} elseif ($defaultMedia) {
+				$this->parsed->addToken(CSSTidy::AT_START, $defaultMedia, true);
 			}
 			
 			foreach ($val as $selector => $vali) {
-				if ($this->configuration->sortProperties) {
+				if ($this->configuration->getSortProperties()) {
 					ksort($vali);
                 }
 				$this->parsed->addToken(CSSTidy::SEL_START, $selector, true);
@@ -388,10 +390,10 @@ html;
 				$this->parsed->addToken(CSSTidy::SEL_END, $selector, true);
 			}
 
-			if (intval($medium) < CSSTidy::DEFAULT_AT) {
+			if ($medium < CSSTidy::DEFAULT_AT) {
 				$this->parsed->addToken(CSSTidy::AT_END, $medium, true);
-			} elseif ($default_media) {
-				$this->parsed->addToken(CSSTidy::AT_END, $default_media, true);
+			} elseif ($defaultMedia) {
+				$this->parsed->addToken(CSSTidy::AT_END, $defaultMedia, true);
 			}
 		}
 	}

@@ -31,22 +31,22 @@
  */
 namespace CSSTidy;
 
-/**
- * @property $cssLevel
- * @property $templateName
- */
+
 class Configuration
 {
-    // Constants for optimiseShorthands
     /*
+      Constants for optimiseShorthands
       1 common shorthands optimization
       2 + font property optimization
       3 + background property optimization
      */
-    const COMMON = 1,
+    const
+        NOTHING = 0,
+        COMMON = 1,
         FONT = 2,
         BACKGROUND = 3;
 
+    // Constans for mergeSelectors
     const DO_NOT_CHANGE = 0,
         SEPARATE_SELECTORS = 1,
         MERGE_SELECTORS = 2;
@@ -57,72 +57,81 @@ class Configuration
         CSS2_1 = 'CSS2.1',
         CSS3_0 = 'CSS3.0';
 
-    // Constants for template
+    // Constants for predefinedTemplate
     const DEFAULT_COMPRESSION = 'default',
         HIGHEST_COMPRESSION = 'highest_compression',
         HIGH_COMPRESSION = 'high_compression',
         LOW_COMPRESSION = 'low_compression',
         OWN_COMPRESSION = 'own_compression';
 
+    // Constants for caseProperties
     const NONE = 0,
         LOWERCASE = 1,
         UPPERCASE = 2;
 
-    public $preserveCss = false;
+    /** @var bool */
+    protected $preserveCss = false;
 
-    /* rewrite all properties with low case, better for later gzip OK, safe*/
-    public $caseProperties = self::LOWERCASE;
+    /**
+     * Rewrite all properties with low case, better for later gzip OK, safe
+     * @var int
+     */
+    protected $caseProperties = self::LOWERCASE;
 
     /** @var bool */
-    public $lowerCaseSelectors = false;
+    protected $lowerCaseSelectors = false;
 
     /** @var bool */
-    public $removeLastSemicolon = true;
+    protected $removeLastSemicolon = true;
 
     /** @var bool */
-    public $removeBackSlash = true;
+    protected $removeBackSlash = true;
 
-    /* is dangeroues to be used: CSS is broken sometimes */
-    public $mergeSelectors = self::DO_NOT_CHANGE;
+    /**
+     * is dangeroues to be used: CSS is broken sometimes
+     * @var int
+     */
+    protected $mergeSelectors = self::DO_NOT_CHANGE;
 
-    /* sort properties in alpabetic order, better for later gzip
+    /**
+     * sort properties in alpabetic order, better for later gzip
      * but can cause trouble in case of overiding same propertie or using hack
+     * @var bool
      */
-    public $sortProperties = false;
-
-    /*
-      1, 3, 5, etc -- enable sorting selectors inside @media: a{}b{}c{}
-      2, 5, 8, etc -- enable sorting selectors inside one CSS declaration: a,b,c{}
-      preserve order by default cause it can break functionality
-     */
-    public $sortSelectors = 0;
+    protected $sortProperties = false;
 
     /** @var bool */
-    public $discardInvalidProperties = false;
+    protected $sortSelectors = false;
 
-    /* preserve or not browser hacks */
-    public $discardInvalidSelectors = false;
+    /** @var bool */
+    protected $discardInvalidProperties = false;
+
+    /**
+     * Preserve or not browser hacks
+     * @var bool
+     */
+    protected $discardInvalidSelectors = false;
 
     /** @var int */
-    public $optimiseShorthands = self::COMMON;
+    protected $optimiseShorthands = self::COMMON;
 
     /** @var bool */
-    public $compressFontWeight = true;
+    protected $compressFontWeight = true;
 
     /** @var bool */
-    public $compressColors = true;
+    protected $compressColors = true;
 
     /** @var bool */
-    public $timestamp = false;
+    protected $addTimestamp = false;
 
     /** @var string */
     protected $cssLevel = self::CSS2_1;
 
-    /** @var string */
-    protected $templateName = self::DEFAULT_COMPRESSION;
-
     /** @var array */
     protected $template = array();
+
+    /** @var string */
+    protected $predefinedTemplateName = self::DEFAULT_COMPRESSION;
 
     /**
      * @param array $configuration
@@ -130,34 +139,42 @@ class Configuration
     public function __construct(array $configuration = array())
     {
         static $oldToNew = array(
-            'sort_properties' => 'sortProperties',
-            'sort_selectors' => 'sortSelectors',
-            'discard_invalid_properties' => 'discardInvalidProperties',
-            'discard_invalid_selectors' => 'discardInvalidSelectors',
-            'optimise_shorthands' => 'optimiseShorthands',
-            'css_level' => 'cssLevel',
-            'merge_selectors' => 'mergeSelectors',
-            'compress_font-weight' => 'compressFontWeight',
+            'sort_properties'            => array('sortProperties', 'bool'),
+            'sort_selectors'             => array('sortSelectors', 'bool'),
+            'discard_invalid_properties' => array('discardInvalidProperties', 'bool'),
+            'discard_invalid_selectors'  => array('discardInvalidSelectors', 'bool'),
+            'optimise_shorthands'        => array('optimiseShorthands', 'int'),
+            'css_level'                  => array('cssLevel', 'string'),
+            'merge_selectors'            => array('mergeSelectors', 'int'),
+            'compress_font-weight'       => array('compressFontWeight', 'bool'),
         );
-
-        foreach ($oldToNew as $old => $new) {
-            if (isset($configuration[$old])) {
-                $this->$new = $configuration[$old];
+        
+        foreach ($configuration as $key => $value) {
+            if (isset($oldToNew[$key])) {
+                list($newName, $dataType) = $oldToNew[$key];
+                settype($value, $dataType);
+                $this->{'set' . ucfirst($newName)}($value);
+            } else if ($key !== 'template') {
+                throw new \Exception("Old configuration '$key' cannot be translated to new");
             }
         }
 
         if (isset($configuration['template'])) {
             switch ($configuration['template']) {
                 case 'highest':
-                    $this->setTemplateName(self::HIGHEST_COMPRESSION);
+                    $this->loadPredefinedTemplate(self::HIGHEST_COMPRESSION);
                     break;
 
                 case 'high':
-                    $this->setTemplateName(self::HIGH_COMPRESSION);
+                    $this->loadPredefinedTemplate(self::HIGH_COMPRESSION);
                     break;
 
                 case 'low':
-                    $this->setTemplateName(self::LOW_COMPRESSION);
+                    $this->loadPredefinedTemplate(self::LOW_COMPRESSION);
+                    break;
+
+                case 'default':
+                    $this->loadPredefinedTemplate(self::DEFAULT_COMPRESSION);
                     break;
 
                 default:
@@ -167,108 +184,263 @@ class Configuration
     }
 
     /**
-     * @param string $cssLevel
-     * @throws \Exception
+     * @param int $caseProperties
      */
-    protected function setCssLevel($cssLevel)
+    public function setCaseProperties($caseProperties)
     {
-        if (!in_array($cssLevel, array(self::CSS1_0, self::CSS2_0, self::CSS2_1, self::CSS3_0))) {
-            throw new \Exception("CSS level must be CSS1.0, CSS2.0, CSS2.1 or CSS3.0, '$cssLevel' given'");
+        if (!in_array($caseProperties, array(self::NONE, self::UPPERCASE, self::LOWERCASE))) {
+            throw new \InvalidArgumentException("caseProperties must be NONE, UPPERCASE or LOWERCASE constants, $caseProperties given");
+        }
+
+        $this->caseProperties = $caseProperties;
+    }
+
+    /**
+     * @return int
+     */
+    public function getCaseProperties()
+    {
+        return $this->caseProperties;
+    }
+
+    /**
+     * @param bool $compressColors
+     */
+    public function setCompressColors($compressColors = true)
+    {
+        $this->checkBool(__FUNCTION__, $compressColors);
+        $this->compressColors = $compressColors;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getCompressColors()
+    {
+        return $this->compressColors;
+    }
+
+    /**
+     * @param bool $compressFontWeight
+     */
+    public function setCompressFontWeight($compressFontWeight = true)
+    {
+        $this->checkBool(__FUNCTION__, $compressFontWeight);
+        $this->compressFontWeight = $compressFontWeight;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getCompressFontWeight()
+    {
+        return $this->compressFontWeight;
+    }
+
+    /**
+     * @param string $cssLevel
+     */
+    public function setCssLevel($cssLevel)
+    {
+        if (!in_array($cssLevel, array(self::CSS1_0, self::CSS2_0, self::CSS2_1, self::CSS3_0), true)) {
+            throw new \InvalidArgumentException("cssLevel must be CSS1_0, CSS2_0, CSS2_1 or CSS3_0 constants, $cssLevel given");
         }
 
         $this->cssLevel = $cssLevel;
     }
-    
-    protected function getPredefinedTemplates()
+
+    /**
+     * @return string
+     */
+    public function getCssLevel()
     {
-        $template = array();
-        
-        $template[self::DEFAULT_COMPRESSION] = array(
-            '<span class="at">', //string before @rule 
-            '</span> <span class="format">{</span>'."\n", //bracket after @-rule
-            '<span class="selector">', //string before selector
-            '</span> <span class="format">{</span>'."\n", //bracket after selector
-            '<span class="property">', //string before property
-            '</span><span class="value">', //string after property+before value
-            '</span><span class="format">;</span>'."\n", //string after value
-            '<span class="format">}</span>', //closing bracket - selector
-            "\n\n", //space between blocks {...}
-            "\n".'<span class="format">}</span>'. "\n\n", //closing bracket @-rule
-            '', //indent in @-rule
-            '<span class="comment">', // before comment
-            '</span>'."\n", // after comment
-            "\n", // after last line @-rule
-        );
-        
-        $template[self::HIGH_COMPRESSION] = array(
-            '<span class="at">',
-            '</span> <span class="format">{</span>'."\n",
-            '<span class="selector">',
-            '</span><span class="format">{</span>',
-            '<span class="property">',
-            '</span><span class="value">',
-            '</span><span class="format">;</span>',
-            '<span class="format">}</span>',
-            "\n",
-            "\n". '<span class="format">}'."\n".'</span>',
-            '',
-            '<span class="comment">', // before comment
-            '</span>', // after comment
-            "\n",
-        );
-        
-        $template[self::HIGHEST_COMPRESSION] = array(
-            '<span class="at">',
-            '</span><span class="format">{</span>',
-            '<span class="selector">',
-            '</span><span class="format">{</span>',
-            '<span class="property">',
-            '</span><span class="value">',
-            '</span><span class="format">;</span>',
-            '<span class="format">}</span>',
-            '',
-            '<span class="format">}</span>',
-            '',
-            '<span class="comment">', // before comment
-            '</span>', // after comment
-            '',
-        );
-        
-        $template[self::LOW_COMPRESSION] = array(
-            '<span class="at">',
-            '</span> <span class="format">{</span>'."\n",
-            '<span class="selector">',
-            '</span>'."\n".'<span class="format">{</span>'."\n",
-            '	<span class="property">',
-            '</span><span class="value">',
-            '</span><span class="format">;</span>'."\n",
-            '<span class="format">}</span>',
-            "\n\n",
-            "\n".'<span class="format">}</span>'."\n\n",
-            '	',
-            '<span class="comment">', // before comment
-            '</span>'."\n", // after comment
-            "\n",
-        );
-        
-        return $template;
+        return $this->cssLevel;
     }
 
     /**
-     * @param string $name
-     * @throws \Exception
+     * @param bool $discardInvalidProperties
      */
-	public function setTemplateName($name)
+    public function setDiscardInvalidProperties($discardInvalidProperties = true)
     {
-        $predefinedTemplates = $this->getPredefinedTemplates();
+        $this->checkBool(__FUNCTION__, $discardInvalidProperties);
+        $this->discardInvalidProperties = $discardInvalidProperties;
+    }
 
-		if (isset($predefinedTemplates[$name])) {
-			$this->template = $predefinedTemplates[$name];
-            $this->templateName = $name;
-		} else {
-            throw new \Exception("Template with name '$name' not exists");
+    /**
+     * @return bool
+     */
+    public function getDiscardInvalidProperties()
+    {
+        return $this->discardInvalidProperties;
+    }
+
+    /**
+     * @param bool $discardInvalidSelectors
+     */
+    public function setDiscardInvalidSelectors($discardInvalidSelectors = true)
+    {
+        $this->checkBool(__FUNCTION__, $discardInvalidSelectors);
+        $this->discardInvalidSelectors = $discardInvalidSelectors;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getDiscardInvalidSelectors()
+    {
+        return $this->discardInvalidSelectors;
+    }
+
+    /**
+     * @param bool $lowerCaseSelectors
+     */
+    public function setLowerCaseSelectors($lowerCaseSelectors = true)
+    {
+        $this->checkBool(__FUNCTION__, $lowerCaseSelectors);
+        $this->lowerCaseSelectors = $lowerCaseSelectors;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getLowerCaseSelectors()
+    {
+        return $this->lowerCaseSelectors;
+    }
+
+    /**
+     * @param int $mergeSelectors
+     */
+    public function setMergeSelectors($mergeSelectors)
+    {
+        if (!in_array($mergeSelectors, array(self::DO_NOT_CHANGE, self::SEPARATE_SELECTORS, self::MERGE_SELECTORS), true)) {
+            throw new \InvalidArgumentException("mergeSelectors must be DO_NOT_CHANGE, SEPARATE_SELECTORS or MERGE_SELECTORS constants, $mergeSelectors given");
         }
-	}
+
+        $this->mergeSelectors = $mergeSelectors;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMergeSelectors()
+    {
+        return $this->mergeSelectors;
+    }
+
+    /**
+     * @param int $optimiseShorthands
+     */
+    public function setOptimiseShorthands($optimiseShorthands)
+    {
+        if (!in_array($optimiseShorthands, array(self::NOTHING, self::COMMON, self::FONT, self::BACKGROUND), true)) {
+            throw new \InvalidArgumentException("optimizeShorthands must be COMMON, FONT or BACKGROUND constants, $optimiseShorthands given");
+        }
+
+        $this->optimiseShorthands = $optimiseShorthands;
+    }
+
+    /**
+     * @return int
+     */
+    public function getOptimiseShorthands()
+    {
+        return $this->optimiseShorthands;
+    }
+
+    /**
+     * @param bool $preserveCss
+     */
+    public function setPreserveCss($preserveCss = true)
+    {
+        $this->checkBool(__FUNCTION__, $preserveCss);
+        $this->preserveCss = $preserveCss;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getPreserveCss()
+    {
+        return $this->preserveCss;
+    }
+
+    /**
+     * @param bool $removeBackSlash
+     */
+    public function setRemoveBackSlash($removeBackSlash = true)
+    {
+        $this->checkBool(__FUNCTION__, $removeBackSlash);
+        $this->removeBackSlash = $removeBackSlash;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getRemoveBackSlash()
+    {
+        return $this->removeBackSlash;
+    }
+
+    /**
+     * @param bool $removeLastSemicolon
+     */
+    public function setRemoveLastSemicolon($removeLastSemicolon = true)
+    {
+        $this->checkBool(__FUNCTION__, $removeLastSemicolon);
+        $this->removeLastSemicolon = $removeLastSemicolon;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getRemoveLastSemicolon()
+    {
+        return $this->removeLastSemicolon;
+    }
+
+    /**
+     * @param bool $sortProperties
+     */
+    public function setSortProperties($sortProperties = true)
+    {
+        $this->checkBool(__FUNCTION__, $sortProperties);
+        $this->sortProperties = $sortProperties;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getSortProperties()
+    {
+        return $this->sortProperties;
+    }
+
+    /**
+     * @param bool $sortSelectors
+     */
+    public function setSortSelectors($sortSelectors)
+    {
+        $this->checkBool(__FUNCTION__, $sortSelectors);
+        $this->sortSelectors = $sortSelectors;
+    }
+
+    /**
+     * @return bool
+     */
+    public function getSortSelectors()
+    {
+        return $this->sortSelectors;
+    }
+
+    /**
+     * @param array $template
+     */
+    public function setTemplate(array $template)
+    {
+        $this->template = $template;
+        $this->predefinedTemplateName = null;
+    }
 
     /**
      * @param string $filename
@@ -282,16 +454,48 @@ class Configuration
             throw new \Exception("Template file $filename cannot be loaded");
         }
 
-        $this->setTemplateFromString($content);
+        $this->loadTemplateFromString($content);
     }
 
-    public function setTemplateFromString($content)
+    /**
+     * @param string $content
+     */
+    public function loadTemplateFromString($content)
     {
         $content = strip_tags($content, '<span>');
 
 		$content = str_replace("\r\n", "\n", $content); // Unify newlines (because the output also only uses \n)
-		$this->template = explode('|', $content);
-        $this->templateName = self::OWN_COMPRESSION;
+		$this->setTemplate(explode('|', $content));
+        $this->predefinedTemplateName = null;
+    }
+
+    /**
+     * @param string $template
+     * @throws \Exception
+     */
+    public function loadPredefinedTemplate($template)
+    {
+        $predefined = $this->getPredefinedTemplates();
+
+        if (isset($predefined[$template])) {
+            $this->setTemplate($predefined[$template]);
+            $this->predefinedTemplateName = $template;
+        } else {
+            throw new \Exception("Predefined template with name '$template' not found");
+        }
+    }
+
+    /**
+     * @return string
+     * @throws \Exception
+     */
+    public function getPredefinedTemplateName()
+    {
+        if ($this->predefinedTemplateName === null) {
+            throw new \Exception('No predefined template is set');
+        }
+
+        return $this->predefinedTemplateName;
     }
 
     /**
@@ -300,40 +504,115 @@ class Configuration
     public function getTemplate()
     {
         if (empty($this->template)) {
-            $this->setTemplateName($this->templateName);
+            $this->loadPredefinedTemplate($this->predefinedTemplateName);
         }
 
         return $this->template;
     }
 
     /**
-     * @param string $name
-     * @return mixed
-     * @throws \Exception
+     * @param bool $timestamp
      */
-    public function __get($name)
+    public function setAddTimestamp($timestamp = true)
     {
-        if (isset($this->$name)) {
-            return $this->$name;
-        }
-
-        throw new \Exception("Undefined config value '$name''");
+        $this->checkBool(__FUNCTION__, $timestamp);
+        $this->addTimestamp = $timestamp;
     }
 
     /**
-     * @param string $name
-     * @param mixed $value
-     * @throws \Exception
+     * @return bool
      */
-    public function __set($name, $value)
+    public function getAddTimestamp()
     {
-        $functionName = 'set' . ucfirst($name);
-        if (is_callable(array($this, $functionName))) {
-            $this->$functionName($value);
-        } else if (isset($this->$name)) {
-            $this->$name = $value;
-        } else {
-            throw new \Exception("Undefined config value '$name''");
+        return $this->addTimestamp;
+    }
+
+    /**
+    * @param string $method
+    * @param mixed $bool
+    * @throws \InvalidArgumentException
+    */
+    protected function checkBool($method, $bool)
+    {
+        if (!is_bool($bool)) {
+            $type = gettype($bool);
+            throw new \InvalidArgumentException("Method $method accept only bool data type, $type given");
         }
+    }
+
+    /**
+     * @return array
+     */
+    protected function getPredefinedTemplates()
+    {
+        return array(
+            self::DEFAULT_COMPRESSION => array(
+                '<span class="at">', //string before @rule
+                '</span> <span class="format">{</span>'."\n", //bracket after @-rule
+                '<span class="selector">', //string before selector
+                '</span> <span class="format">{</span>'."\n", //bracket after selector
+                '<span class="property">', //string before property
+                '</span><span class="value">', //string after property+before value
+                '</span><span class="format">;</span>'."\n", //string after value
+                '<span class="format">}</span>', //closing bracket - selector
+                "\n\n", //space between blocks {...}
+                "\n".'<span class="format">}</span>'. "\n\n", //closing bracket @-rule
+                '', //indent in @-rule
+                '<span class="comment">', // before comment
+                '</span>'."\n", // after comment
+                "\n", // after last line @-rule
+            ),
+
+            self::HIGH_COMPRESSION => array(
+                '<span class="at">',
+                '</span> <span class="format">{</span>'."\n",
+                '<span class="selector">',
+                '</span><span class="format">{</span>',
+                '<span class="property">',
+                '</span><span class="value">',
+                '</span><span class="format">;</span>',
+                '<span class="format">}</span>',
+                "\n",
+                "\n". '<span class="format">}'."\n".'</span>',
+                '',
+                '<span class="comment">', // before comment
+                '</span>', // after comment
+                "\n",
+            ),
+
+            self::HIGHEST_COMPRESSION => array(
+                '<span class="at">',
+                '</span><span class="format">{</span>',
+                '<span class="selector">',
+                '</span><span class="format">{</span>',
+                '<span class="property">',
+                '</span><span class="value">',
+                '</span><span class="format">;</span>',
+                '<span class="format">}</span>',
+                '',
+                '<span class="format">}</span>',
+                '',
+                '<span class="comment">', // before comment
+                '</span>', // after comment
+                '',
+            ),
+
+            self::LOW_COMPRESSION => array(
+                '<span class="at">',
+                '</span> <span class="format">{</span>'."\n",
+                '<span class="selector">',
+                '</span>'."\n".'<span class="format">{</span>'."\n",
+                '	<span class="property">',
+                '</span><span class="value">',
+                '</span><span class="format">;</span>'."\n",
+                '<span class="format">}</span>',
+                "\n\n",
+                "\n".'<span class="format">}</span>'."\n\n",
+                '	',
+                '<span class="comment">', // before comment
+                '</span>'."\n", // after comment
+                "\n",
+            )
+        );
     }
 }

@@ -111,20 +111,20 @@ if($is_custom)
 
 rmdirr('temp');
 
-if(isset($_REQUEST['case_properties'])) $css->configuration->caseProperties = (int) $_REQUEST['case_properties'];
-if(isset($_REQUEST['lowercase'])) $css->configuration->lowerCaseSelectors = true;
-if(!isset($_REQUEST['compress_c']) && isset($_REQUEST['post'])) $css->configuration->compressColors = false;
-if(!isset($_REQUEST['compress_fw']) && isset($_REQUEST['post'])) $css->configuration->compressFontWeight = false;
-if(isset($_REQUEST['merge_selectors'])) $css->configuration->mergeSelectors = (int) $_REQUEST['merge_selectors'];
-if(isset($_REQUEST['optimise_shorthands'])) $css->configuration->optimiseShorthands = (int) $_REQUEST['optimise_shorthands'];
-if(!isset($_REQUEST['rbs']) && isset($_REQUEST['post'])) $css->configuration->removeBackSlash = false;
-if(isset($_REQUEST['preserve_css'])) $css->configuration->preserveCss = true;
-if(isset($_REQUEST['sort_sel'])) $css->configuration->sortSelectors = true;
-if(isset($_REQUEST['sort_de'])) $css->configuration->sortProperties = true;
-if(isset($_REQUEST['remove_last_sem'])) $css->configuration->removeLastSemicolon = true;
-if(isset($_REQUEST['discard'])) $css->configuration->discardInvalidProperties = true;
-if(isset($_REQUEST['css_level'])) $css->configuration->cssLevel = $_REQUEST['css_level'];
-if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
+if(isset($_REQUEST['case_properties'])) $css->configuration->setCaseProperties((int) $_REQUEST['case_properties']);
+if(isset($_REQUEST['lowercase'])) $css->configuration->setLowerCaseSelectors(true);
+if(!isset($_REQUEST['compress_c']) && isset($_REQUEST['post'])) $css->configuration->setCompressColors(false);
+if(!isset($_REQUEST['compress_fw']) && isset($_REQUEST['post'])) $css->configuration->setCompressFontWeight(false);
+if(isset($_REQUEST['merge_selectors'])) $css->configuration->setMergeSelectors((int) $_REQUEST['merge_selectors']);
+if(isset($_REQUEST['optimise_shorthands'])) $css->configuration->setOptimiseShorthands((int) $_REQUEST['optimise_shorthands']);
+if(!isset($_REQUEST['rbs']) && isset($_REQUEST['post'])) $css->configuration->setRemoveBackSlash(false);
+if(isset($_REQUEST['preserve_css'])) $css->configuration->setPreserveCss(true);
+if(isset($_REQUEST['sort_sel'])) $css->configuration->setSortSelectors(true);
+if(isset($_REQUEST['sort_de'])) $css->configuration->setSortProperties(true);
+if(isset($_REQUEST['remove_last_sem'])) $css->configuration->setRemoveLastSemicolon(true);
+if(isset($_REQUEST['discard'])) $css->configuration->setDiscardInvalidProperties(true);
+if(isset($_REQUEST['css_level'])) $css->configuration->setCssLevel($_REQUEST['css_level']);
+if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
 
 ?>
 <!DOCTYPE html>
@@ -220,75 +220,75 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
          <legend><?php echo $lang[$l][19]; ?></legend>
 
             <input onchange="enable_disable_preserve()" type="checkbox" name="preserve_css" id="preserve_css"
-                   <?php if($css->configuration->preserveCss) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getPreserveCss()) echo 'checked="checked"'; ?>>
             <label for="preserve_css" title="<?php echo $lang[$l][52]; ?>" class="help"><?php echo $lang[$l][51]; ?></label><br>
 
 
             <input type="checkbox" name="sort_sel" id="sort_sel"
-                   <?php if($css->configuration->sortSelectors) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getSortSelectors()) echo 'checked="checked"'; ?>>
             <label for="sort_sel" title="<?php echo $lang[$l][41]; ?>" class="help"><?php echo $lang[$l][20]; ?></label><br>
 
 
             <input type="checkbox" name="sort_de" id="sort_de"
-                   <?php if($css->configuration->sortProperties) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getSortProperties()) echo 'checked="checked"'; ?>>
             <label for="sort_de"><?php echo $lang[$l][21]; ?></label><br>
 
 
             <label for="merge_selectors"><?php echo $lang[$l][22]; ?></label>
             <select style="width:15em;" name="merge_selectors" id="merge_selectors">
-              <?php echo options(array('0' => $lang[$l][47], '1' => $lang[$l][48], '2' => $lang[$l][49]), $css->configuration->mergeSelectors); ?>
+              <?php echo options(array('0' => $lang[$l][47], '1' => $lang[$l][48], '2' => $lang[$l][49]), $css->configuration->getMergeSelectors()); ?>
             </select><br>
 
             <label for="optimise_shorthands"><?php echo $lang[$l][23]; ?></label>
             <select name="optimise_shorthands" id="optimise_shorthands">
-            <?php echo options(array($lang[$l][54], $lang[$l][55], $lang[$l][56]), $css->configuration->optimiseShorthands); ?>
+            <?php echo options(array($lang[$l][54], $lang[$l][55], $lang[$l][56]), $css->configuration->getOptimiseShorthands()); ?>
             </select><br>
 
 
             <input type="checkbox" name="compress_c" id="compress_c"
-                   <?php if($css->configuration->compressColors) echo 'checked="checked"';?>>
+                   <?php if($css->configuration->getCompressColors()) echo 'checked="checked"';?>>
             <label for="compress_c"><?php echo $lang[$l][24]; ?></label><br>
 
 
             <input type="checkbox" name="compress_fw" id="compress_fw"
-                   <?php if($css->configuration->compressFontWeight) echo 'checked="checked"';?>>
+                   <?php if($css->configuration->getCompressFontWeight()) echo 'checked="checked"';?>>
             <label for="compress_fw"><?php echo $lang[$l][45]; ?></label><br>
 
 
             <input type="checkbox" name="lowercase" id="lowercase" value="lowercase"
-                   <?php if($css->configuration->lowerCaseSelectors) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getLowerCaseSelectors()) echo 'checked="checked"'; ?>>
             <label title="<?php echo $lang[$l][30]; ?>" class="help" for="lowercase"><?php echo $lang[$l][25]; ?></label><br>
 
 
             <?php echo $lang[$l][26]; ?><br>
             <input type="radio" name="case_properties" id="none" value="0"
-                   <?php if($css->configuration->caseProperties === 0) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getCaseProperties() === 0) echo 'checked="checked"'; ?>>
             <label for="none"><?php echo $lang[$l][53]; ?></label>
             <input type="radio" name="case_properties" id="lower_yes" value="1"
-                   <?php if($css->configuration->caseProperties === 1) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getCaseProperties() === 1) echo 'checked="checked"'; ?>>
             <label for="lower_yes"><?php echo $lang[$l][27]; ?></label>
             <input type="radio" name="case_properties" id="upper_yes" value="2"
-                   <?php if($css->configuration->caseProperties === 2) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getCaseProperties() === 2) echo 'checked="checked"'; ?>>
             <label for="upper_yes"><?php echo $lang[$l][29]; ?></label><br>
 
             <input type="checkbox" name="rbs" id="rbs"
-                   <?php if($css->configuration->removeBackSlash) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getRemoveBackSlash()) echo 'checked="checked"'; ?>>
             <label for="rbs"><?php echo $lang[$l][31]; ?></label><br>
 
 
             <input type="checkbox" id="remove_last_sem" name="remove_last_sem"
-                   <?php if($css->configuration->removeLastSemicolon) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getRemoveLastSemicolon()) echo 'checked="checked"'; ?>>
    			<label for="remove_last_sem"><?php echo $lang[$l][42]; ?></label><br>
 
 
             <input type="checkbox" id="discard" name="discard"
-                   <?php if($css->configuration->discardInvalidProperties) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getDiscardInvalidProperties()) echo 'checked="checked"'; ?>>
             <label for="discard"><?php echo $lang[$l][43]; ?></label>
-            <select name="css_level"><?php echo options(array('CSS3.0', 'CSS2.1','CSS2.0','CSS1.0'),$css->configuration->cssLevel, true); ?></select><br>
+            <select name="css_level"><?php echo options(array('CSS3.0', 'CSS2.1','CSS2.0','CSS1.0'), $css->configuration->getCssLevel(), true); ?></select><br>
 
 
             <input type="checkbox" id="timestamp" name="timestamp"
-                   <?php if($css->configuration->timestamp) echo 'checked="checked"'; ?>>
+                   <?php if($css->configuration->getAddTimestamp()) echo 'checked="checked"'; ?>>
    			<label for="timestamp"><?php echo $lang[$l][57]; ?></label><br>
 
 			<input type="checkbox" id="whole_file" name="whole_file"
@@ -320,20 +320,20 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->timestamp = true;
 		{
 			case 4:
                 if($is_custom) {
-                    $css->configuration->setTemplateFromString($_REQUEST['custom']);
+                    $css->configuration->loadTemplateFromString($_REQUEST['custom']);
                 }
                 break;
 
 			case 3:
-                $css->configuration->templateName = \CSSTidy\Configuration::HIGHEST_COMPRESSION;
+                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::HIGHEST_COMPRESSION);
                 break;
 
 			case 2:
-                $css->configuration->templateName = \CSSTidy\Configuration::HIGH_COMPRESSION;
+                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::HIGH_COMPRESSION);
                 break;
 
 			case 0:
-                $css->configuration->templateName = \CSSTidy\Configuration::LOW_COMPRESSION;
+                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::LOW_COMPRESSION);
                 break;
 		}
 	}
