@@ -308,7 +308,7 @@ class CSSTidy
 
 		$string = str_replace("\r\n", "\n", $string) . ' ';
         
-		$cur_comment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
+		$currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
         $quotedString = $strInStr = $invalidAtRule = false;
 
         /*
@@ -624,10 +624,10 @@ class CSSTidy
 					if ($string{$i} === '*' && $string{$i + 1} === '/') {
 						$status = $from;
 						$i++;
-						$parsed->addToken(self::COMMENT, $cur_comment);
-						$cur_comment = '';
+						$parsed->addToken(self::COMMENT, $currentComment);
+						$currentComment = '';
 					} else {
-						$cur_comment .= $string{$i};
+						$currentComment .= $string{$i};
 					}
 					break;
 			}
