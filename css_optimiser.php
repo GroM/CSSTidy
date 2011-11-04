@@ -75,28 +75,27 @@ function rmdirr($dirname,$oc=0)
 	}
 }
 
-function options(array $options = array(), $selected = null, $labelIsValue = false)
-{
+function options(array $options = array(), $selected = null, $labelIsValue = false) {
     $html = '';
 
     foreach ($options as $value => $label) {
         if (is_array($label)) {
-            $value = $label[0];
-            $label = $label[1];
+            
         }
+
         $label = htmlspecialchars($label, ENT_QUOTES, 'utf-8');
         $value = $labelIsValue ? $label
                                : htmlspecialchars($value, ENT_QUOTES, 'utf-8');
 
         $html .= '<option value="'.$value.'"';
-        if (in_array($value, (array) $selected)) {
+        if ($value == $selected) {
             $html .= ' selected="selected"';
         }
         $html .= '>'.$label.'</option>';
     }
 
-    if (!$html) {
-        $html .= '<option value="0">---</option>';
+    if (empty($html)) {
+        return '<option value="0">---</option>';
     }
 
     return $html;
@@ -130,31 +129,26 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
 <!DOCTYPE html>
 <html>
   <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta charset="utf-8">
     <title>
-      <?php echo $lang[$l][0]; echo $css->getVersion(); ?>)
+      <?php echo $lang[$l][0]; echo $css::getVersion(); ?>)
     </title>
     <link rel="stylesheet" href="cssparse.css" type="text/css" >
     <script type="text/javascript">
     function enable_disable_preserve()
     {
-        var inputs =   new Array('sort_sel', 'sort_de', 'optimise_shorthands', 'merge_selectors', 'none');
-        var inputs_v = new Array( true,       true,      true,                  true,              false);
-        for(var i = 0; i < inputs.length; i++)
-        {
-            if(document.getElementById('preserve_css').checked)  {
-                document.getElementById(inputs[i]).disabled = inputs_v[i];
-            } else {
-                document.getElementById(inputs[i]).disabled = !inputs_v[i];
-            }
+        var inputs = {'sort_sel': true, 'sort_de': true, 'optimise_shorthands': true, 'merge_selectors': true, 'none': false};
+        var preserverCssChecked = document.getElementById('preserve_css').checked;
+
+        for(var key in inputs) {
+            document.getElementById(key).disabled = preserverCssChecked ? inputs[key] : !inputs[key];
         }
     }
     function ClipBoard()
     {
 		if (window.clipboardData) { // Feature testing
 			window.clipboardData.setData('Text',document.getElementById("copytext").innerText);
-		}
-		else if (navigator.userAgent.indexOf('Gecko') != -1
+		} else if (navigator.userAgent.indexOf('Gecko') != -1
 					&& navigator.userAgent.indexOf('Apple') == -1
 					) {
 			try {
@@ -178,14 +172,14 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
       <?php echo $lang[$l][1]; ?>
     </h1>
     <?php echo $lang[$l][2]; ?> <a
-      href="http://csstidy.sourceforge.net/">csstidy</a> <?php echo $css->getVersion(); ?>)
+      href="http://csstidy.sourceforge.net/">CSSTidy</a> <?php echo $css::getVersion(); ?>)
     </div><p>
     <?php echo $lang[$l][39]; ?>: <a hreflang="en" href="?lang=en">English</a> <a hreflang="de" href="?lang=de">Deutsch</a> <a hreflang="fr" href="?lang=fr">French</a> <a hreflang="zh" href="?lang=zh">Chinese</a></p>
     <p><?php echo $lang[$l][4]; ?>
       <?php echo $lang[$l][6]; ?>
     </p>
 
-    <form method="post" action="">
+    <form method="post">
       <div>
         <fieldset id="field_input">
           <legend><?php echo $lang[$l][8]; ?></legend> <label for="css_text"
@@ -325,28 +319,25 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
                 break;
 
 			case 3:
-                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::HIGHEST_COMPRESSION);
+                $css->configuration->loadPredefinedTemplate(CSSTidy\Configuration::HIGHEST_COMPRESSION);
                 break;
 
 			case 2:
-                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::HIGH_COMPRESSION);
+                $css->configuration->loadPredefinedTemplate(CSSTidy\Configuration::HIGH_COMPRESSION);
                 break;
 
 			case 0:
-                $css->configuration->loadPredefinedTemplate(\CSSTidy\Configuration::LOW_COMPRESSION);
+                $css->configuration->loadPredefinedTemplate(CSSTidy\Configuration::LOW_COMPRESSION);
                 break;
 		}
 	}
 
-    if($url)
-    {
-    	if(substr($_REQUEST['url'],0,7) !== 'http://')
-		{
-			$_REQUEST['url'] = 'http://'.$_REQUEST['url'];
+    if($url) {
+    	if(substr($_REQUEST['url'], 0, 7) !== 'http://') {
+			$_REQUEST['url'] = 'http://' . $_REQUEST['url'];
 		}
         $output = $css->parseFromUrl($_REQUEST['url']);
-    } elseif(isset($_REQUEST['css_text']) && strlen($_REQUEST['css_text'])>5)
-    {
+    } elseif(isset($_REQUEST['css_text']) && strlen($_REQUEST['css_text']) > 5) {
         $output = $css->parse($_REQUEST['css_text']);
     }
 
@@ -392,7 +383,7 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
         </fieldset>
         <?php endif; ?>
         <fieldset>
-          <legend><?= $lang[$l][37] ?>: <?= $output->size(CSSTidy\Output::INPUT) ?> KB (gzipped <?= $output->gzippedSize(CSSTidy\Output::INPUT) ?> KB), <?= $lang[$l][38] ?>: <?= $output->size(CSSTidy\Output::OUTPUT) ?> KB (gzipped <?= $output->gzippedSize(CSSTidy\Output::OUTPUT) ?> KB), <?= $lang[$l][36] ?>: <?= $ratio ?>
+          <legend><?php echo $lang[$l][37] ?>: <?php echo $output->size(CSSTidy\Output::INPUT) ?> KB (gzipped <?php echo $output->gzippedSize(CSSTidy\Output::INPUT) ?> KB), <?php echo $lang[$l][38] ?>: <?php echo $output->size(CSSTidy\Output::OUTPUT) ?> KB (gzipped <?php echo $output->gzippedSize(CSSTidy\Output::OUTPUT) ?> KB), <?php echo $lang[$l][36] ?>: <?php echo $ratio ?>
         <?php
         if($file_ok)
         {
@@ -407,12 +398,10 @@ if(isset($_REQUEST['timestamp'])) $css->configuration->setAddTimestamp(true);
 		echo '<fieldset class="code_output"><legend>',$lang[$l][64],'</legend>';
         echo '<textarea rows="10" cols="80">';
 
-		if(isset($_REQUEST['whole_file'])) {
-			echo htmlspecialchars($output->formattedPage('xhtml1.1', false, '', 'en'), ENT_QUOTES, 'utf-8');
-		}
-		else {
-			echo htmlspecialchars('<code id="copytext">', ENT_QUOTES, 'utf-8'),"\n";
-			echo htmlspecialchars($output->formatted()."\n".'</code>', ENT_QUOTES, 'utf-8');
+		if (isset($_REQUEST['whole_file'])) {
+			echo htmlspecialchars($output->formattedPage(false, ''), ENT_QUOTES, 'utf-8');
+		} else {
+			echo htmlspecialchars("<code id=\"copytext\">\n{$output->formatted()}\n</code>", ENT_QUOTES, 'utf-8');
 		}
 		echo '</textarea></fieldset>';
 		echo '<fieldset class="code_output"><legend>',$lang[$l][65],'</legend>';
