@@ -48,9 +48,6 @@ class Parsed
     /** @var string */
     public $namespace = '';
 
-    /** @var bool */
-    protected $preserveCss;
-
     /** @var int */
     protected $mergeSelectors;
 
@@ -59,7 +56,6 @@ class Parsed
      */
     public function __construct(Configuration $configuration)
     {
-        $this->preserveCss = $configuration->getPreserveCss();
         $this->mergeSelectors = $configuration->getMergeSelectors();
     }
 
@@ -67,14 +63,11 @@ class Parsed
 	 * Adds a token to $this->tokens
 	 * @param int $type
 	 * @param string $data
-	 * @param bool $do add a token even if preserve_css is off
      * @return void
 	 */
-	public function addToken($type, $data, $do = false)
+	public function addToken($type, $data)
     {
-		if ($this->preserveCss || $do) {
-			$this->tokens[] = array($type, ($type === CSSTidy::COMMENT) ? $data : trim($data));
-		}
+        $this->tokens[] = array($type, ($type === CSSTidy::COMMENT) ? $data : trim($data));
 	}
 
     /**
@@ -88,7 +81,7 @@ class Parsed
 	 */
 	public function addProperty($media, $selector, $property, $newValue)
     {
-		if ($this->preserveCss || trim($newValue) == '') {
+		if (trim($newValue) == '') {
 			return;
 		}
 
@@ -105,13 +98,13 @@ class Parsed
 	 * Adds CSS to an existing media/selector
 	 * @param string $media
 	 * @param string $selector
-	 * @param array $css_add
+	 * @param array $cssToAdd
 	 * @version 1.1
 	 */
-	public function mergeCssBlocks($media, $selector, array $css_add)
+	public function mergeCssBlocks($media, $selector, array $cssToAdd)
     {
-		foreach ($css_add as $property => $value) {
-			$this->addProperty($media, $selector, $property, $value, false);
+		foreach ($cssToAdd as $property => $value) {
+			$this->addProperty($media, $selector, $property, $value);
 		}
 	}
 
@@ -126,10 +119,6 @@ class Parsed
 	 */
 	public function newMediaSection($media)
     {
-		if ($this->preserveCss) {
-			return $media;
-		}
-
 		// if the last @media is the same as this
 		// keep it
 		if (!$this->css || !is_array($this->css) || empty($this->css)) {
@@ -168,10 +157,6 @@ class Parsed
 	 */
 	public function newSelector($media, $selector)
     {
-		if ($this->preserveCss) {
-			return $selector;
-		}
-
 		$selector = trim($selector);
 		if (strncmp($selector, "@font-face", 10) != 0) {
 			if ($this->mergeSelectors != Configuration::DO_NOT_CHANGE) {
@@ -210,10 +195,6 @@ class Parsed
 	 */
 	public function newProperty($media, $selector, $property)
     {
-		if ($this->preserveCss) {
-			return $property;
-		}
-
 		if (!$this->css || !isset($this->css[$media][$selector]) || !$this->css[$media][$selector]) {
 			return $property;
         }
