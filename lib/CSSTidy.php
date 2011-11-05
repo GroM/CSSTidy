@@ -239,7 +239,7 @@ class CSSTidy
         'animation-play-state' => 'CSS3.0',
         'animation-delay' => 'CSS3.0',
         'animation' => 'CSS3.0',
-
+        // Backgrounds
         'background-size' => 'CSS3.0',
         'background-origin' => 'CSS3.0',
         'border-radius' => 'CSS3.0',
@@ -267,6 +267,9 @@ class CSSTidy
         'user-select' => 'CSS3.0',
         // Images
         'image-rendering' => 'CSS3.0',
+        'image-resolution' => 'CSS3.0',
+        'image-orientation' => 'CSS3.0',
+
     );
 
     /** @var \CSSTidy\Optimise */
@@ -488,14 +491,29 @@ class CSSTidy
                                     $subValues[0] = '"' . $subValues[0] . '"';
                                 }
 
+
                                 $status = 'is';
 
                                 switch ($selector) {
-                                    case '@charset': $parsed->charset = $subValues[0];
+                                    case '@charset':
+                                        $parsed->charset = $subValues[0];
+                                        if (!empty($parsed->css) || !empty($parsed->import) || !empty($parsed->namespace)) {
+                                            $this->logger->log("@charset must be before anything", Logger::WARNING);
+                                        }
                                         break;
-                                    case '@namespace': $parsed->namespace = implode(' ', $subValues);
+
+                                    case '@namespace':
+                                        $parsed->namespace = implode(' ', $subValues);
                                         break;
-                                    case '@import': $parsed->import[] = implode(' ', $subValues);
+
+                                    case '@import':
+                                        $parsed->import[] = implode(' ', $subValues);
+                                        if (!empty($parsed->css)) {
+                                            $this->logger->log("@import must be before anything selectors", Logger::WARNING);
+                                        } else if (!empty($at)) {
+                                            $this->logger->log("@import cannot be inside @media", Logger::WARNING);
+                                        }
+
                                         break;
                                 }
 
