@@ -94,6 +94,7 @@ class CSSTidy
         '@import' => 'iv',
         '@namespace' => 'iv',
         '@media' => 'at',
+        '@keyframes' => 'at',
         //'font-feature-values ' => 'at', // Not fully supported yet
     );
 
@@ -228,7 +229,17 @@ class CSSTidy
         'speak-punctuation' => 'CSS2.0,CSS2.1,CSS3.0',
         'speak-numeral' => 'CSS2.0,CSS2.1,CSS3.0',
 
-        // CSS3 only
+        // CSS3 properties
+        // Animation module
+        'animation-timing-function' => 'CSS3.0',
+        'animation-name' => 'CSS3.0',
+        'animation-duration' => 'CSS3.0',
+        'animation-iteration-count' => 'CSS3.0',
+        'animation-direction' => 'CSS3.0',
+        'animation-play-state' => 'CSS3.0',
+        'animation-delay' => 'CSS3.0',
+        'animation' => 'CSS3.0',
+
         'background-size' => 'CSS3.0',
         'background-origin' => 'CSS3.0',
         'border-radius' => 'CSS3.0',

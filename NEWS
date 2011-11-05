@@ -24,6 +24,7 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 ! New CSS3 properties
 ! Method for merging @import files
 ! Properly sorting IE 6 and 7 hack properties (thanks weikinhuang)
+! Support for CSS3 animations
 - Added localizations for css_optimiser.php
 - Fixed bug with cookie setting for custom templates
 - Minor security problem in css_optimiser.php fixed
