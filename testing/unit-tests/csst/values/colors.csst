@@ -7,8 +7,11 @@ a {
     baz:#ffaabb;
     qux:#f00;
     quux:blanchedalmond;
-    quuux:rgb(0,0,1);
-    acci:hsl(0, 100%, 50%);
+    rgb:rgb(0,0,1);
+    rgb2:rgb(255,255,100%);
+    hsl:hsl(25, 100%, 50%);
+    hsl2:hsl(210, 100%, 50%);
+    hsl3:hsl(270, 25%, 25%);
 }
 --EXPECT--
 array (
@@ -19,7 +22,10 @@ array (
     'baz' => '#fab',
     'qux' => 'red',
     'quux' => '#ffebcd',
-    'quuux' => '#000001',
-    'acci' => 'red',
+    'rgb' => '#000001',
+    'rgb2' => '#fff',
+    'hsl' => '#ff6a00',
+    'hsl2' => '#0080ff',
+    'hsl3' => '#403050',
   ),
 )

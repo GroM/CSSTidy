@@ -57,7 +57,16 @@ class Optimise
      * @var array
      * @version 1.0
      */
-    public static $colorValues = array('background-color', 'border-color', 'border-top-color', 'border-right-color', 'border-bottom-color',  'border-left-color', 'color', 'outline-color');
+    public static $colorValues = array(
+        'background-color' => true,
+        'border-color' => true,
+        'border-top-color' => true,
+        'border-right-color' => true,
+        'border-bottom-color' => true,
+        'border-left-color' => true,
+        'color' => true,
+        'outline-color' => true
+    );
 
     /**
      * All CSS units (CSS 3 units included)
@@ -515,6 +524,11 @@ class Optimise
 			$colorTmp = substr($color, 4, strlen($color) - 5);
 			$colorTmp = explode(',', $colorTmp);
 
+            if (count($colorTmp) !== 3) {
+                $this->logger->log("Invalid color value '$color'", "Warning");
+                return $color;
+            }
+
             if ($type === 'rgb(') {
                 $parts = $this->convertRgbToHex($colorTmp);
             } else {
@@ -562,22 +576,15 @@ class Optimise
      */
     protected function convertRgbToHex(array $parts)
     {
-        $output = array();
-        foreach ($parts as $i => $part) {
-            if ($i > 2) {
-                break;
-            }
-
-            $part = (int) trim($part);
+        foreach ($parts as &$part) {
+            $part = trim($part);
 
             if (substr($part, -1) === '%') {
                 $part = round((255 * $part) / 100);
             }
-
-            $output[] = $part;
         }
 
-        return $output;
+        return $parts;
     }
 
     /**
@@ -587,16 +594,21 @@ class Optimise
      */
     protected function convertHslToHex(array $parts)
     {
-        // Normalize parts from 90% -> 0.9 and from 255 -> 1
-        foreach ($parts as &$part) {
-            if (substr($part, -1) === '%') {
-                $part = (int) $part / 100;
-            } else {
-                $part /= 255;
-            }
+        list ($h, $s, $l) = $parts;
+
+        $h = ((($h % 360) + 360) % 360) / 360;
+
+        if (substr($s, -1) === '%') {
+            $s = (int) $s / 100;
+        } else {
+            $this->logger->log("HSL saturation must be  apercent value", "Warning");
         }
 
-        list ($h, $s, $l) = $parts;
+        if (substr($l, -1) === '%') {
+            $l = (int) $l / 100;
+        } else {
+            $this->logger->log("HSL light must be a percent value", "Warning");
+        }
 
         $m2 = ($l <= 0.5) ? $l * ($s + 1) : ($l + $s - $l * $s);
         $m1 = $l * 2 - $m2;
@@ -614,7 +626,7 @@ class Optimise
                 $output[] = $m1 + ($m2 - $m1) * $mH * 6;
             } else if ($mH * 2 < 1) {
                 $output[] = $m2;
-            } else if ($h * 3 < 2) {
+            } else if ($mH * 3 < 2) {
                 $output[] = $m1 + ($m2 - $m1) * (2/3 - $mH) * 6;
             } else {
                 $output[] = $m1;
@@ -623,7 +635,7 @@ class Optimise
 
         // Convert back to 1 -> 255
         foreach ($output as &$rgb) {
-            $rgb *= 255;
+            $rgb = round($rgb * 255);
         }
 
         return $output;
@@ -632,43 +644,43 @@ class Optimise
 	/**
 	 * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1 )
 	 * @param string $property
-     * @param string $subvalue
+     * @param string $subValue
 	 * @return string
 	 */
-	protected function compressNumbers($property, $subvalue)
+	protected function compressNumbers($property, $subValue)
     {
 		// for font:1em/1em sans-serif...;
 		if ($property === 'font') {
-			$temp = explode('/', $subvalue);
+			$parts = explode('/', $subValue);
 		} else {
-			$temp = array($subvalue);
+			$parts = array($subValue);
 		}
 
-		for ($l = 0; $l < count($temp); $l++) {
+		foreach ($parts as &$part) {
 			// if we are not dealing with a number at this point, do not optimise anything
-			$number = $this->analyseCssNumber($temp[$l]);
+			$number = $this->analyseCssNumber($part);
 			if ($number === false) {
-				return $subvalue;
+				return $subValue;
 			}
 
 			// Fix bad colors
-			if (in_array($property, self::$colorValues)) {
-				$temp[$l] = '#' . $temp[$l];
+			if (isset(self::$colorValues[$property])) {
+				$part = '#' . $part;
 				continue;
 			}
 
 			if (abs($number[0]) > 0) {
-				if ($number[1] == '' && in_array($property, self::$unitValues, true)) {
+				if ($number[1] === '' && in_array($property, self::$unitValues, true)) {
 					$number[1] = 'px';
 				}
 			} else {
 				$number[1] = '';
 			}
 
-			$temp[$l] = $number[0] . $number[1];
+			$part = $number[0] . $number[1];
 		}
 
-		return ((count($temp) > 1) ? $temp[0] . '/' . $temp[1] : $temp[0]);
+		return (isset($parts[1]) ? $parts[0] . '/' . $parts[1] : $parts[0]);
 	}
 
 	/**
@@ -680,7 +692,7 @@ class Optimise
 	protected function analyseCssNumber($string)
     {
 		// most simple checks first
-		if (strlen($string) == 0 || ctype_alpha($string{0})) {
+		if (!isset($string{0}) || ctype_alpha($string{0})) {
 			return false;
 		}
 
