@@ -1,0 +1,11 @@
+--TEST--
+Attribute substring selector
+--CSS--
+a[src*="w3schools"] {display: inherit;}
+--EXPECT--
+array (
+  'a[src*="w3schools"]' =>
+  array (
+    'display' => 'inherit',
+  ),
+)
