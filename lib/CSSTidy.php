@@ -334,7 +334,8 @@ class CSSTidy
         $this->parsed = $parsed = new Parsed($this->configuration, $string);
 
 		$string = str_replace("\r\n", "\n", $string) . ' ';
-        
+
+        $preserveCss = $this->configuration->getPreserveCss();
 		$currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
         $quotedString = $strInStr = $invalidAtRule = false;
 
@@ -400,13 +401,15 @@ class CSSTidy
 							$status = 'is';
 						} elseif ($current === '{') {
 							$status = 'ip';
-							if($at == '') {
-								$at = $parsed->newMediaSection(self::DEFAULT_AT);
+							if (!$preserveCss) {
+                                if ($at === '') {
+								    $at = $parsed->newMediaSection(self::DEFAULT_AT);
+                                }
+                                $selector = $parsed->newSelector($at, $selector);
+                                $parsed->addToken(self::SEL_START, $selector);
 							}
-							$selector = $parsed->newSelector($at,$selector);
-							$parsed->addToken(self::SEL_START, $selector);
 						} elseif ($current === '}') {
-							$parsed->addToken(self::AT_END, $at);
+							if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
 							$at = $selector = '';
 							$selectorSeparate = array();
 						} elseif ($current === ',') {
@@ -432,7 +435,7 @@ class CSSTidy
 					if ($this->isToken($string, $i)) {
 						if (($current === ':' || $current === '=') && $property != '') {
 							$status = 'iv';
-							if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
+							if (!$preserveCss && (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property))) {
 								$property = $parsed->newProperty($at, $selector, $property);
 								$parsed->addToken(self::PROPERTY, $property);
 							}
@@ -444,7 +447,7 @@ class CSSTidy
 							$this->explodeSelectors($selector, $at);
 							$status = 'is';
 							$invalidAtRule = false;
-							$parsed->addToken(self::SEL_END, $selector);
+							if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
 							$selector = $property = '';
 						} elseif ($current === ';') {
 							$property = '';
@@ -506,7 +509,7 @@ class CSSTidy
 							$subValue .= $current;
 						}
 						if (($current === '}' || $current === ';' || $pn) && !empty($selector)) {
-							if ($at == '') {
+							if ($at == '' && !$preserveCss) {
 								$at = $parsed->newMediaSection(self::DEFAULT_AT);
 							}
 
@@ -518,24 +521,29 @@ class CSSTidy
 
 							$subValue = $this->optimise->subValue($property, $subValue);
 							if ($subValue != '') {
-								if (substr($subValue, 0, 6) == 'format') {
-									$subValue = str_replace(array('format(', ')'), array('format("', '")'), $subValue);
-								}
 								$subValues[] = $subValue;
 								$subValue = '';
 							}
 
+                            foreach ($subValues as &$sbv) {
+                                if (strncmp($sbv, 'format(', 7) == 0) {
+									$sbv = str_replace(array('format(', ')'), array('format("', '")'), $sbv);
+								}
+                            }
+
 							$value = array_shift($subValues);
 							while (!empty($subValues)) {
-								$value .= (substr($value, -1, 1) == ',' ? '' : ' ') . array_shift($subValues);
+								$value .= (substr($value, -1) == ',' ? '' : ' ') . array_shift($subValues);
 							}
 
 							$value = $this->optimise->value($property, $value);
 
 							$valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
 							if ((!$invalidAtRule || $this->configuration->getPreserveCss()) && (!$this->configuration->getDiscardInvalidProperties() || $valid)) {
-								$parsed->addProperty($at, $selector, $property, $value);
-								$parsed->addToken(self::VALUE, $value);
+								if (!$preserveCss) {
+                                    $parsed->addProperty($at, $selector, $property, $value);
+								    $parsed->addToken(self::VALUE, $value);
+                                }
 								$this->optimise->shorthands($parsed, $at, $selector, $property, $value);
 							}
 							if (!$valid) {
@@ -551,7 +559,7 @@ class CSSTidy
 						}
 						if ($current === '}') {
 							$this->explodeSelectors($selector, $at);
-							$parsed->addToken(self::SEL_END, $selector);
+							if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
 							$status = 'is';
 							$invalidAtRule = false;
 							$selector = '';
@@ -623,7 +631,7 @@ class CSSTidy
 					if ($current === '*' && $string{$i + 1} === '/') {
 						$status = $from;
 						$i++;
-						$parsed->addToken(self::COMMENT, $currentComment);
+						if (!$preserveCss) $parsed->addToken(self::COMMENT, $currentComment);
 						$currentComment = '';
 					} else {
 						$currentComment .= $current;
@@ -639,8 +647,10 @@ class CSSTidy
 							$from = 'at';
 						} elseif ($current === '{') {
 							$status = 'is';
-							$at = $parsed->newMediaSection($at);
-							$parsed->addToken(self::AT_START, $at);
+                            if (!$preserveCss) {
+                                $at = $parsed->newMediaSection($at);
+                                $parsed->addToken(self::AT_START, $at);
+                            }
 						} elseif ($current === ',') {
 							$at = trim($at) . ',';
 						} elseif ($current === '\\') {

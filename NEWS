@@ -33,5 +33,6 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 - Fixed optimisation: 1.0 was not optimised to 1
 - Fixed incorrect parsing of !imporant close to numbers
 - Fixed incorrect removing url() from @import and parsing with media type specified
+- Fixed removing quotation marks from @font-face src property (thanks oroboto)
 - Allowed Copy to Clipboard for Firefox if preference set (if not, gives 
   instructions on how to add and warning re: security)
