@@ -40,25 +40,25 @@ class Logger
     protected $line = 1;
 
     /**
-	 * Add a message to the message log
-	 * @param string $message
-	 * @param string $type
-	 * @param integer $line
-	 * @version 1.0
-	 */
-	public function log($message, $type, $line = -1)
+     * Add a message to the message log
+     * @param string $message
+     * @param string $type
+     * @param integer $line
+     * @version 1.0
+     */
+    public function log($message, $type, $line = -1)
     {
-		if ($line === -1) {
-			$line = $this->line;
-		}
+        if ($line === -1) {
+            $line = $this->line;
+        }
 
-		$line = (int) $line;
+        $line = (int) $line;
 
-		$add = array(self::MESSAGE => $message, self::TYPE => $type);
-		if (!isset($this->log[$line]) || !in_array($add, $this->log[$line])) {
-			$this->log[$line][] = $add;
-		}
-	}
+        $add = array(self::MESSAGE => $message, self::TYPE => $type);
+        if (!isset($this->log[$line]) || !in_array($add, $this->log[$line])) {
+            $this->log[$line][] = $add;
+        }
+    }
 
     /**
      * @return int

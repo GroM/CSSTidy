@@ -472,8 +472,8 @@ class Configuration
     {
         $content = strip_tags($content, '<span>');
 
-		$content = str_replace("\r\n", "\n", $content); // Unify newlines (because the output also only uses \n)
-		$this->setTemplate(explode('|', $content));
+        $content = str_replace("\r\n", "\n", $content); // Unify newlines (because the output also only uses \n)
+        $this->setTemplate(explode('|', $content));
         $this->predefinedTemplateName = null;
     }
 
@@ -610,13 +610,13 @@ class Configuration
                 '</span> <span class="format">{</span>'."\n",
                 '<span class="selector">',
                 '</span>'."\n".'<span class="format">{</span>'."\n",
-                '	<span class="property">',
+                '    <span class="property">',
                 '</span><span class="value">',
                 '</span><span class="format">;</span>'."\n",
                 '<span class="format">}</span>',
                 "\n\n",
                 "\n".'<span class="format">}</span>'."\n\n",
-                '	',
+                '    ',
                 '<span class="comment">', // before comment
                 '</span>'."\n", // after comment
                 "\n",
