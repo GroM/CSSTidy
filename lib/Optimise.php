@@ -328,14 +328,14 @@ class Optimise
         if (isset(self::$shorthands[$property])) {
             $temp = $this->shorthand($value); // FIXME - move
             if ($temp != $value) {
-                $this->logger->log('Optimised shorthand notation (' . $property . '): Changed "' . $value . '" to "' . $temp . '"', 'Information');
+                $this->logger->log('Optimised shorthand notation (' . $property . '): Changed "' . $value . '" to "' . $temp . '"', Logger::INFORMATION);
             }
             $value = $temp;
         }
 
         // Remove whitespace at ! important
         if ($value != $this->compressImportant($value)) {
-            $this->logger->log('Optimised !important', 'Information');
+            $this->logger->log('Optimised !important', Logger::INFORMATION);
         }
 
         return $value;
@@ -398,7 +398,7 @@ class Optimise
             static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
             if (isset($optimizedFontWeight[$subValue])) {
                 $optimized = $optimizedFontWeight[$subValue];
-                $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", 'Information');
+                $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", Logger::INFORMATION);
                 $subValue = $optimized;
             }
         }
@@ -407,9 +407,9 @@ class Optimise
 
         if (strcasecmp($temp, $subValue) !== 0) {
             if (strlen($temp) > strlen($subValue)) {
-                $this->logger->log("Fixed invalid number: Changed \"{$subValue}\" to \"{$temp}\"", 'Warning');
+                $this->logger->log("Fixed invalid number: Changed \"{$subValue}\" to \"{$temp}\"", Logger::WARNING);
             } else {
-                $this->logger->log("Optimised number: Changed \"{$subValue}\" to \"{$temp}\"", 'Information');
+                $this->logger->log("Optimised number: Changed \"{$subValue}\" to \"{$temp}\"", Logger::INFORMATION);
             }
             $subValue = $temp;
         }
@@ -418,9 +418,9 @@ class Optimise
             $temp = $this->cutColor($subValue);
             if ($temp !== $subValue) {
                 if (isset(self::$replaceColors[$subValue])) {
-                    $this->logger->log("Fixed invalid color name: Changed \"{$subValue}\" to \"{$temp}\"", 'Warning');
+                    $this->logger->log("Fixed invalid color name: Changed \"{$subValue}\" to \"{$temp}\"", Logger::WARNING);
                 } else {
-                    $this->logger->log("Optimised color: Changed \"{$subValue}\" to \"{$temp}\"", 'Information');
+                    $this->logger->log("Optimised color: Changed \"{$subValue}\" to \"{$temp}\"", Logger::INFORMATION);
                 }
                 $subValue = $temp;
             }
@@ -525,7 +525,7 @@ class Optimise
             $colorTmp = explode(',', $colorTmp);
 
             if (count($colorTmp) !== 3) {
-                $this->logger->log("Invalid color value '$color'", "Warning");
+                $this->logger->log("Invalid color value '$color'", Logger::WARNING);
                 return $color;
             }
 
@@ -601,13 +601,13 @@ class Optimise
         if (substr($s, -1) === '%') {
             $s = (int) $s / 100;
         } else {
-            $this->logger->log("HSL saturation must be  apercent value", "Warning");
+            $this->logger->log("HSL saturation must be a percent value", Logger::WARNING);
         }
 
         if (substr($l, -1) === '%') {
             $l = (int) $l / 100;
         } else {
-            $this->logger->log("HSL light must be a percent value", "Warning");
+            $this->logger->log("HSL light must be a percent value", Logger::WARNING);
         }
 
         $m2 = ($l <= 0.5) ? $l * ($s + 1) : ($l + $s - $l * $s);

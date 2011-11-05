@@ -33,6 +33,11 @@ class Logger
     const MESSAGE = 'm',
         TYPE = 't';
 
+    // Constants for log type
+    const ERROR = 'Error',
+        WARNING = 'Warning',
+        INFORMATION = 'Information';
+
     /** @var array */
     protected $log = array();
 

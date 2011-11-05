@@ -34,19 +34,7 @@ namespace CSSTidy;
 require_once __DIR__ . '/Configuration.php';
 require_once __DIR__ . '/Logger.php';
 require_once __DIR__ . '/Parsed.php';
-
-/**
- * Contains a class for printing CSS code
- *
- * @version 1.0
- */
 require_once __DIR__ . '/Output.php';
-
-/**
- * Contains a class for optimising CSS code
- *
- * @version 1.0
- */
 require_once __DIR__ . '/Optimise.php';
 
 /**
@@ -380,14 +368,14 @@ class CSSTidy
 
                             if ($invalidAtRule) {
                                 $selector = '@';
-                                $invalid_at_name = '';
+                                $invalidAtName = '';
                                 for ($j = $i + 1; $j < $size; ++$j) {
                                     if (!ctype_alpha($string{$j})) {
                                         break;
                                     }
-                                    $invalid_at_name .= $string{$j};
+                                    $invalidAtName .= $string{$j};
                                 }
-                                $this->logger->log('Invalid @-rule: ' . $invalid_at_name . ' (removed)', 'Warning');
+                                $this->logger->log('Invalid @-rule: ' . $invalidAtName . ' (removed)', Logger::WARNING);
                             }
                         } elseif ($current === '"' || $current === "'") {
                             $currentString = $current;
@@ -548,9 +536,9 @@ class CSSTidy
                             }
                             if (!$valid) {
                                 if ($this->configuration->getDiscardInvalidProperties()) {
-                                    $this->logger->log("Removed invalid property: $property", 'Warning');
+                                    $this->logger->log("Removed invalid property: $property", Logger::WARNING);
                                 } else {
-                                    $this->logger->log("Invalid property in {$this->configuration->getCssLevel()}: $property", 'Warning');
+                                    $this->logger->log("Invalid property in {$this->configuration->getCssLevel()}: $property", Logger::WARNING);
                                 }
                             }
 
@@ -587,7 +575,7 @@ class CSSTidy
                     $temp_add = $current;                     // ...and no not-escaped backslash at the previous position
                     if (($current === "\n" || $current === "\r") && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
                         $temp_add = "\\A ";
-                        $this->logger->log('Fixed incorrect newline in string', 'Warning');
+                        $this->logger->log('Fixed incorrect newline in string', Logger::WARNING);
                     }
                     // this optimisation remove space in css3 properties (see vendor-prefixed/webkit-gradient.csst)
                     #if (!($stringChar === ')' && in_array($current, $GLOBALS['csstidy']['whitespace']) && !$strInStr)) {
@@ -706,6 +694,7 @@ class CSSTidy
 
             if (!$content) {
                 $notResolvedImports[] = $matches[0][$i];
+                $this->logger->log("Import file {$fileDirectory}{$fileName} not found", Logger::WARNING);
             }
         }
 
@@ -773,7 +762,7 @@ class CSSTidy
 
         $hexDecAdd = hexdec($add);
         if ($hexDecAdd > 47 && $hexDecAdd < 58 || $hexDecAdd > 64 && $hexDecAdd < 91 || $hexDecAdd > 96 && $hexDecAdd < 123) {
-            $this->logger->log('Replaced unicode notation: Changed \\' . $add . ' to ' . chr($hexDecAdd), 'Information');
+            $this->logger->log('Replaced unicode notation: Changed \\' . $add . ' to ' . chr($hexDecAdd), Logger::INFORMATION);
             $add = chr($hexDecAdd);
             $replaced = true;
         } else {
@@ -790,7 +779,7 @@ class CSSTidy
         }
 
         if ($add === '\\') {
-            $this->logger->log('Removed unnecessary backslash', 'Information');
+            $this->logger->log('Removed unnecessary backslash', Logger::INFORMATION);
         }
         return '';
     }
@@ -858,7 +847,7 @@ class CSSTidy
         }
         $istring = strtolower(trim(substr($istring, 0, $pos)));
         if (isset(self::$allProperties[$istring])) {
-            $this->logger->log('Added semicolon to the end of declaration', 'Warning');
+            $this->logger->log('Added semicolon to the end of declaration', Logger::WARNING);
             return true;
         }
         return false;

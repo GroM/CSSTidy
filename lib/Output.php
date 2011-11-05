@@ -269,7 +269,7 @@ html;
             $replaced = preg_replace('~url\(["\']?([^\)\'"]*)["\']?\)~', '"$1"', $import);
             if ($replaced !== $import) {
                 $import = $replaced;
-                $this->logger->log('Optimised @import: Removed "url("', 'Information');
+                $this->logger->log('Optimised @import: Removed "url("', Logger::INFORMATION);
             }
 
             $output .= $template[0] . '@import' . $template[5] . $import . $template[6];
@@ -278,7 +278,7 @@ html;
         if (!empty($this->parsed->namespace)) {
             if (substr($this->parsed->namespace, 0, 4) === 'url(' && substr($this->parsed->namespace, -1, 1) === ')') {
                 $this->parsed->namespace = '\'' . substr($this->parsed->namespace, 4, -1) . '\'';
-                $this->logger->log('Optimised @namespace: Removed "url("', 'Information');
+                $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
             }
             $output .= $template[0] . '@namespace ' . $template[5] . $this->parsed->namespace . $template[6];
         }
