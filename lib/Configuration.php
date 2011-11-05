@@ -610,13 +610,13 @@ class Configuration
                 '</span> <span class="format">{</span>'."\n",
                 '<span class="selector">',
                 '</span>'."\n".'<span class="format">{</span>'."\n",
-                '    <span class="property">',
+                "\t" . '<span class="property">',
                 '</span><span class="value">',
                 '</span><span class="format">;</span>'."\n",
                 '<span class="format">}</span>',
                 "\n\n",
                 "\n".'<span class="format">}</span>'."\n\n",
-                '    ',
+                "\t",
                 '<span class="comment">', // before comment
                 '</span>'."\n", // after comment
                 "\n",
