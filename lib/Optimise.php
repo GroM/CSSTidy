@@ -76,7 +76,7 @@ class Optimise
      * @var array
      * @version 1.0
      */
-    public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz');
+    public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz','dpi','dpcm','dppx');
 
     /**
      * Properties that need a value with unit
