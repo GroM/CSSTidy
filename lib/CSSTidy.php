@@ -80,7 +80,7 @@ class CSSTidy
      * @var array
      * @version 1.0
      */
-    public static $whitespace = array(' ',"\n","\t","\r","\x0B");
+    public static $whitespace = array(' ', "\n", "\t", "\r", "\x0B");
 
     /**
      * All CSS tokens used by csstidy
@@ -100,12 +100,12 @@ class CSSTidy
      * @version 1.0
      */
     public static $atRules = array(
-        'page' => 'is',
-        'font-face' => 'is',
-        'charset' => 'iv',
-        'import' => 'iv',
-        'namespace' => 'iv',
-        'media' => 'at',
+        '@page' => 'is',
+        '@font-face' => 'is',
+        '@charset' => 'iv',
+        '@import' => 'iv',
+        '@namespace' => 'iv',
+        '@media' => 'at',
         //'font-feature-values ' => 'at', // Not fully supported yet
     );
 
@@ -358,38 +358,10 @@ class CSSTidy
 			}
 
 			switch ($status) {
-				/* Case in at-block */
-				case 'at':
-					if ($this->isToken($string, $i)) {
-						if ($current === '/' && @$string{$i + 1} === '*') {
-							$status = 'ic';
-							++$i;
-							$from = 'at';
-						} elseif ($current === '{') {
-							$status = 'is';
-							$at = $parsed->newMediaSection($at);
-							$parsed->addToken(self::AT_START, $at);
-						} elseif ($current === ',') {
-							$at = trim($at) . ',';
-						} elseif ($current === '\\') {
-							$at .= $this->unicode($string, $i);
-						}
-						// fix for complicated media, i.e @media screen and (-webkit-min-device-pixel-ratio:0)
-						elseif (in_array($current, array('(', ')', ':'))) {
-							$at .= $current;
-						}
-					} else {
-						$lastpos = strlen($at) - 1;
-						if (!( (ctype_space($at{$lastpos}) || $this->isToken($at, $lastpos) && $at{$lastpos} === ',') && ctype_space($current))) {
-							$at .= $current;
-						}
-					}
-					break;
-
 				/* Case in-selector */
 				case 'is':
 					if ($this->isToken($string, $i)) {
-						if ($current === '/' && @$string{$i + 1} === '*' && trim($selector) == '') {
+						if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*' && trim($selector) == '') {
 							$status = 'ic';
 							++$i;
 							$from = 'is';
@@ -397,10 +369,10 @@ class CSSTidy
 							// Check for at-rule
 							$invalidAtRule = true;
 							foreach (self::$atRules as $name => $type) {
-								if (!strcasecmp(substr($string, $i + 1, strlen($name)), $name)) {
-									($type === 'at') ? $at = '@' . $name : $selector = '@' . $name;
+                                if (!substr_compare($string, $name, $i, strlen($name), true)) {
+									($type === 'at') ? $at = $name : $selector = $name;
 									$status = $type;
-									$i += strlen($name);
+									$i += strlen($name) - 1;
 									$invalidAtRule = false;
 								}
 							}
@@ -416,7 +388,7 @@ class CSSTidy
 								}
 								$this->logger->log('Invalid @-rule: ' . $invalid_at_name . ' (removed)', 'Warning');
 							}
-						} elseif (($current === '"' || $current === "'")) {
+						} elseif ($current === '"' || $current === "'") {
 							$currentString = $current;
 							$status = 'instr';
 							$stringChar = $current;
@@ -464,7 +436,7 @@ class CSSTidy
 								$property = $parsed->newProperty($at, $selector, $property);
 								$parsed->addToken(self::PROPERTY, $property);
 							}
-						} elseif ($current === '/' && @$string{$i + 1} === '*' && $property == '') {
+						} elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*' && $property == '') {
 							$status = 'ic';
 							++$i;
 							$from = 'ip';
@@ -493,7 +465,7 @@ class CSSTidy
 				case 'iv':
 					$pn = (($current === "\n" || $current === "\r") && $this->propertyIsNext($string, $i + 1) || $i == strlen($string) - 1);
 					if ($this->isToken($string, $i) || $pn) {
-						if ($current === '/' && @$string{$i + 1} === '*') {
+						if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
 							$status = 'ic';
 							++$i;
 							$from = 'iv';
@@ -507,10 +479,10 @@ class CSSTidy
 						} elseif ($current === '\\') {
 							$subValue .= $this->unicode($string, $i);
 						} elseif ($current === ';' || $pn) {
-							if ($selector{0} === '@' && isset(self::$atRules[substr($selector, 1)]) && self::$atRules[substr($selector, 1)] === 'iv') {
+							if ($selector{0} === '@' && isset(self::$atRules[$selector]) && self::$atRules[$selector] === 'iv') {
                                 $subValues[] = trim($subValue);
 
-                                if (substr($subValues[0], 0, 4) !== 'url(') {
+                                if (substr_compare($subValues[0], 'url(', 0, 4) !== 0) {
                                     $subValues[0] = '"' . $subValues[0] . '"';
                                 }
 
@@ -621,7 +593,7 @@ class CSSTidy
 									// Temporarily disable this optimization to avoid problems with @charset rule, quote properties, and some attribute selectors...
 									// Attribute selectors fixed, added quotes to @chartset, no problems with properties detected. Enabled
 									$currentString = substr($currentString, 1, -1);
-								} else if (strlen($currentString) > 3 && ($currentString[1] === '"' || $currentString[1] === '\'')) /* () */ {
+								} else if (isset($currentString{3}) && ($currentString[1] === '"' || $currentString[1] === '\'')) /* () */ {
 									$currentString = $currentString[0] . substr($currentString, 2, -2) . substr($currentString, -1);
 								}
 							} else {
@@ -655,6 +627,34 @@ class CSSTidy
 						$currentComment = '';
 					} else {
 						$currentComment .= $current;
+					}
+					break;
+
+                /* Case in at-block */
+				case 'at':
+					if ($this->isToken($string, $i)) {
+						if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+							$status = 'ic';
+							++$i;
+							$from = 'at';
+						} elseif ($current === '{') {
+							$status = 'is';
+							$at = $parsed->newMediaSection($at);
+							$parsed->addToken(self::AT_START, $at);
+						} elseif ($current === ',') {
+							$at = trim($at) . ',';
+						} elseif ($current === '\\') {
+							$at .= $this->unicode($string, $i);
+						}
+						// fix for complicated media, i.e @media screen and (-webkit-min-device-pixel-ratio:0)
+						elseif (in_array($current, array('(', ')', ':'))) {
+							$at .= $current;
+						}
+					} else {
+						$lastpos = strlen($at) - 1;
+						if (!( (ctype_space($at{$lastpos}) || $this->isToken($at, $lastpos) && $at{$lastpos} === ',') && ctype_space($current))) {
+							$at .= $current;
+						}
 					}
 					break;
 			}
@@ -793,9 +793,9 @@ class CSSTidy
 	 * @return bool
 	 * @version 1.02
 	 */
-	static function escaped($string, $pos)
+	public static function escaped($string, $pos)
     {
-		return !(@($string{$pos - 1} !== '\\') || self::escaped($string, $pos - 1));
+		return !((!isset($string{$pos - 1}) || $string{$pos - 1} !== '\\') || self::escaped($string, $pos - 1));
 	}
 
 	/**
@@ -807,7 +807,7 @@ class CSSTidy
 	 */
 	public static function isImportant($value)
     {
-		return (!strcasecmp(substr(str_replace(self::$whitespace, '', $value), -10, 10), '!important'));
+        return isset($value{9}) && substr_compare(str_replace(self::$whitespace, '', $value), '!important', -10, 10, true) === 0;
 	}
 
 	/**
@@ -822,9 +822,9 @@ class CSSTidy
 		if (self::isImportant($value)) {
 			$value = trim($value);
 			$value = substr($value, 0, -9);
-			$value = trim($value);
+			$value = rtrim($value);
 			$value = substr($value, 0, -1);
-			$value = trim($value);
+			$value = rtrim($value);
 			return $value;
 		}
 
