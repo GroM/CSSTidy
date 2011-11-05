@@ -376,35 +376,57 @@ html;
     {
 		$this->parsed->tokens = array();
 
+        $sortSelectors = $this->configuration->getSortSelectors();
+        $sortProperties = $this->configuration->getSortProperties();
+
 		foreach ($this->parsed->css as $medium => $val) {
-			if ($this->configuration->getSortSelectors()) {
+			if ($sortSelectors) {
 				ksort($val);
             }
 
 			if ($medium < CSSTidy::DEFAULT_AT) {
-				$this->parsed->addToken(CSSTidy::AT_START, $medium, true);
+				$this->parsed->addToken(CSSTidy::AT_START, $medium);
 			} elseif ($defaultMedia) {
-				$this->parsed->addToken(CSSTidy::AT_START, $defaultMedia, true);
+				$this->parsed->addToken(CSSTidy::AT_START, $defaultMedia);
 			}
 			
 			foreach ($val as $selector => $vali) {
-				if ($this->configuration->getSortProperties()) {
-					ksort($vali);
+				if ($sortProperties) {
+					uksort($vali, function($a, $b) {
+                        static $ieHacks = array(
+                            '*' => 1, // IE7 hacks first
+                            '_' => 2, // IE6 hacks
+                            '/' => 2, // IE6 hacks
+                            '-' => 2  // IE6 hacks
+                        );
+
+                        if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
+                            return strcasecmp($a, $b);
+                        } else if (isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
+                            return 1;
+                        } else if (!isset($ieHacks[$a{0}]) && isset($ieHacks[$b{0}])) {
+                            return -1;
+                        } else if ($ieHacks[$a{0}] === $ieHacks[$b{0}]) {
+                            return strcasecmp(substr($a, 1), substr($b, 1));
+                        } else {
+                            return $ieHacks[$a{0}] > $ieHacks[$b{0}] ? 1 : -1;
+                         }
+                    });
                 }
-				$this->parsed->addToken(CSSTidy::SEL_START, $selector, true);
+				$this->parsed->addToken(CSSTidy::SEL_START, $selector);
 
 				foreach ($vali as $property => $valj) {
-					$this->parsed->addToken(CSSTidy::PROPERTY, $property, true);
-					$this->parsed->addToken(CSSTidy::VALUE, $valj, true);
+                    $this->parsed->addToken(CSSTidy::PROPERTY, $property);
+                    $this->parsed->addToken(CSSTidy::VALUE, $valj);
 				}
 
-				$this->parsed->addToken(CSSTidy::SEL_END, $selector, true);
+				$this->parsed->addToken(CSSTidy::SEL_END, $selector);
 			}
 
 			if ($medium < CSSTidy::DEFAULT_AT) {
-				$this->parsed->addToken(CSSTidy::AT_END, $medium, true);
+				$this->parsed->addToken(CSSTidy::AT_END, $medium);
 			} elseif ($defaultMedia) {
-				$this->parsed->addToken(CSSTidy::AT_END, $defaultMedia, true);
+				$this->parsed->addToken(CSSTidy::AT_END, $defaultMedia);
 			}
 		}
 	}

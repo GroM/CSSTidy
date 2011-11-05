@@ -1,0 +1,25 @@
+--TEST--
+Internet Explorer hacks
+--CSS--
+a {
+    *color: white;
+    color: black;
+    _color:white;
+    font-size:13px;
+    *font-size:15px;
+    -color:green
+}
+--PRINT--
+a {
+color:#000;
+font-size:13px;
+*color:#fff;
+*font-size:15px;
+-color:green;
+_color:#fff
+}
+--SETTINGS--
+discard_invalid_properties=false
+optimise_shorthands=0
+css_level='CSS2.1'
+sort_properties=true
