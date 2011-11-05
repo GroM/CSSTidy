@@ -491,7 +491,6 @@ class CSSTidy
                                     $subValues[0] = '"' . $subValues[0] . '"';
                                 }
 
-
                                 $status = 'is';
 
                                 switch ($selector) {
@@ -618,8 +617,11 @@ class CSSTidy
                                     // Temporarily disable this optimization to avoid problems with @charset rule, quote properties, and some attribute selectors...
                                     // Attribute selectors fixed, added quotes to @chartset, no problems with properties detected. Enabled
                                     $currentString = substr($currentString, 1, -1);
-                                } else if (isset($currentString{3}) && ($currentString[1] === '"' || $currentString[1] === '\'')) /* () */ {
-                                    $currentString = $currentString[0] . substr($currentString, 2, -2) . substr($currentString, -1);
+                                } else if (isset($currentString{3}) && ($currentString{1} === '"' || $currentString{1} === '\'')) /* () */ {
+                                    $inside = substr($currentString, 2, -2);
+                                    if (strpos($inside, '(') === false) { // if inside string contains '(', don't remove quotations mark
+                                        $currentString = $currentString{0} . $inside  . substr($currentString, -1);
+                                    }
                                 }
                             } else {
                                 $quotedString = false;
