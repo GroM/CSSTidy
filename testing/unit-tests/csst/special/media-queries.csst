@@ -1,0 +1,12 @@
+--TEST--
+Media queries
+--CSS--
+@media handheld and (grid) and (device-max-height: 7em) {
+    a {color:red}
+}
+--PRINT--
+@media handheld and (grid) and (device-max-height: 7em) {
+a {
+color:red
+}
+}
