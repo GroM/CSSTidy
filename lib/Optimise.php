@@ -390,8 +390,8 @@ class Optimise
 		$important = '';
 		if (CSSTidy::isImportant($subValue)) {
 			$important = '!important';
+            $subValue = CSSTidy::removeImportant($subValue);
 		}
-		$subValue = CSSTidy::removeImportant($subValue);
 
 		// Compress font-weight
 		if ($property === 'font-weight' && $this->configuration->getCompressFontWeight()) {
@@ -692,11 +692,15 @@ class Optimise
 	protected function analyseCssNumber($string)
     {
 		// most simple checks first
-		if (!isset($string{0}) || ctype_alpha($string{0})) {
+		if (!isset($string{0}) || $string{0} === '#' || ctype_alpha($string{0})) {
 			return false;
 		}
 
 		$return = array(0, '');
+
+        if ($string === '0') {
+            return $return;
+        }
 
 		$return[0] = floatval($string);
 		if (abs($return[0]) > 0 && abs($return[0]) < 1) {
@@ -707,12 +711,24 @@ class Optimise
 			}
 		}
 
+        /*preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches);
+
+        if ($matches[1] === '') {
+            return false;
+        }
+
+        $return[1] = trim($matches[3]);
+
+        if ($return[1] !== '' && !in_array($return[1], self::$units)) {
+            return false;
+        }*/
+
 		// Look for unit and split from value if exists
 		foreach (self::$units as $unit) {
-			$expectUnitAt = strlen($string) - strlen($unit);
 			if (!($unitInString = stristr($string, $unit))) { // mb_strpos() fails with "false"
 				continue;
 			}
+            $expectUnitAt = strlen($string) - strlen($unit);
 			$actualPosition = strpos($string, $unitInString);
 			if ($expectUnitAt === $actualPosition) {
 				$return[1] = $unit;
