@@ -108,7 +108,6 @@ class Optimise
         'border-width' => array('border-top-width','border-right-width','border-bottom-width','border-left-width'),
         'margin' => array('margin-top','margin-right','margin-bottom','margin-left'),
         'padding' => array('padding-top','padding-right','padding-bottom','padding-left'),
-        '-moz-border-radius' => 0
     );
     
     public static $replaceColors = array(
@@ -294,7 +293,7 @@ class Optimise
 
         if ($this->configuration->getOptimiseShorthands() > Configuration::NOTHING) {
             foreach ($css as $medium => $value) {
-                foreach ($value as $selector => $value1) {
+                foreach ($value as $selector => $foo) {
                     $css[$medium][$selector] = $this->mergeFourValueShorthands($css[$medium][$selector]);
 
                     if ($this->configuration->getOptimiseShorthands() < Configuration::FONT) {
@@ -308,6 +307,7 @@ class Optimise
                     }
 
                     $css[$medium][$selector] = $this->mergeBackground($css[$medium][$selector]);
+
                     if (empty($css[$medium][$selector])) {
                         unset($css[$medium][$selector]);
                     }
@@ -328,13 +328,15 @@ class Optimise
         if (isset(self::$shorthands[$property])) {
             $temp = $this->shorthand($value); // FIXME - move
             if ($temp != $value) {
-                $this->logger->log('Optimised shorthand notation (' . $property . '): Changed "' . $value . '" to "' . $temp . '"', Logger::INFORMATION);
+                $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
             }
             $value = $temp;
         }
 
         // Remove whitespace at ! important
-        if ($value != $this->compressImportant($value)) {
+        $tmp = $this->compressImportant($value);
+        if ($value != $tmp) {
+            $value = $tmp;
             $this->logger->log('Optimised !important', Logger::INFORMATION);
         }
 
@@ -367,9 +369,7 @@ class Optimise
 
         if (isset(self::$shorthands[$property])) {
             $parsed->mergeCssBlocks($at, $selector, $this->dissolveFourValueShorthands($property, $value));
-            if (is_array(self::$shorthands[$property])) { // TODO: Optimize
-                $parsed->css[$at][$selector][$property] = '';
-            }
+            $parsed->css[$at][$selector][$property] = '';
         }
     }
 
@@ -390,7 +390,7 @@ class Optimise
         $important = '';
         if (CSSTidy::isImportant($subValue)) {
             $important = '!important';
-            $subValue = CSSTidy::removeImportant($subValue);
+            $subValue = CSSTidy::removeImportant($subValue, false);
         }
 
         // Compress font-weight
@@ -407,9 +407,9 @@ class Optimise
 
         if (strcasecmp($temp, $subValue) !== 0) {
             if (strlen($temp) > strlen($subValue)) {
-                $this->logger->log("Fixed invalid number: Changed \"{$subValue}\" to \"{$temp}\"", Logger::WARNING);
+                $this->logger->log("Fixed invalid number: Changed '{$subValue}' to '{$temp}'", Logger::WARNING);
             } else {
-                $this->logger->log("Optimised number: Changed \"{$subValue}\" to \"{$temp}\"", Logger::INFORMATION);
+                $this->logger->log("Optimised number: Changed '{$subValue}' to '{$temp}'", Logger::INFORMATION);
             }
             $subValue = $temp;
         }
@@ -418,9 +418,9 @@ class Optimise
             $temp = $this->cutColor($subValue);
             if ($temp !== $subValue) {
                 if (isset(self::$replaceColors[$subValue])) {
-                    $this->logger->log("Fixed invalid color name: Changed \"{$subValue}\" to \"{$temp}\"", Logger::WARNING);
+                    $this->logger->log("Fixed invalid color name: Changed '{$subValue}' to '{$temp}'", Logger::WARNING);
                 } else {
-                    $this->logger->log("Optimised color: Changed \"{$subValue}\" to \"{$temp}\"", Logger::INFORMATION);
+                    $this->logger->log("Optimised color: Changed '{$subValue}' to '{$temp}'", Logger::INFORMATION);
                 }
                 $subValue = $temp;
             }
@@ -440,13 +440,11 @@ class Optimise
     {
         $important = '';
         if (CSSTidy::isImportant($value)) {
-            $values = CSSTidy::removeImportant($value);
+            $value = CSSTidy::removeImportant($value, false);
             $important = '!important';
-        } else {
-            $values = $value;
         }
 
-        $values = explode(' ', $values);
+        $values = explode(' ', $value);
         switch (count($values)) {
             case 4:
                 if ($values[0] == $values[1] && $values[0] == $values[2] && $values[0] == $values[3]) {
@@ -483,9 +481,10 @@ class Optimise
      * @access public
      * @version 1.1
      */
-    public function compressImportant(&$string) {
+    public function compressImportant($string)
+    {
         if (CSSTidy::isImportant($string)) {
-            $string = CSSTidy::removeImportant($string) . '!important';
+            $string = CSSTidy::removeImportant($string, false) . '!important';
         }
         return $string;
     }
@@ -524,8 +523,11 @@ class Optimise
             $colorTmp = substr($color, 4, strlen($color) - 5);
             $colorTmp = explode(',', $colorTmp);
 
-            if (count($colorTmp) !== 3) {
-                $this->logger->log("Invalid color value '$color'", Logger::WARNING);
+            if (count($colorTmp) > 3) {
+                $this->logger->log("RGB or HSL color value supports only three items", Logger::WARNING);
+                $colorTmp = array_slice($colorTmp, 0, 3);
+            } else if (count($colorTmp) !== 3) {
+                $this->logger->log("RGB or HSL color value supports only three items", Logger::ERROR);
                 return $color;
             }
 
@@ -598,17 +600,20 @@ class Optimise
 
         $h = ((($h % 360) + 360) % 360) / 360;
 
-        if (substr($s, -1) === '%') {
-            $s = (int) $s / 100;
-        } else {
-            $this->logger->log("HSL saturation must be a percent value", Logger::WARNING);
-        }
+        $normalizeSOrL = function($value, $name) {
+            if (!substr($value, -1) === '%') {
+                $this->logger->log("HSL $name must be a percent value", Logger::WARNING);
+            }
 
-        if (substr($l, -1) === '%') {
-            $l = (int) $l / 100;
-        } else {
-            $this->logger->log("HSL light must be a percent value", Logger::WARNING);
-        }
+            if ((int) $value > 100) {
+                $this->logger->log("HSL $name must be lower than 100%", Logger::WARNING);
+            }
+
+            return (int) $value / 100;
+        };
+
+        $s = $normalizeSOrL($s, 'saturation');
+        $l = $normalizeSOrL($l, 'light');
 
         $m2 = ($l <= 0.5) ? $l * ($s + 1) : ($l + $s - $l * $s);
         $m1 = $l * 2 - $m2;
@@ -826,44 +831,40 @@ class Optimise
      */
     protected function dissolveFourValueShorthands($property, $value)
     {
-        $shorthands = self::$shorthands;
-        if (!is_array($shorthands[$property])) {
-            $return[$property] = $value;
-            return $return;
-        }
+        $shorthands = self::$shorthands[$property];
 
         $important = '';
         if (CSSTidy::isImportant($value)) {
             $value = CSSTidy::removeImportant($value);
             $important = '!important';
         }
-        $values = explode(' ', $value);
 
+        $values = explode(' ', $value);
 
         $return = array();
         switch (count($values)) {
             case 4:
                 for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$property][$i]] = $values[$i] . $important;
+                    $return[$shorthands[$i]] = $values[$i] . $important;
                 }
                 break;
 
             case 3:
-                $return[$shorthands[$property][0]] = $values[0] . $important;
-                $return[$shorthands[$property][1]] = $values[1] . $important;
-                $return[$shorthands[$property][3]] = $values[1] . $important;
-                $return[$shorthands[$property][2]] = $values[2] . $important;
+                $return[$shorthands[0]] = $values[0] . $important;
+                $return[$shorthands[1]] = $values[1] . $important;
+                $return[$shorthands[3]] = $values[1] . $important;
+                $return[$shorthands[2]] = $values[2] . $important;
                 break;
 
             case 2:
                 for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$property][$i]] = (($i % 2 != 0)) ? $values[1] . $important : $values[0] . $important;
+                    $return[$shorthands[$i]] = (($i % 2 != 0)) ? $values[1] . $important : $values[0] . $important;
                 }
                 break;
 
             default:
                 for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$property][$i]] = $values[0] . $important;
+                    $return[$shorthands[$i]] = $values[0] . $important;
                 }
                 break;
         }
@@ -1116,12 +1117,12 @@ class Optimise
 
     /**
      * Dissolve font property
-     * @param string $str_value
+     * @param string $value
      * @return array
      * @version 1.3
      * @see merge_font()
      */
-    protected function dissolveShortFont($str_value)
+    protected function dissolveShortFont($value)
     {
         static $font_weight = array('normal', 'bold', 'bolder', 'lighter', 100, 200, 300, 400, 500, 600, 700, 800, 900);
         static $font_variant = array('normal', 'small-caps');
@@ -1130,9 +1131,9 @@ class Optimise
         $important = '';
         $return = array('font-style' => null, 'font-variant' => null, 'font-weight' => null, 'font-size' => null, 'line-height' => null, 'font-family' => null);
 
-        if (CSSTidy::isImportant($str_value)) {
+        if (CSSTidy::isImportant($value)) {
             $important = '!important';
-            $str_value = CSSTidy::removeImportant($str_value);
+            $value = CSSTidy::removeImportant($value, false);
         }
 
         $have = array(
@@ -1146,22 +1147,22 @@ class Optimise
         $multiwords = false;
 
         // Workaround with multiple font-family
-        $str_value = $this->explodeWs(',', trim($str_value));
+        $value = $this->explodeWs(',', trim($value));
 
-        $str_value[0] = $this->explodeWs(' ', trim($str_value[0]));
+        $value[0] = $this->explodeWs(' ', trim($value[0]));
 
-        for ($j = 0; $j < count($str_value[0]); $j++) {
-            if ($have['weight'] === false && in_array($str_value[0][$j], $font_weight)) {
-                $return['font-weight'] = $str_value[0][$j];
+        for ($j = 0; $j < count($value[0]); $j++) {
+            if ($have['weight'] === false && in_array($value[0][$j], $font_weight)) {
+                $return['font-weight'] = $value[0][$j];
                 $have['weight'] = true;
-            } elseif ($have['variant'] === false && in_array($str_value[0][$j], $font_variant)) {
-                $return['font-variant'] = $str_value[0][$j];
+            } elseif ($have['variant'] === false && in_array($value[0][$j], $font_variant)) {
+                $return['font-variant'] = $value[0][$j];
                 $have['variant'] = true;
-            } elseif ($have['style'] === false && in_array($str_value[0][$j], $font_style)) {
-                $return['font-style'] = $str_value[0][$j];
+            } elseif ($have['style'] === false && in_array($value[0][$j], $font_style)) {
+                $return['font-style'] = $value[0][$j];
                 $have['style'] = true;
-            } elseif ($have['size'] === false && (is_numeric($str_value[0][$j]{0}) || $str_value[0][$j]{0} === null || $str_value[0][$j]{0} === '.')) {
-                $size = $this->explodeWs('/', trim($str_value[0][$j]));
+            } elseif ($have['size'] === false && (is_numeric($value[0][$j]{0}) || $value[0][$j]{0} === null || $value[0][$j]{0} === '.')) {
+                $size = $this->explodeWs('/', trim($value[0][$j]));
                 $return['font-size'] = $size[0];
                 if (isset($size[1])) {
                     $return['line-height'] = $size[1];
@@ -1171,10 +1172,10 @@ class Optimise
                 $have['size'] = true;
             } else {
                 if (isset($return['font-family'])) {
-                    $return['font-family'] .= ' ' . $str_value[0][$j];
+                    $return['font-family'] .= ' ' . $value[0][$j];
                     $multiwords = true;
                 } else {
-                    $return['font-family'] = $str_value[0][$j];
+                    $return['font-family'] = $value[0][$j];
                 }
             }
         }
@@ -1183,8 +1184,8 @@ class Optimise
             $return['font-family'] = '"' . $return['font-family'] . '"';
         }
         $i = 1;
-        while (isset($str_value[$i])) {
-            $return['font-family'] .= ',' . trim($str_value[$i]);
+        while (isset($value[$i])) {
+            $return['font-family'] .= ',' . trim($value[$i]);
             $i++;
         }
 
@@ -1235,38 +1236,38 @@ class Optimise
                 $inputCss['font-family'] = implode(",", $result_families);
             }
 
-            foreach (self::$fontPropDefault as $font_property => $default_value) {
+            foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
 
                 // Skip if property does not exist
-                if (!isset($inputCss[$font_property])) {
+                if (!isset($inputCss[$fontProperty])) {
                     continue;
                 }
 
-                $cur_value = $inputCss[$font_property];
+                $currentValue = $inputCss[$fontProperty];
 
                 // Skip if default value is used
-                if ($cur_value === $default_value) {
+                if ($currentValue === $defaultValue) {
                     continue;
                 }
 
                 // Remove !important
-                if (CSSTidy::isImportant($cur_value)) {
+                if (CSSTidy::isImportant($currentValue)) {
                     $important = '!important';
-                    $cur_value = CSSTidy::removeImportant($cur_value);
+                    $currentValue = CSSTidy::removeImportant($currentValue, false);
                 }
 
-                $new_font_value .= $cur_value;
+                $new_font_value .= $currentValue;
                 // Add delimiter
-                $new_font_value .= ( $font_property === 'font-size' &&
+                $new_font_value .= ( $fontProperty === 'font-size' &&
                                 isset($inputCss['line-height'])) ? '/' : ' ';
             }
 
             $new_font_value = trim($new_font_value);
 
             // Delete all font-properties
-            foreach (self::$fontPropDefault as $font_property => $default_value) {
-                if ($font_property !== 'font' || !$new_font_value)
-                    unset($inputCss[$font_property]);
+            foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
+                if ($fontProperty !== 'font' || !$new_font_value)
+                    unset($inputCss[$fontProperty]);
             }
 
             // Add new font property

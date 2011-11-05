@@ -375,7 +375,7 @@ class CSSTidy
                                     }
                                     $invalidAtName .= $string{$j};
                                 }
-                                $this->logger->log('Invalid @-rule: ' . $invalidAtName . ' (removed)', Logger::WARNING);
+                                $this->logger->log("Invalid @-rule: $invalidAtName (removed)", Logger::WARNING);
                             }
                         } elseif ($current === '"' || $current === "'") {
                             $currentString = $current;
@@ -812,13 +812,12 @@ class CSSTidy
     /**
      * Returns a value without !important
      * @param string $value
+     * @param bool $check Check if important in value exists
      * @return string
-     * @access public
-     * @version 1.0
      */
-    public static function removeImportant($value)
+    public static function removeImportant($value, $check = true)
     {
-        if (self::isImportant($value)) {
+        if (!$check || self::isImportant($value)) {
             $value = trim($value);
             $value = substr($value, 0, -9);
             $value = rtrim($value);
