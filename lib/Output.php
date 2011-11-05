@@ -87,27 +87,27 @@ class Output
 
 	/**
 	 * Returns the CSS code as plain text
-	 * @param string $default_media default @media to add to selectors without any @media
+	 * @param string $defaultMedia default @media to add to selectors without any @media
 	 * @return string
 	 * @access public
 	 * @version 1.0
 	 */
-	public function plain($default_media = '')
+	public function plain($defaultMedia = null)
     {
-		$this->generate(true, $default_media);
+		$this->generate(true, $defaultMedia);
 		return $this->outputCssPlain;
 	}
 
 	/**
 	 * Returns the formatted CSS code
-	 * @param string $default_media default @media to add to selectors without any @media
+	 * @param string $defaultMedia default @media to add to selectors without any @media
 	 * @return string
 	 * @access public
 	 * @version 1.0
 	 */
-	public function formatted($default_media = '')
+	public function formatted($defaultMedia = null)
     {
-		$this->generate(false, $default_media);
+		$this->generate(false, $defaultMedia);
 		return $this->outputCss;
 	}
 
@@ -221,31 +221,46 @@ html;
 	/**
 	 * Returns the formatted CSS Code and saves it into $this->output_css and $this->output_css_plain
 	 * @param bool $plain plain text or not
-	 * @param string $default_media default @media to add to selectors without any @media
+	 * @param string $defaultMedia default @media to add to selectors without any @media
 	 * @version 2.0
 	 */
-	protected function generate($plain = false, $default_media = '')
+	protected function generate($plain = false, $defaultMedia = null)
     {
 		if ($this->outputCss && $this->outputCssPlain) {
 			return;
 		}
 
-		$output = '';
 		if (!$this->configuration->getPreserveCss()) {
-			$this->convertRawCss($default_media);
+			$this->convertRawCss($defaultMedia);
 		}
 
 		$template = $this->configuration->getTemplate();
-
-		if ($plain) {
-			$template = array_map('strip_tags', $template);
-		}
 
 		if ($this->configuration->getAddTimestamp()) {
 			array_unshift($this->parsed->tokens, array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' '));
 		}
 
-		if (!empty($this->parsed->charset)) {
+		if (!$plain) {
+            $this->outputCss = $this->tokensToCss($template, false);
+		}
+
+        $template = array_map('strip_tags', $template);
+        $this->outputCssPlain = $this->tokensToCss($template, true);
+
+        // If using spaces in the template, don't want these to appear in the plain output
+        $this->outputCssPlain = str_replace('&#160;', '', $this->outputCssPlain);
+	}
+
+    /**
+     * @param array $template
+     * @param bool $plain
+     * @return string
+     */
+    protected function tokensToCss(array $template, $plain)
+    {
+        $output = '';
+
+        if (!empty($this->parsed->charset)) {
 			$output .= $template[0] . '@charset ' . $template[5] . $this->parsed->charset . $template[6];
 		}
 
@@ -274,24 +289,12 @@ html;
 
 		foreach ($this->parsed->tokens as $key => $token) {
 			switch ($token[0]) {
-				case CSSTidy::AT_START:
-					$out .= $template[0] . $this->htmlsp($token[1], $plain) . $template[1];
-					$out = & $in_at_out;
-					break;
-
-				case CSSTidy::SEL_START:
-					if ($this->configuration->getLowerCaseSelectors()) {
+                case CSSTidy::PROPERTY:
+                    if ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
 						$token[1] = strtolower($token[1]);
-                    }
-					$out .= $template[ $token[1]{0} !== '@' ? 2: 0 ] . $this->htmlsp($token[1], $plain) . $template[3];
-					break;
-
-				case CSSTidy::PROPERTY:
-					if ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
+					} elseif ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
 						$token[1] = strtoupper($token[1]);
-					} elseif ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
-						$token[1] = strtolower($token[1]);
-					}
+                    }
 					$out .= $template[4] . $this->htmlsp($token[1], $plain) . ':' . $template[5];
 					break;
 
@@ -304,10 +307,23 @@ html;
 					}
 					break;
 
+                case CSSTidy::SEL_START:
+					if ($this->configuration->getLowerCaseSelectors()) {
+						$token[1] = strtolower($token[1]);
+                    }
+					$out .= $template[ $token[1]{0} !== '@' ? 2 : 0 ] . $this->htmlsp($token[1], $plain) . $template[3];
+					break;
+
 				case CSSTidy::SEL_END:
 					$out .= $template[7];
-					if ($this->seekNoComment($key, 1) !== CSSTidy::AT_END)
+					if ($this->seekNoComment($key, 1) !== CSSTidy::AT_END) {
 						$out .= $template[8];
+                    }
+					break;
+
+				case CSSTidy::AT_START:
+					$out .= $template[0] . $this->htmlsp($token[1], $plain) . $template[1];
+					$out = & $in_at_out;
 					break;
 
 				case CSSTidy::AT_END:
@@ -323,16 +339,8 @@ html;
 			}
 		}
 
-		$output = trim($output);
-
-		if (!$plain) {
-			$this->outputCss = $output;
-			$this->generate(true);
-		} else {
-			// If using spaces in the template, don't want these to appear in the plain output
-			$this->outputCssPlain = str_replace('&#160;', '', $output);
-		}
-	}
+		return trim($output);
+    }
 
     /**
 	 * Gets the next token type which is $move away from $key, excluding comments
