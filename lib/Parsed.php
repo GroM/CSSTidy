@@ -174,8 +174,9 @@ class Parsed
 
 		$selector = trim($selector);
 		if (strncmp($selector, "@font-face", 10) != 0) {
-			if ($this->mergeSelectors != Configuration::DO_NOT_CHANGE)
+			if ($this->mergeSelectors != Configuration::DO_NOT_CHANGE) {
 				return $selector;
+            }
 
 			if (!$this->css || !isset($this->css[$media]) || !$this->css[$media]) {
 				return $selector;
