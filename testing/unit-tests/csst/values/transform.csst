@@ -1,0 +1,13 @@
+--TEST--
+Test color optimisation
+--CSS--
+div {
+  transform: translate(80px, 80px) scale(1.5, 1.5) rotate(45deg);
+}
+--EXPECT--
+array (
+  'div' =>
+  array (
+    'transform' => 'translate(80px,80px) scale(1.5,1.5) rotate(45deg)'
+  ),
+)

@@ -1,0 +1,17 @@
+--TEST--
+Internet Explorer hacks
+--CSS--
+a {filter:
+    progid:DXImageTransform.Microsoft.MotionBlur(strength=13, direction=310)
+    progid:DXImageTransform.Microsoft.Blur(pixelradius=2)
+    progid:DXImageTransform.Microsoft.Wheel(duration=3);
+}
+--PRINT--
+a {
+filter:progid:DXImageTransform.Microsoft.MotionBlur(strength=13,direction=310) progid:DXImageTransform.Microsoft.Blur(pixelradius=2) progid:DXImageTransform.Microsoft.Wheel(duration=3)
+}
+--SETTINGS--
+discard_invalid_properties=false
+optimise_shorthands=0
+css_level='CSS2.1'
+sort_properties=true

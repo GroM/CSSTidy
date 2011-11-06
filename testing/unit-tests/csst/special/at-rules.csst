@@ -8,7 +8,10 @@ Import
 @import 'bluish.css';
 @import "bluish.css";
 @import url("bluish.css") projection, tv;
-@import "bluish.css" projection, tv;
+@import "bluish.css" screen and (orientation:landscape);
+@page :pseudo-class {
+  margin:2in;
+}
 --PRINT--
 @charset "ISO-8859-1";
 @import"bluish.css";
@@ -17,4 +20,8 @@ Import
 @import"bluish.css";
 @import"bluish.css";
 @import"bluish.css" projection, tv;
-@import"bluish.css" projection, tv;
+@import"bluish.css" screen and (orientation:landscape);
+
+@page :pseudo-class {
+margin:2in
+}
