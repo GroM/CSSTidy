@@ -95,7 +95,8 @@ class CSSTidy
         '@namespace' => 'iv',
         '@media' => 'at',
         '@keyframes' => 'at',
-        //'font-feature-values ' => 'at', // Not fully supported yet
+        '@-moz-keyframes' => 'at', // vendor prefixed
+        //'@font-feature-values ' => 'at', // Not fully supported yet
     );
 
 
@@ -595,10 +596,8 @@ class CSSTidy
 
                 /* Case in string */
                 case 'instr':
-                    if ($stringChar === ')' && ($current === '"' || $current === '\'') && !$strInStr && !self::escaped($string, $i)) {
-                        $strInStr = true;
-                    } elseif ($stringChar === ')' && ($current === '"' || $current === '\'') && $strInStr && !self::escaped($string, $i)) {
-                        $strInStr = false;
+                    if ($stringChar === ')' && ($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
+                        $strInStr = !$strInStr;
                     }
                     $temp_add = $current;                     // ...and no not-escaped backslash at the previous position
                     if (($current === "\n" || $current === "\r") && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
