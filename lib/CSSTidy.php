@@ -338,9 +338,11 @@ class CSSTidy
 
         $string = str_replace("\r\n", "\n", $string) . ' ';
 
+        // Initialize variables
         $preserveCss = $this->configuration->getPreserveCss();
         $currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
         $quotedString = $strInStr = $invalidAtRule = false;
+        $bracketCount = 0;
 
         /*
          * Possible values:
@@ -420,7 +422,7 @@ class CSSTidy
                             $selectorSeparate[] = strlen($selector);
                         } elseif ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
-                        } elseif ($current === '*' && @in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
+                        } elseif ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
                             // remove unnecessary universal selector, FS#147
                         } else {
                             $selector .= $current;
@@ -478,6 +480,9 @@ class CSSTidy
                         } elseif (($current === '"' || $current === "'" || $current === '(')) {
                             $currentString = $current;
                             $stringChar = ($current === '(') ? ')' : $current;
+                            if ($current === '(') {
+                                $bracketCount = 1;
+                            }
                             $status = 'instr';
                             $from = 'iv';
                         } elseif ($current === ',') {
@@ -525,6 +530,7 @@ class CSSTidy
                         } elseif ($current !== '}') {
                             $subValue .= $current;
                         }
+
                         if (($current === '}' || $current === ';' || $pn) && !empty($selector)) {
                             if ($at == '' && !$preserveCss) {
                                 $at = $parsed->newMediaSection(self::DEFAULT_AT);
@@ -596,18 +602,27 @@ class CSSTidy
 
                 /* Case in string */
                 case 'instr':
-                    if ($stringChar === ')' && ($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
-                        $strInStr = !$strInStr;
+                    if ($stringChar === ')') {
+                        if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
+                            $strInStr = !$strInStr;
+                        } else if ($current === '(' && !$strInStr) {
+                            ++$bracketCount;
+                        } else if ($current === ')' && !$strInStr && --$bracketCount !== 0) {
+                            $currentString .= ')';
+                            break;
+                        }
                     }
-                    $temp_add = $current;                     // ...and no not-escaped backslash at the previous position
+
+                    // ...and no not-escaped backslash at the previous position
+                    $temp_add = $current;
                     if (($current === "\n" || $current === "\r") && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
                         $temp_add = "\\A ";
                         $this->logger->log('Fixed incorrect newline in string', Logger::WARNING);
                     }
                     // this optimisation remove space in css3 properties (see vendor-prefixed/webkit-gradient.csst)
-                    #if (!($stringChar === ')' && in_array($current, $GLOBALS['csstidy']['whitespace']) && !$strInStr)) {
+                    //if (!($stringChar === ')' && in_array($current, self::$whitespace) && !$strInStr)) {
                         $currentString .= $temp_add;
-                    #}
+                    //}
                     if ($current === $stringChar && !self::escaped($string, $i) && !$strInStr) {
                         $status = $from;
                         if (!preg_match('|[' . implode('', self::$whitespace) . ']|uis', $currentString) && $property !== 'content') {
