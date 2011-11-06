@@ -55,7 +55,6 @@ class Optimise
      * @see compress_numbers();
      * @static
      * @var array
-     * @version 1.0
      */
     public static $colorValues = array(
         'background-color' => true,
@@ -74,7 +73,6 @@ class Optimise
      * @see compress_numbers()
      * @static
      * @var array
-     * @version 1.0
      */
     public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz','dpi','dpcm','dppx');
 
@@ -85,7 +83,6 @@ class Optimise
      * @see compress_numbers();
      * @static
      * @var array
-     * @version 1.2
      */
     public static $unitValues = array ('background', 'background-position', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-width',
                                 'border-top-width', 'border-right-width', 'border-left-width', 'border-bottom-width', 'bottom', 'border-spacing',
@@ -96,11 +93,9 @@ class Optimise
     /**
      * A list of all shorthand properties that are devided into four properties and/or have four subvalues
      *
-     * @global array $GLOBALS['csstidy']['shorthands']
      * @todo Are there new ones in CSS3?
      * @see dissolve_4value_shorthands()
      * @see merge_4value_shorthands()
-     * @version 1.0
      */
     public static $shorthands = array(
         'border-color' => array('border-top-color','border-right-color','border-bottom-color','border-left-color'),
@@ -108,6 +103,7 @@ class Optimise
         'border-width' => array('border-top-width','border-right-width','border-bottom-width','border-left-width'),
         'margin' => array('margin-top','margin-right','margin-bottom','margin-left'),
         'padding' => array('padding-top','padding-right','padding-bottom','padding-left'),
+        'border-radius' => array('border-radius-top-left', 'border-radius-top-right', 'border-radius-bottom-right', 'border-radius-bottom-left')
     );
     
     public static $replaceColors = array(
@@ -326,11 +322,19 @@ class Optimise
     {
         // optimise shorthand properties
         if (isset(self::$shorthands[$property])) {
-            $temp = $this->shorthand($value); // FIXME - move
+            if ($property === 'border-radius') {
+                $temp = $this->borderRadiusShorthand($value);
+            } else {
+                $temp = $this->shorthand($value); // FIXME - move
+            }
             if ($temp != $value) {
                 $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
             }
             $value = $temp;
+        }
+
+        if ($property === 'background-image' && $this->configuration->getCompressColors()) {
+            $value = $this->optimizeGradients($value);
         }
 
         // Remove whitespace at ! important
@@ -360,14 +364,12 @@ class Optimise
         if ($property === 'font' && $this->configuration->getOptimiseShorthands() > Configuration::COMMON) {
             $parsed->css[$at][$selector]['font'] = '';
             $parsed->mergeCssBlocks($at, $selector, $this->dissolveShortFont($value));
-        }
-
-        if ($property === 'background' && $this->configuration->getOptimiseShorthands() > Configuration::FONT) {
+        } else if ($property === 'background' && $this->configuration->getOptimiseShorthands() > Configuration::FONT) {
             $parsed->css[$at][$selector]['background'] = '';
             $parsed->mergeCssBlocks($at, $selector, $this->dissolveShortBackground($value));
-        }
-
-        if (isset(self::$shorthands[$property])) {
+        } else if ($property === 'border-radius') {
+            return;
+        } else if (isset(self::$shorthands[$property])) {
             $parsed->mergeCssBlocks($at, $selector, $this->dissolveFourValueShorthands($property, $value));
             $parsed->css[$at][$selector][$property] = '';
         }
@@ -430,13 +432,52 @@ class Optimise
     }
 
     /**
+     * Removes unnecessary whitespace in ! important
+     * @param string $string
+     * @return string
+     * @access public
+     * @version 1.1
+     */
+    public function compressImportant($string)
+    {
+        if (CSSTidy::isImportant($string)) {
+            $string = CSSTidy::removeImportant($string, false) . '!important';
+        }
+        return $string;
+    }
+
+    /**
+     * Optimize border-radius property
+     *
+     * @param string $value
+     * @return string
+     */
+    protected function borderRadiusShorthand($value)
+    {
+        $parts = explode('/', $value);
+
+        if (empty($parts)) { // / delimiter in string not found
+            return $value;
+        }
+
+        if (isset($parts[2])) {
+            return $value; // border-radius value can contains only two parts
+        }
+
+        foreach ($parts as &$part) {
+            $part = $this->shorthand(trim($part));
+        }
+
+        return implode('/', $parts);
+    }
+
+    /**
      * Compresses shorthand values. Example: margin:1px 1px 1px 1px -> margin:1px
      * @param string $value
-     * @access public
      * @return string
      * @version 1.0
      */
-    public function shorthand($value)
+    protected function shorthand($value)
     {
         $important = '';
         if (CSSTidy::isImportant($value)) {
@@ -475,21 +516,6 @@ class Optimise
     }
 
     /**
-     * Removes unnecessary whitespace in ! important
-     * @param string $string
-     * @return string
-     * @access public
-     * @version 1.1
-     */
-    public function compressImportant($string)
-    {
-        if (CSSTidy::isImportant($string)) {
-            $string = CSSTidy::removeImportant($string, false) . '!important';
-        }
-        return $string;
-    }
-
-    /**
      * Color compression function. Converts all rgb() values to #-values and uses the short-form if possible. Also replaces 4 color names by #-values.
      * @param string $color
      * @return string
@@ -518,9 +544,10 @@ class Optimise
         );
 
         // rgb(0,0,0) -> #000000 (or #000 in this case later)
-        $type = strtolower(substr($color, 0, 4));
-        if ($type === 'rgb(' || $type === 'hsl(') {
-            $colorTmp = substr($color, 4, strlen($color) - 5);
+        $type = strtolower(strstr($color, '(', true));
+
+        if ($type === 'rgb' || $type === 'hsl' ) {
+            $colorTmp = substr($color, 4, -1);
             $colorTmp = explode(',', $colorTmp);
 
             if (count($colorTmp) > 3) {
@@ -531,23 +558,30 @@ class Optimise
                 return $color;
             }
 
-            if ($type === 'rgb(') {
-                $parts = $this->convertRgbToHex($colorTmp);
+            if ($type === 'rgb') {
+                $color = $this->convertRgbToHex($colorTmp);
             } else {
-                $parts = $this->convertHslToHex($colorTmp);
+                $color = $this->convertHslToHex($colorTmp);
+            }
+        } else if ($type === 'rgba' || $type === 'hsla') {
+            $colorTmp = substr($color, 5, -1);
+            $colorTmp = explode(',', $colorTmp);
+
+            if (count($colorTmp) > 4) {
+                $this->logger->log(strtoupper($type) . " color value supports only four items", Logger::WARNING);
+                $colorTmp = array_slice($colorTmp, 0, 4);
+            } else if (count($colorTmp) !== 4) {
+                $this->logger->log(strtoupper($type) ." color value supports only four items", Logger::ERROR);
+                return $color;
             }
 
-            $color = '#';
-
-            foreach ($parts as $part) {
-                if ($part < 16) {
-                    $color .= '0' . dechex($part);
-                } else {
-                    if ($part > 255) {
-                        $part = 255;
-                    }
-                    $color .= dechex($part);
-                }
+            if ($colorTmp[3] == 0) { // no alpha is set -> convert to HEX
+                $colorTmp = array_slice($colorTmp, 0, 3);
+                $color = ($type === 'rgba' ? $this->convertRgbToHex($colorTmp) : $this->convertHslToHex($colorTmp));
+            } else if ($colorTmp[3] == 1) { // full transparency
+                $color = 'rgba(0,0,0,1)';
+            } else {
+                $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],{$this->compressNumber($colorTmp[3])})";
             }
         } else {
             // Fix bad color names
@@ -586,7 +620,7 @@ class Optimise
             }
         }
 
-        return $parts;
+        return $this->threeByteArrayToHex($parts);
     }
 
     /**
@@ -643,7 +677,32 @@ class Optimise
             $rgb = round($rgb * 255);
         }
 
-        return $output;
+        return $this->threeByteArrayToHex($output);
+    }
+
+    /**
+     * @param array $array
+     * @return string
+     */
+    protected function threeByteArrayToHex(array $array)
+    {
+        $hex = '#';
+
+        foreach ($array as $byte) {
+            if ($byte < 16) {
+                if ($byte < 0) {
+                    $byte = 0;
+                }
+                $hex .= '0' . dechex($byte);
+            } else {
+                if ($byte > 255) {
+                    $byte = 255;
+                }
+                $hex .= dechex($byte);
+            }
+        }
+
+        return $hex;
     }
 
     /**
@@ -707,14 +766,7 @@ class Optimise
             return $return;
         }
 
-        $return[0] = floatval($string);
-        if (abs($return[0]) > 0 && abs($return[0]) < 1) {
-            if ($return[0] < 0) {
-                $return[0] = '-' . ltrim(substr($return[0], 1), '0');
-            } else {
-                $return[0] = ltrim($return[0], '0');
-            }
-        }
+        $return[0] = $this->compressNumber($string);
 
         /*preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches);
 
@@ -728,6 +780,7 @@ class Optimise
             return false;
         }*/
 
+        // TODO: Optimize
         // Look for unit and split from value if exists
         foreach (self::$units as $unit) {
             if (!($unitInString = stristr($string, $unit))) { // mb_strpos() fails with "false"
@@ -741,22 +794,41 @@ class Optimise
                 break;
             }
         }
+
         if (!is_numeric($string)) {
             return false;
         }
+
         return $return;
+    }
+
+    /**
+     * Removes 0 from decimal number between -1 - 1
+     * Example: 0.3 -> .3; -0.3 -> -.3
+     * @param string $string
+     * @return string without any non numeric character
+     */
+    protected function compressNumber($string)
+    {
+        $float = floatval($string);
+        if (abs($float) > 0 && abs($float) < 1) {
+            if ($float < 0) {
+                return '-' . ltrim(substr($float, 1), '0');
+            } else {
+                return ltrim($float, '0');
+            }
+        }
+
+        return $float;
     }
 
     /**
      * Merges selectors with same properties. Example: a{color:red} b{color:red} -> a,b{color:red}
      * Very basic and has at least one bug. Hopefully there is a replacement soon.
      * @param array $array
-     * @return array
-     * @version 1.2
      */
-    protected function mergeSelectors(&$array)
+    protected function mergeSelectors(array &$css)
     {
-        $css = $array;
         foreach ($css as $key => $value) {
             if (!isset($css[$key])) {
                 continue;
@@ -787,7 +859,6 @@ class Optimise
                 $css[$newSelector] = $value;
             }
         }
-        $array = $css;
     }
 
     /**
@@ -798,7 +869,8 @@ class Optimise
      * @version 1.4
      * @param array $array
      */
-    protected function discardInvalidSelectors(array &$array) {
+    protected function discardInvalidSelectors(array &$array)
+    {
         foreach ($array as $selector => $decls) {
             $ok = true;
             $selectors = array_map('trim', explode(',', $selector));
@@ -835,7 +907,7 @@ class Optimise
 
         $important = '';
         if (CSSTidy::isImportant($value)) {
-            $value = CSSTidy::removeImportant($value);
+            $value = CSSTidy::removeImportant($value, false);
             $important = '!important';
         }
 
@@ -873,51 +945,6 @@ class Optimise
     }
 
     /**
-     * Explodes a string as explode() does, however, not if $sep is escaped or within a string.
-     * @param string $sep seperator
-     * @param string $string
-     * @return array
-     * @version 1.0
-     */
-    protected function explodeWs($sep, $string)
-    {
-        $status = 'st';
-        $to = '';
-
-        $output = array();
-        $num = 0;
-        $stringLength = strlen($string);
-        for ($i = 0, $len = $stringLength; $i < $len; $i++) {
-            switch ($status) {
-                case 'st':
-                    if ($string{$i} == $sep && !CSSTidy::escaped($string, $i)) {
-                        ++$num;
-                    } elseif ($string{$i} === '"' || $string{$i} === '\'' || $string{$i} === '(' && !CSSTidy::escaped($string, $i)) {
-                        $status = 'str';
-                        $to = ($string{$i} === '(') ? ')' : $string{$i};
-                        (isset($output[$num])) ? $output[$num] .= $string{$i} : $output[$num] = $string{$i};
-                    } else {
-                        (isset($output[$num])) ? $output[$num] .= $string{$i} : $output[$num] = $string{$i};
-                    }
-                    break;
-
-                case 'str':
-                    if ($string{$i} == $to && !CSSTidy::escaped($string, $i)) {
-                        $status = 'st';
-                    }
-                    (isset($output[$num])) ? $output[$num] .= $string{$i} : $output[$num] = $string{$i};
-                    break;
-            }
-        }
-
-        if (isset($output[0])) {
-            return $output;
-        } else {
-            return array($output);
-        }
-    }
-
-    /**
      * Merges Shorthand properties again, the opposite of dissolve_4value_shorthands()
      * @param array $array
      * @return array
@@ -937,7 +964,7 @@ class Optimise
                     $val = $array[$value[$i]];
                     if (CSSTidy::isImportant($val)) {
                         $important = '!important';
-                        $return[$key] .= CSSTidy::removeImportant($val) . ' ';
+                        $return[$key] .= CSSTidy::removeImportant($val, false) . ' ';
                     } else {
                         $return[$key] .= $val . ' ';
                     }
@@ -953,8 +980,6 @@ class Optimise
      * Dissolve background property
      * @param string $str_value
      * @return array
-     * @version 1.0
-     * @see merge_bg()
      * @todo full CSS 3 compliance
      */
     protected function dissolveShortBackground($str_value)
@@ -975,11 +1000,11 @@ class Optimise
 
         if (CSSTidy::isImportant($str_value)) {
             $important = ' !important';
-            $str_value = CSSTidy::removeImportant($str_value);
+            $str_value = CSSTidy::removeImportant($str_value, false);
         }
 
         $str_value = $this->explodeWs(',', $str_value);
-        for ($i = 0; $i < count($str_value); $i++) {
+        foreach ($str_value as $strVal) {
             $have = array(
                 'clip' => false,
                 'pos' => false,
@@ -987,84 +1012,81 @@ class Optimise
                 'bg' => false,
             );
 
-            if (is_array($str_value[$i])) {
-                $str_value[$i] = $str_value[$i][0];
+            if (is_array($strVal)) {
+                $strVal = $strVal[0];
             }
 
-            $str_value[$i] = $this->explodeWs(' ', trim($str_value[$i]));
+            $strVal = $this->explodeWs(' ', trim($strVal));
 
-            for ($j = 0; $j < count($str_value[$i]); $j++) {
-                if ($have['bg'] === false && (substr($str_value[$i][$j], 0, 4) === 'url(' || $str_value[$i][$j] === 'none')) {
-                    $return['background-image'] .= $str_value[$i][$j] . ',';
+            foreach ($strVal as $current) {
+                if ($have['bg'] === false && (substr($current, 0, 4) === 'url(' || $current === 'none')) {
+                    $return['background-image'] .= $current . ',';
                     $have['bg'] = true;
-                } elseif (in_array($str_value[$i][$j], $repeat, true)) {
-                    $return['background-repeat'] .= $str_value[$i][$j] . ',';
-                } elseif (in_array($str_value[$i][$j], $attachment, true)) {
-                    $return['background-attachment'] .= $str_value[$i][$j] . ',';
-                } elseif (in_array($str_value[$i][$j], $clip, true) && !$have['clip']) {
-                    $return['background-clip'] .= $str_value[$i][$j] . ',';
+                } elseif (in_array($current, $repeat, true)) {
+                    $return['background-repeat'] .= $current . ',';
+                } elseif (in_array($current, $attachment, true)) {
+                    $return['background-attachment'] .= $current . ',';
+                } elseif (in_array($current, $clip, true) && !$have['clip']) {
+                    $return['background-clip'] .= $current . ',';
                     $have['clip'] = true;
-                } elseif (in_array($str_value[$i][$j], $origin, true)) {
-                    $return['background-origin'] .= $str_value[$i][$j] . ',';
-                } elseif ($str_value[$i][$j]{0} === '(') {
-                    $return['background-size'] .= substr($str_value[$i][$j], 1, -1) . ',';
-                } elseif (in_array($str_value[$i][$j], $pos, true) || is_numeric($str_value[$i][$j]{0}) || $str_value[$i][$j]{0} === null || $str_value[$i][$j]{0} === '-' || $str_value[$i][$j]{0} === '.') {
-                    $return['background-position'] .= $str_value[$i][$j];
-                    if (!$have['pos'])
-                        $return['background-position'] .= ' '; else
-                        $return['background-position'].= ',';
+                } elseif (in_array($current, $origin, true)) {
+                    $return['background-origin'] .= $current . ',';
+                } elseif ($current{0} === '(') {
+                    $return['background-size'] .= substr($current, 1, -1) . ',';
+                } elseif (in_array($current, $pos, true) || is_numeric($current{0}) || $current{0} === null || $current{0} === '-' || $current{0} === '.') {
+                    $return['background-position'] .= $current . ($have['pos'] ? ',' : ' ');
                     $have['pos'] = true;
-                }
-                elseif (!$have['color']) {
-                    $return['background-color'] .= $str_value[$i][$j] . ',';
+                } elseif (!$have['color']) {
+                    $return['background-color'] .= $current . ',';
                     $have['color'] = true;
                 }
             }
         }
 
-        foreach (self::$backgroundPropDefault as $bg_prop => $default_value) {
-            if ($return[$bg_prop] !== null) {
-                $return[$bg_prop] = substr($return[$bg_prop], 0, -1) . $important;
+        foreach (self::$backgroundPropDefault as $backgroundProperty => $defaultValue) {
+            if ($return[$backgroundProperty] !== null) {
+                $return[$backgroundProperty] = substr($return[$backgroundProperty], 0, -1) . $important;
             } else {
-                $return[$bg_prop] = $default_value . $important;
+                $return[$backgroundProperty] = $defaultValue . $important;
             }
         }
+
         return $return;
     }
 
     /**
      * Merges all background properties
-     * @param array $input_css
+     * @param array $inputCss
      * @return array
      * @version 1.0
      * @see dissolve_short_bg()
      * @todo full CSS 3 compliance
      */
-    protected function mergeBackground($input_css)
+    protected function mergeBackground($inputCss)
     {
         // Max number of background images. CSS3 not yet fully implemented
-        $number_of_values = @max(count($this->explodeWs(',', $input_css['background-image'])), count($this->explodeWs(',', $input_css['background-color'])), 1);
+        $numberOfValues = @max(count($this->explodeWs(',', $inputCss['background-image'])), count($this->explodeWs(',', $inputCss['background-color'])), 1);
         // Array with background images to check if BG image exists
-        $bg_img_array = @$this->explodeWs(',', CSSTidy::removeImportant($input_css['background-image']));
-        $new_bg_value = '';
+        $bg_img_array = @$this->explodeWs(',', CSSTidy::removeImportant($inputCss['background-image']));
+        $newBackgroundValue = '';
         $important = '';
 
         // if background properties is here and not empty, don't try anything
-        if (isset($input_css['background']) && $input_css['background']) {
-            return $input_css;
+        if (isset($inputCss['background']) && $inputCss['background']) {
+            return $inputCss;
         }
         
-        for ($i = 0; $i < $number_of_values; $i++) {
-            foreach (self::$backgroundPropDefault as $bg_property => $default_value) {
+        for ($i = 0; $i < $numberOfValues; $i++) {
+            foreach (self::$backgroundPropDefault as $bg_property => $defaultValue) {
                 // Skip if property does not exist
-                if (!isset($input_css[$bg_property])) {
+                if (!isset($inputCss[$bg_property])) {
                     continue;
                 }
 
-                $cur_value = $input_css[$bg_property];
+                $currentValue = $inputCss[$bg_property];
                 // skip all optimisation if gradient() somewhere
-                if (stripos($cur_value, "gradient(") !== false) {
-                    return $input_css;
+                if (stripos($currentValue, "gradient(") !== false) {
+                    return $inputCss;
                 }
 
                 // Skip some properties if there is no background image
@@ -1075,44 +1097,46 @@ class Optimise
                 }
 
                 // Remove !important
-                if (CSSTidy::isImportant($cur_value)) {
+                if (CSSTidy::isImportant($currentValue)) {
                     $important = ' !important';
-                    $cur_value = CSSTidy::removeImportant($cur_value);
+                    $currentValue = CSSTidy::removeImportant($currentValue, false);
                 }
 
                 // Do not add default values
-                if ($cur_value === $default_value) {
+                if ($currentValue === $defaultValue) {
                     continue;
                 }
 
-                $temp = $this->explodeWs(',', $cur_value);
+                $temp = $this->explodeWs(',', $currentValue);
 
                 if (isset($temp[$i])) {
                     if ($bg_property === 'background-size') {
-                        $new_bg_value .= '(' . $temp[$i] . ') ';
+                        $newBackgroundValue .= '(' . $temp[$i] . ') ';
                     } else {
-                        $new_bg_value .= $temp[$i] . ' ';
+                        $newBackgroundValue .= $temp[$i] . ' ';
                     }
                 }
             }
 
-            $new_bg_value = trim($new_bg_value);
-            if ($i != $number_of_values - 1)
-                $new_bg_value .= ',';
+            $newBackgroundValue = trim($newBackgroundValue);
+            if ($i != $numberOfValues - 1) {
+                $newBackgroundValue .= ',';
+            }
         }
 
         // Delete all background-properties
-        foreach (self::$backgroundPropDefault as $bg_property => $default_value) {
-            unset($input_css[$bg_property]);
+        foreach (self::$backgroundPropDefault as $bg_property => $foo) {
+            unset($inputCss[$bg_property]);
         }
 
         // Add new background property
-        if ($new_bg_value !== '')
-            $input_css['background'] = $new_bg_value . $important;
-        elseif(isset ($input_css['background']))
-            $input_css['background'] = 'none';
+        if ($newBackgroundValue !== '') {
+            $inputCss['background'] = $newBackgroundValue . $important;
+        } elseif (isset($inputCss['background'])) {
+            $inputCss['background'] = 'none';
+        }
 
-        return $input_css;
+        return $inputCss;
     }
 
     /**
@@ -1277,5 +1301,97 @@ class Optimise
         }
 
         return $inputCss;
+    }
+
+    /**
+     * Compress color inside gradient definition
+     * @param string $string
+     * @return string
+     */
+    protected function optimizeGradients($string)
+    {
+        /*
+         * Gradinet functions and color start from
+         * -webkit-gradient syntax is not supported
+         */
+        static $supportedGradients = array(
+            '-webkit-repeating-linear-gradient' => 1,
+            '-moz-repeating-linear-gradient' => 1,
+            '-o-repeating-linear-gradient' => 1,
+            'repeating-linear-gradient' => 1,
+            '-webkit-linear-gradient' => 1,
+            '-moz-linear-gradient' => 1,
+            '-o-linear-gradient' => 1,
+            'linear-gradient' => 1,
+            '-webkit-repeating-radial-gradient' => 2,
+            '-moz-repeating-radial-gradient' => 2,
+            '-o-repeating-radial-gradient' => 2,
+            'repeating-radial-gradient' => 2,
+            '-webkit-radial-gradient' => 2,
+            '-moz-radial-gradient' => 2,
+            '-o-radial-gradient' => 2,
+            'radial-gradient' => 2,
+        );
+
+        $type = strstr($string, '(', true);
+
+        if ($type === false || !isset($supportedGradients[$type])) {
+            return $string; // value is not gradient or unsupported type
+        }
+
+        $string = substr($string, strlen($type) + 1, -1); // Remove linear-gradient()
+        $parts = $this->explodeWs(',', $string);
+
+        $start = $supportedGradients[$type];
+        foreach ($parts as $i => &$part) {
+            if ($i < $start) {
+                continue;
+            }
+
+            $colorAndLength = $this->explodeWs(' ', $part);
+            $colorAndLength[0] = $this->cutColor($colorAndLength[0]);
+            $part = implode(' ', $colorAndLength);
+        }
+
+        return "$type(" . implode(',', $parts) . ')';
+    }
+
+     /**
+     * Explodes a string as explode() does, however, not if $sep is escaped or within a string.
+     * @param string $sep separator
+     * @param string $string
+     * @return array
+     */
+    protected function explodeWs($sep, $string)
+    {
+        if ($string === '' || $string === $sep) {
+            return array();
+        }
+
+        $insideString = false;
+        $to = '';
+        $output = array(0 => '');
+        $num = 0;
+
+        for ($i = 0, $len = strlen($string); $i < $len; $i++) {
+            if ($insideString) {
+                if ($string{$i} === $to && !CSSTidy::escaped($string, $i)) {
+                    $insideString = false;
+                }
+            } else {
+                if ($string{$i} === $sep && !CSSTidy::escaped($string, $i)) {
+                    ++$num;
+                    $output[$num] = '';
+                    continue;
+                } else if ($string{$i} === '"' || $string{$i} === '\'' || $string{$i} === '(' && !CSSTidy::escaped($string, $i)) {
+                    $insideString = true;
+                    $to = ($string{$i} === '(') ? ')' : $string{$i};
+                }
+            }
+
+            $output[$num] .= $string{$i};
+        }
+
+        return $output;
     }
 }
