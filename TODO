@@ -1,2 +1,3 @@
 - Merge overflow-y and overflow-x to overflow property (http://www.w3.org/TR/css3-box/#overflow)
 - Complete support for CSS3 @page at rule (http://www.w3.org/TR/css3-page/)
+- outline shorthands
