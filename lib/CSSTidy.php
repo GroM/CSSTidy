@@ -68,7 +68,7 @@ class CSSTidy
      * @var array
      * @version 1.0
      */
-    public static $whitespace = array(' ', "\n", "\t", "\r", "\x0B");
+    public static $whitespace = array(' ', "\n", "\r", "\x0B");
 
     /**
      * All CSS tokens used by csstidy
@@ -96,6 +96,7 @@ class CSSTidy
         '@media' => 'at',
         '@keyframes' => 'at',
         '@-moz-keyframes' => 'at', // vendor prefixed
+        '@-webkit-keyframes' => 'at',
         //'@font-feature-values ' => 'at', // Not fully supported yet
     );
 
@@ -244,6 +245,10 @@ class CSSTidy
         'background-size' => 'CSS3.0',
         'background-origin' => 'CSS3.0',
         'border-radius' => 'CSS3.0',
+        'border-top-right-radius' => 'CSS3.0',
+        'border-bottom-right-radius' => 'CSS3.0',
+        'border-bottom-left-radius' => 'CSS3.0',
+        'border-top-left-radius' => 'CSS3.0',
         'border-image' => 'CSS3.0',
         'border-top-left-radius' => 'CSS3.0',
         'border-top-right-radius' => 'CSS3.0',
@@ -270,7 +275,13 @@ class CSSTidy
         'image-rendering' => 'CSS3.0',
         'image-resolution' => 'CSS3.0',
         'image-orientation' => 'CSS3.0',
-
+        // Transform
+        'transform' => 'CSS3.0',
+        'transform-origin' => 'CSS3.0',
+        'transform-style' => 'CSS3.0',
+        'perspective' => 'CSS3.0',
+        'perspective-origin' => 'CSS3.0',
+        'backface-visibility' => 'CSS3.0',
     );
 
     /** @var \CSSTidy\Optimise */
@@ -336,7 +347,8 @@ class CSSTidy
         $this->optimise = new Optimise($this->logger, $this->configuration);
         $this->parsed = $parsed = new Parsed($this->configuration, $string);
 
-        $string = str_replace("\r\n", "\n", $string) . ' ';
+        // Normalize new line characters
+        $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
         $preserveCss = $this->configuration->getPreserveCss();
@@ -359,7 +371,7 @@ class CSSTidy
         for ($i = 0, $size = strlen($string); $i < $size; $i++) {
             $current = $string{$i};
 
-            if ($current === "\n" || $current === "\r") {
+            if ($current === "\n") {
                 $this->logger->incrementLine();
             }
 
@@ -471,7 +483,7 @@ class CSSTidy
 
                 /* Case in-value */
                 case 'iv':
-                    $pn = (($current === "\n" || $current === "\r") && $this->propertyIsNext($string, $i + 1) || $i == strlen($string) - 1);
+                    $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i == strlen($string) - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
@@ -615,7 +627,7 @@ class CSSTidy
 
                     // ...and no not-escaped backslash at the previous position
                     $temp_add = $current;
-                    if (($current === "\n" || $current === "\r") && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
+                    if ($current === "\n" && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
                         $temp_add = "\\A ";
                         $this->logger->log('Fixed incorrect newline in string', Logger::WARNING);
                     }
@@ -748,8 +760,8 @@ class CSSTidy
 
     /**
      * Explodes selectors
-     * @access private
-     * @version 1.0
+     * @param string $selector
+     * @param string $at
      */
     protected function explodeSelectors($selector, $at)
     {
@@ -786,9 +798,7 @@ class CSSTidy
      * Parse unicode notations and find a replacement character
      * @param string $string
      * @param integer $i
-     * @access private
      * @return string
-     * @version 1.2
      */
     protected function unicode($string, &$i)
     {
@@ -833,9 +843,7 @@ class CSSTidy
      * Checks if a character is escaped (and returns true if it is)
      * @param string $string
      * @param integer $pos
-     * @access public
      * @return bool
-     * @version 1.02
      */
     public static function escaped($string, $pos)
     {
@@ -846,8 +854,6 @@ class CSSTidy
      * Checks if $value is !important.
      * @param string $value
      * @return bool
-     * @access public
-     * @version 1.0
      */
     public static function isImportant($value)
     {
@@ -901,8 +907,7 @@ class CSSTidy
      * Checks if there is a token at the current position
      * @param string $string
      * @param integer $i
-     * @access public
-     * @version 1.11
+     * @return bool
      */
     protected function isToken($string, $i)
     {
