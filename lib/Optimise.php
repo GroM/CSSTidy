@@ -581,6 +581,9 @@ class Optimise
             } else if ($colorTmp[3] == 1) { // full transparency
                 $color = 'rgba(0,0,0,1)';
             } else {
+                if ($type === 'hsla') {
+                    $colorTmp[0] = $this->compressAngle($colorTmp[0]);
+                }
                 $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],{$this->compressNumber($colorTmp[3])})";
             }
         } else {
@@ -820,6 +823,21 @@ class Optimise
         }
 
         return $float;
+    }
+
+    /**
+     * @param int $angle
+     * @return int
+     */
+    protected function compressAngle($angle)
+    {
+        $angle = (($angle % 360) + 360) % 360; // normalize from 0 to 359
+
+        if ($angle > 350) {
+            $angle -= 360;
+        }
+
+        return $angle;
     }
 
     /**
