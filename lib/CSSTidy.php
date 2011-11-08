@@ -737,9 +737,10 @@ class CSSTidy
 
         $notResolvedImports = array();
         foreach ($matches[2] as $i => $fileName) {
+            $importRule = $matches[0][$i];
 
             if (trim($matches[4][$i]) !== '') {
-                $notResolvedImports[] = $matches[0][$i];
+                $notResolvedImports[] = $importRule;
                 continue; // Import is for other media
             }
 
@@ -747,15 +748,15 @@ class CSSTidy
 
             $content = file_get_contents($fileDirectory . $fileName);
 
-            $string = str_replace($matches[0][$i], $content ? $content : '', $string);
+            $string = str_replace($importRule, $content ? $content : '', $string);
 
             if (!$content) {
-                $notResolvedImports[] = $matches[0][$i];
+                $notResolvedImports[] = $importRule;
                 $this->logger->log("Import file {$fileDirectory}{$fileName} not found", Logger::WARNING);
             }
         }
 
-        return implode('', $notResolvedImports) . $string;
+        return implode("\n", $notResolvedImports) . $string;
     }
 
     /**
