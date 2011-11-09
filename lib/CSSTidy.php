@@ -282,6 +282,12 @@ class CSSTidy
         'perspective' => 'CSS3.0',
         'perspective-origin' => 'CSS3.0',
         'backface-visibility' => 'CSS3.0',
+        // Transition
+        'transition' => 'CSS3.0',
+        'transition-delay' => 'CSS3.0',
+        'transition-duration' => 'CSS3.0',
+        'transition-property' => 'CSS3.0',
+        'transition-timing-function' => 'CSS3.0',
     );
 
     /** @var \CSSTidy\Optimise */
