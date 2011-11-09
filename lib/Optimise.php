@@ -575,11 +575,11 @@ class Optimise
                 return $color;
             }
 
-            if ($colorTmp[3] == 0) { // no alpha is set -> convert to HEX
+            if ($colorTmp[3] == 1) { // no alpha is set -> convert to HEX
                 $colorTmp = array_slice($colorTmp, 0, 3);
                 $color = ($type === 'rgba' ? $this->convertRgbToHex($colorTmp) : $this->convertHslToHex($colorTmp));
-            } else if ($colorTmp[3] == 1) { // full transparency
-                $color = 'rgba(0,0,0,1)';
+            } else if ($colorTmp[3] == 0) { // full transparency
+                $color = 'rgba(0,0,0,0)';
             } else {
                 if ($type === 'hsla') {
                     $colorTmp[0] = $this->compressAngle($colorTmp[0]);
