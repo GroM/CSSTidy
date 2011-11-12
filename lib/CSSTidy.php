@@ -322,23 +322,6 @@ class CSSTidy
     }
 
     /**
-     * Parse CSS from $url
-     * @param string $url
-     * @return Output
-     * @throws \Exception
-     */
-    public function parseFromUrl($url)
-    {
-        $content = @file_get_contents($url);
-
-        if (!$content) {
-            throw new \Exception("Cannot open URL '$url'");
-        }
-
-        return $this->parse($content);
-    }
-
-    /**
      * Parses CSS in $string.
      * @param string $string the CSS code
      * @return Output
