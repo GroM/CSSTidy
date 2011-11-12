@@ -487,7 +487,12 @@ class CSSTidy
                             $status = 'instr';
                             $from = 'iv';
                         } elseif ($current === ',') {
-                            $subValue = trim($subValue) . ',';
+                            $subValue = $this->optimise->subValue($property, $subValue);
+                            if ($subValue != '') {
+                                $subValues[] = $subValue;
+                                $subValues[] = ',';
+                                $subValue = '';
+                            }
                         } elseif ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } elseif ($current === ';' || $pn) {
@@ -513,7 +518,7 @@ class CSSTidy
                                         break;
 
                                     case '@import':
-                                        $parsed->import[] = implode(' ', $subValues);
+                                        $parsed->import[] = $this->mergeSubValues($subValues);
                                         if (!empty($parsed->css)) {
                                             $this->logger->log("@import must be before anything selectors", Logger::WARNING);
                                         } else if (!empty($at)) {
@@ -555,11 +560,12 @@ class CSSTidy
                                 }
                             }
 
-                            $value = array_shift($subValues);
+                            /*$value = array_shift($subValues);
                             while (!empty($subValues)) {
-                                $value .= (substr($value, -1) == ',' ? '' : ' ') . array_shift($subValues);
-                            }
+                                $value .= ($value === ',' ? '' : ' ') . array_shift($subValues);
+                            }*/
 
+                            $value = $this->mergeSubValues($subValues);
                             $value = $this->optimise->value($property, $value);
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
@@ -782,6 +788,26 @@ class CSSTidy
         }
 
         $this->selectorSeparate = array();
+    }
+
+    /**
+     * @param array $subValues
+     * @return string
+     */
+    protected function mergeSubValues(array $subValues)
+    {
+        $prev = false;
+        foreach ($subValues as &$subValue) {
+            if ($subValue === ',') {
+                $prev = true;
+            } else if (!$prev) {
+                $subValue = ' ' . $subValue;
+            } else {
+                $prev = false;
+            }
+        }
+
+        return ltrim(implode('', $subValues), ' ');
     }
 
     /**

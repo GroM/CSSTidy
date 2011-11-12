@@ -19,7 +19,7 @@ Import
 @import"bluish.css";
 @import"bluish.css";
 @import"bluish.css";
-@import"bluish.css" projection, tv;
+@import"bluish.css" projection,tv;
 @import"bluish.css" screen and (orientation:landscape);
 
 @page :pseudo-class {
