@@ -583,6 +583,10 @@ class Optimise
             } else {
                 if ($type === 'hsla') {
                     $colorTmp[0] = $this->compressAngle($colorTmp[0]);
+                } else if ($colorTmp[0] == 255 && $colorTmp[1] == 255 && $colorTmp[2] == 255) {
+                    $colorTmp[0] = $colorTmp[1] = 0;
+                    $colorTmp[2] = '100%';
+                    $type = 'hsla';
                 }
                 $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],{$this->compressNumber($colorTmp[3])})";
             }
