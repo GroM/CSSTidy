@@ -15,7 +15,7 @@ array (
 	),
 	'.radial' =>
 	array (
-		'background-image' => '-moz-radial-gradient(45px 45px,ellipse farthest-corner,aqua 0%,#00f 100%,blue 95%)',
+		'background-image' => '-moz-radial-gradient(45px 45px,ellipse farthest-corner,aqua 0%,rgba(0,0,0,0) 100%,blue 95%)',
 	),
 )
 --SETTINGS--
