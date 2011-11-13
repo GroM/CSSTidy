@@ -1,0 +1,55 @@
+--TEST--
+Dynamic active selector
+--CSS--
+.\000074hree { /* "three" */
+    color: blue;
+}
+.\000066 our { /* "four" */
+    color: fuchsia;
+}
+.\66\69 \76\65 { /* "five" */
+    color: gray;
+}
+.\00073 \i\x {  /* "six" */
+    color: green;
+}
+.seven {
+    \43 \6F \6c \00006fr : lime;  /* " color : lime" */
+}
+\62\6c\6f \63 \6B \0071 \000075o\74 e { /* "blockquote" */
+    color: silver;
+}
+h\36.si\78te\65n {  /* "h6.sixteen" */
+    color: teal;
+}
+--EXPECT--
+array (
+    '.three' =>
+    array (
+      'color' => 'blue',
+    ),
+    '.four' =>
+    array (
+      'color' => '#f0f',
+    ),
+    '.five' =>
+    array (
+      'color' => 'gray',
+    ),
+    '.six' =>
+    array (
+      'color' => 'green',
+    ),
+    '.seven' =>
+    array (
+      'color' => 'lime',
+    ),
+    'blockquote' =>
+    array (
+      'color' => 'silver',
+    ),
+    'h6.sixteen' =>
+    array (
+      'color' => 'teal',
+    ),
+  )
