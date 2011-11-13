@@ -277,7 +277,7 @@ html;
 
         if (!empty($this->parsed->namespace)) {
             if (substr($this->parsed->namespace, 0, 4) === 'url(' && substr($this->parsed->namespace, -1, 1) === ')') {
-                $this->parsed->namespace = '\'' . substr($this->parsed->namespace, 4, -1) . '\'';
+                $this->parsed->namespace = '"' . substr($this->parsed->namespace, 4, -1) . '"';
                 $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
             }
             $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$this->parsed->namespace}{$template->afterValueWithSemicolon}";
