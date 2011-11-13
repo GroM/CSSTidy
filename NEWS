@@ -43,3 +43,4 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 - Fixed removing quotation marks from url() if contains '('
 - Fixed parsing gradient function
 - Fixed incorrect removing quotes from quotes property value
+- Fixed parsing comments after property or selector

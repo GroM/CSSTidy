@@ -370,7 +370,7 @@ class CSSTidy
                 /* Case in-selector */
                 case 'is':
                     if ($this->isToken($string, $i)) {
-                        if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*' && trim($selector) == '') {
+                        if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from = 'is';
@@ -460,7 +460,7 @@ class CSSTidy
                                 $property = $parsed->newProperty($at, $selector, $property);
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
-                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*' && $property == '') {
+                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from = 'ip';
