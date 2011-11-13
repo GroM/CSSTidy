@@ -647,11 +647,11 @@ class CSSTidy
                             if (!$quotedString) {
                                 if (strpos($currentString, ',') !== false) {
                                     // we can on only remove space next to ','
-                                    $currentString = implode(',', array_map('trim', explode(',', $currentString)));
+                                    $currentString = preg_replace('~\s*,\s*~', ',', $currentString);
                                 }
                                 // and multiple spaces (too expensive)
                                 if (strpos($currentString, '  ') !== false) {
-                                    $currentString = preg_replace(",\s+,", " ", $currentString);
+                                    $currentString = preg_replace('~\s{2,}~', ' ', $currentString);
                                 }
                             }
                             $subValue .= $currentString;
