@@ -472,7 +472,7 @@ class CSSTidy
 
                 /* Case in-value */
                 case 'iv':
-                    $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i == strlen($string) - 1);
+                    $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
