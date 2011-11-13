@@ -68,8 +68,6 @@ class Configuration
         LOWERCASE = 1,
         UPPERCASE = 2;
 
-    const TEMPLATE_ITEMS = 14;
-
     /** @var bool */
     protected $preserveCss = false;
 
