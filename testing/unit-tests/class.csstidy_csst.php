@@ -43,7 +43,7 @@ class csstidy_csst extends SimpleExpectation
 
         foreach ($lines as $line) {
 
-            if ($line{0} === '-' && $line{1} === '-') {
+            if (isset($line{0}) && isset($line{1}) && $line{0} === '-' && $line{1} === '-') {
                 // detected section
                 $state = $line;
                 continue;
