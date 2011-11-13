@@ -1,0 +1,6 @@
+--TEST--
+Import
+--CSS--
+@namespace url("http://example.com/");
+--PRINT--
+@namespace"http://example.com/";
