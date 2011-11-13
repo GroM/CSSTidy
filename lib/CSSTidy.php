@@ -323,9 +323,9 @@ class CSSTidy
     }
 
     /**
-     * Parses CSS in $string.
-     * @param string $string the CSS code
+     * @param string $string
      * @return Output
+     * @throws \Exception
      */
     public function parse($string)
     {
@@ -488,9 +488,8 @@ class CSSTidy
                             $status = 'instr';
                             $from = 'iv';
                         } elseif ($current === ',') {
-                            $subValue = $this->optimise->subValue($property, $subValue);
-                            if ($subValue != '') {
-                                $subValues[] = $subValue;
+                            if (trim($subValue) != '') {
+                                $subValues[] = trim($subValue);
                                 $subValues[] = ',';
                                 $subValue = '';
                             }
@@ -500,11 +499,18 @@ class CSSTidy
                             if ($selector{0} === '@' && isset(self::$atRules[$selector]) && self::$atRules[$selector] === 'iv') {
                                 $subValues[] = trim($subValue);
 
-                                if (substr_compare($subValues[0], 'url(', 0, 4) !== 0) {
-                                    $subValues[0] = '"' . $subValues[0] . '"';
+                                $status = 'is';
+
+                                if ($selector === '@namespace' && isset($subValues[1])) {
+                                    $stringPosition = 1;
+                                    $subValues[0] = ' ' . $subValues[0];
+                                } else {
+                                    $stringPosition = 0;
                                 }
 
-                                $status = 'is';
+                                if (substr_compare($subValues[$stringPosition], 'url(', 0, 4) !== 0) {
+                                    $subValues[$stringPosition] = '"' . $subValues[$stringPosition] . '"';
+                                }
 
                                 switch ($selector) {
                                     case '@charset':
@@ -516,10 +522,13 @@ class CSSTidy
 
                                     case '@namespace':
                                         $parsed->namespace = implode(' ', $subValues);
+                                        if (!empty($parsed->css)) {
+                                            $this->logger->log("@namespace must be before selectors", Logger::WARNING);
+                                        }
                                         break;
 
                                     case '@import':
-                                        $parsed->import[] = $this->mergeSubValues($subValues);
+                                        $parsed->import[] = $this->mergeSubValues(null, $subValues);
                                         if (!empty($parsed->css)) {
                                             $this->logger->log("@import must be before anything selectors", Logger::WARNING);
                                         } else if (!empty($at)) {
@@ -545,9 +554,8 @@ class CSSTidy
 
                             $property = strtolower($property);
 
-                            $subValue = $this->optimise->subValue($property, $subValue);
-                            if ($subValue != '') {
-                                $subValues[] = $subValue;
+                            if (trim($subValue) != '') {
+                                $subValues[] = trim($subValue);
                                 $subValue = '';
                             }
 
@@ -557,7 +565,7 @@ class CSSTidy
                                 }
                             }
 
-                            $value = $this->mergeSubValues($subValues);
+                            $value = $this->mergeSubValues($property, $subValues);
                             $value = $this->optimise->value($property, $value);
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
@@ -590,9 +598,8 @@ class CSSTidy
                         $subValue .= $current;
 
                         if (ctype_space($current)) {
-                            $subValue = $this->optimise->subValue($property, $subValue);
-                            if ($subValue != '') {
-                                $subValues[] = $subValue;
+                            if (trim($subValue) != '') {
+                                $subValues[] = trim($subValue);
                                 $subValue = '';
                             }
                         }
@@ -783,10 +790,11 @@ class CSSTidy
     }
 
     /**
+     * @param string $property
      * @param array $subValues
      * @return string
      */
-    protected function mergeSubValues(array $subValues)
+    protected function mergeSubValues($property, array $subValues)
     {
         $prev = false;
         $output = '';
@@ -795,8 +803,10 @@ class CSSTidy
             if ($subValue === ',') {
                 $prev = true;
             } else if (!$prev) {
+                $subValue = $this->optimise->subValue($property, $subValue);
                 $output .= ' ';
             } else {
+                $subValue = $this->optimise->subValue($property, $subValue);
                 $prev = false;
             }
             $output .= $subValue;

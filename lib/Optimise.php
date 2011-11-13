@@ -384,11 +384,6 @@ class Optimise
      */
     public function subValue($property, $subValue)
     {
-        $subValue = trim($subValue);
-        if ($subValue == '') { // caution : '0'
-            return '';
-        }
-
         $important = '';
         if (CSSTidy::isImportant($subValue)) {
             $important = '!important';
@@ -441,8 +436,9 @@ class Optimise
     public function compressImportant($string)
     {
         if (CSSTidy::isImportant($string)) {
-            $string = CSSTidy::removeImportant($string, false) . '!important';
+            return CSSTidy::removeImportant($string, false) . '!important';
         }
+
         return $string;
     }
 
