@@ -1,0 +1,7 @@
+--TEST--
+Import
+--CSS--
+@namespace	c	url("test-c"
+);
+--PRINT--
+@namespace c "test-c";
