@@ -1,0 +1,21 @@
+--TEST--
+multiples cursor rules
+--CSS--
+
+p
+
+{
+
+color
+
+:
+
+green
+
+;
+
+}
+--PRINT--
+p {
+color:green
+}

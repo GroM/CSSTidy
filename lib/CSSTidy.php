@@ -64,12 +64,17 @@ class CSSTidy
 
     /**
      * All whitespace allowed in CSS
-     *
+     * @static
+     * @var string
+     */
+    public static $whitespace = " \n\t\x0B\x0C";
+
+    /**
+     * Array is generated from self::$whitespace
      * @static
      * @var array
-     * @version 1.0
      */
-    public static $whitespace = array(' ', "\n", "\t", "\x0B");
+    public static $whitespaceArray = array();
 
     /**
      * All CSS tokens used by csstidy
@@ -320,6 +325,8 @@ class CSSTidy
     {
         $this->configuration = $configuration ?: new Configuration();
         $this->logger = new Logger;
+
+        self::$whitespaceArray = str_split(self::$whitespace);
     }
 
     /**
@@ -377,7 +384,7 @@ class CSSTidy
                         } elseif ($current === '@' && trim($selector) == '') {
                             $selector = '@';
                             // Add whitespaces and remove backslash
-                            $tokensList = implode('', self::$whitespace) . str_replace('\\', '', self::$tokensList);
+                            $tokensList = self::$whitespace . str_replace('\\', '', self::$tokensList);
 
                             do {
                                 $c = $string{++$i};
@@ -503,8 +510,8 @@ class CSSTidy
                             $bracketCount = 1;
                             $status = 'inbrck';
                         } elseif ($current === ',') {
-                            if (trim($subValue) != '') {
-                                $subValues[] = trim($subValue);
+                            if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
+                                $subValues[] = $trimmed;
                                 $subValues[] = ',';
                                 $subValue = '';
                             }
@@ -512,7 +519,7 @@ class CSSTidy
                             $subValue .= $this->unicode($string, $i);
                         } elseif ($current === ';' || $pn) {
                             if ($selector{0} === '@' && isset(self::$atRules[$selector]) && self::$atRules[$selector] === 'iv') {
-                                $subValues[] = trim($subValue);
+                                $subValues[] = trim($subValue, self::$whitespace);
 
                                 $status = 'is';
 
@@ -569,8 +576,8 @@ class CSSTidy
 
                             $property = strtolower($property);
 
-                            if (trim($subValue) != '') {
-                                $subValues[] = trim($subValue);
+                            if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
+                                $subValues[] = $trimmed;
                                 $subValue = '';
                             }
 
@@ -613,11 +620,9 @@ class CSSTidy
                     } elseif (!$pn) {
                         $subValue .= $current;
 
-                        if (ctype_space($current)) {
-                            if (trim($subValue) != '') {
-                                $subValues[] = trim($subValue);
-                                $subValue = '';
-                            }
+                        if (ctype_space($current) && ($trimmed = trim($subValue, self::$whitespace)) !== '') {
+                            $subValues[] = $trimmed;
+                            $subValue = '';
                         }
                     }
                     break;
@@ -831,7 +836,7 @@ class CSSTidy
      */
     protected function removeQuotes($string, $from)
     {
-        if (preg_match('|[' . implode('', self::$whitespace) . ']|uis', $string)) { // If string contains whitespace
+        if (preg_match('|[' . self::$whitespace . ']|uis', $string)) { // If string contains whitespace
             if (strpos($string, '"') === false) { // Convert all possible single quote to double quote
                 return '"' . substr($string, 1, -1) . '"';
             }
@@ -908,7 +913,7 @@ class CSSTidy
      */
     public static function isImportant($value)
     {
-        return isset($value{9}) && substr_compare(str_replace(self::$whitespace, '', $value), '!important', -10, 10, true) === 0;
+        return isset($value{9}) && substr_compare(str_replace(self::$whitespaceArray, '', $value), '!important', -10, 10, true) === 0;
     }
 
     /**
