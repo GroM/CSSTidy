@@ -1,10 +1,10 @@
 <?php
-
+namespace CSSTidy\Test;
 /**
  * Custom test reporter for CSSTidy, adds appropriate CSS declarations
  * for diffs.
  */
-class csstidy_reporter extends HTMLReporter
+class Reporter extends \HTMLReporter
 {
     
     function _getCss() {

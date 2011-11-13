@@ -1,6 +1,6 @@
 <?php
 
-require_once 'class.Text_Diff_Renderer_parallel.php';
+require_once 'Text_Diff_Renderer_Parallel.php';
 
 /**
  * CSSTidy CSST expectation, for testing CSS parsing.
@@ -37,22 +37,24 @@ class csstidy_csst extends SimpleExpectation
      */
     function load($filename) {
         $this->filename = $filename;
-        $fh = fopen($filename, 'r');
-        $state = '';
-        while (($line = fgets($fh)) !== false) {
-            $line = rtrim($line, "\n\r"); // normalize newlines
-            if (substr($line, 0, 2) == '--') {
+
+        $lines = file($filename, FILE_IGNORE_NEW_LINES);
+        $state = null;
+
+        foreach ($lines as $line) {
+
+            if ($line{0} === '-' && $line{1} === '-') {
                 // detected section
                 $state = $line;
                 continue;
             }
-            if ($state === null) continue;
+
             switch ($state) {
                 case '--TEST--':
-                    $this->test    = trim($line);
+                    $this->test = trim($line);
                     break;
                 case '--CSS--':
-                    $this->css    .= $line . "\n";
+                    $this->css .= $line . "\n";
                     break;
                 case '--FULLEXPECT--':
                     $this->fullexpect = true;
@@ -62,7 +64,7 @@ class csstidy_csst extends SimpleExpectation
                     $this->expect .= $line . "\n";
                     break;
                 case '--SETTINGS--':
-                    list($n, $v) = array_map('trim',explode('=', $line, 2));
+                    list($n, $v) = array_map('trim', explode('=', $line, 2));
                     $v = eval("return $v;");
                     $this->settings[$n] = $v;
                     break;
@@ -72,23 +74,23 @@ class csstidy_csst extends SimpleExpectation
                     break;
             }
         }
-				if ($this->print) {
-					$this->expect = trim($this->expect);
-				}
-				else {
-					if ($this->expect)
-						$this->expect = eval("return ".$this->expect.";");
-					if (!$this->fullexpect)
-						$this->expect = array(41=>$this->expect);
-				}
-        fclose($fh);
+
+        if ($this->print) {
+            $this->expect = trim($this->expect);
+        } else {
+            if ($this->expect)
+                $this->expect = eval("return ".$this->expect.";");
+            if (!$this->fullexpect)
+                $this->expect = array(41 => $this->expect);
+        }
     }
     
     /**
      * Implements SimpleExpectation::test().
      * @param $filename Filename of test file to test.
      */
-    function test($filename = false) {
+    function test($filename = false)
+    {
         if ($filename) $this->load($filename);
         $configure = new CSSTidy\Configuration($this->settings);
         $css = new CSSTidyTest($configure);
@@ -105,7 +107,8 @@ class csstidy_csst extends SimpleExpectation
     /**
      * Implements SimpleExpectation::testMessage().
      */
-    function testMessage() {
+    function testMessage()
+    {
         $message = $this->test . ' test at '. htmlspecialchars($this->filename);
         return $message;
     }
@@ -113,7 +116,8 @@ class csstidy_csst extends SimpleExpectation
     /**
      * Renders the test with an HTML diff table.
      */
-    function render() {
+    function render()
+    {
         $message = '<pre>'. htmlspecialchars($this->css) .'</pre>';
         $diff = new Text_Diff(
 						'auto',
@@ -122,7 +126,7 @@ class csstidy_csst extends SimpleExpectation
 								explode("\n", $this->print?$this->actual:var_export($this->actual,true))
 						)
 				);
-        $renderer = new Text_Diff_Renderer_parallel();
+        $renderer = new Text_Diff_Renderer_Parallel;
         $renderer->original = 'Expected';
         $renderer->final    = 'Actual';
         $message .= $renderer->render($diff);

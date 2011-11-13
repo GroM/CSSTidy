@@ -4,7 +4,7 @@
  * Parallel diff renderer for HTML tables with original text on left,
  * new text on right, and changed text highlighted with appropriate classes.
  */
-class Text_Diff_Renderer_parallel extends Text_Diff_Renderer
+class Text_Diff_Renderer_Parallel extends Text_Diff_Renderer
 {
     /** String header for left column */
     var $original = 'Original';
