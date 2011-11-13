@@ -627,7 +627,7 @@ class CSSTidy
                     //}
                     if ($current === $stringChar && !self::escaped($string, $i) && !$strInStr) {
                         $status = $from;
-                        if (!preg_match('|[' . implode('', self::$whitespace) . ']|uis', $currentString) && $property !== 'content') {
+                        if (!preg_match('|[' . implode('', self::$whitespace) . ']|uis', $currentString) && $property !== 'content' && $property !== 'quotes') {
                             if (!$quotedString) {
                                 if ($stringChar === '"' || $stringChar === '\'') {
                                     // Temporarily disable this optimization to avoid problems with @charset rule, quote properties, and some attribute selectors...

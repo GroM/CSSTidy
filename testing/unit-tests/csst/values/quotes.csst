@@ -1,0 +1,20 @@
+--TEST--
+Test color optimisation
+--CSS--
+a {
+    quotes:"" "";
+}
+b {
+    quotes: "«" "»" "'" "'";
+}
+--EXPECT--
+array (
+  'a' =>
+  array (
+    'quotes' => '"" ""',
+  ),
+  'b' =>
+  array (
+    'quotes' => '"«" "»" "\'" "\'"',
+  ),
+)
