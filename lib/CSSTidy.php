@@ -820,9 +820,10 @@ class CSSTidy
     protected function removeQuotes($string, $from)
     {
         if (preg_match('|[' . implode('', self::$whitespace) . ']|uis', $string)) { // If string contains whitespace
-            if (strpos($string, '\"') === false) { // Convert all possible single quote to double quote
+            if (strpos($string, '"') === false) { // Convert all possible single quote to double quote
                 return '"' . substr($string, 1, -1) . '"';
             }
+            return $string;
         }
 
         if ($from === 'inbrck' && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
