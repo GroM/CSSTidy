@@ -561,7 +561,7 @@ class CSSTidy
                             $value = $this->optimise->value($property, $value);
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
-                            if ((!$invalidAtRule || $this->configuration->getPreserveCss()) && (!$this->configuration->getDiscardInvalidProperties() || $valid)) {
+                            if ((!$invalidAtRule || $preserveCss) && (!$this->configuration->getDiscardInvalidProperties() || $valid)) {
                                 if (!$preserveCss) {
                                     $parsed->addProperty($at, $selector, $property, $value);
                                     $parsed->addToken(self::VALUE, $value);
