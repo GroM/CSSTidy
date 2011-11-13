@@ -74,7 +74,7 @@ class Optimise
      * @static
      * @var array
      */
-    public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz','dpi','dpcm','dppx');
+    public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz','dpi','dpcm','dppx', 'fr', 'gr');
 
     /**
      * Properties that need a value with unit
@@ -481,7 +481,7 @@ class Optimise
             $important = '!important';
         }
 
-        $values = explode(' ', $value);
+        $values = $this->explodeWs(' ', $value);
         switch (count($values)) {
             case 4:
                 if ($values[0] == $values[1] && $values[0] == $values[2] && $values[0] == $values[3]) {
@@ -592,8 +592,8 @@ class Optimise
                 $color = self::$replaceColors[strtolower($color)];
             }
         }
-
-        if (strlen($color) === 7 && $color{0} === '#') {
+            // strlen($color) === 7
+        if (isset($color{6}) && !isset($color{7}) && $color{0} === '#') {
             $color = strtolower($color); // Lower hex color for better gziping
 
             // #aabbcc -> #abc
@@ -929,7 +929,7 @@ class Optimise
             $important = '!important';
         }
 
-        $values = explode(' ', $value);
+        $values = $this->explodeWs(' ', $value);
 
         $return = array();
         switch (count($values)) {
