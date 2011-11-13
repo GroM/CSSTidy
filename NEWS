@@ -10,6 +10,8 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 # CSSTidy->parse method returns instance of CSSTidy\Output
 # Some methods and properties moved from CSSTidy class to CSSTidy\Parsed
 # Logger has own class
+# Templates are now classes, for loading template from file or string
+  use CSSTidy\Template::loadFromString($string)
 ! CSSTidy\Output->formattedPage added, returns a full HTML page based
   off of CSSTidy\Output->formatted
 ! cssparsed.css created, contains just the CSS for formatted CSS output

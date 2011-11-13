@@ -58,11 +58,10 @@ class Configuration
         CSS3_0 = 'CSS3.0';
 
     // Constants for predefinedTemplate
-    const DEFAULT_COMPRESSION = 'default',
-        HIGHEST_COMPRESSION = 'highest_compression',
-        HIGH_COMPRESSION = 'high_compression',
-        LOW_COMPRESSION = 'low_compression',
-        OWN_COMPRESSION = 'own_compression';
+    const STANDARD_COMPRESSION = 'standard',
+        HIGHEST_COMPRESSION = 'highest',
+        HIGH_COMPRESSION = 'high',
+        LOW_COMPRESSION = 'low';
 
     // Constants for caseProperties
     const NONE = 0,
@@ -129,11 +128,11 @@ class Configuration
     /** @var string */
     protected $cssLevel = self::CSS2_1;
 
-    /** @var array */
-    protected $template = array();
+    /** @var Template */
+    protected $template;
 
     /** @var string */
-    protected $predefinedTemplateName = self::DEFAULT_COMPRESSION;
+    protected $predefinedTemplateName = self::STANDARD_COMPRESSION;
 
     /**
      * @param array $configuration
@@ -176,7 +175,8 @@ class Configuration
                     break;
 
                 case 'default':
-                    $this->loadPredefinedTemplate(self::DEFAULT_COMPRESSION);
+                case 'standard':
+                    $this->loadPredefinedTemplate(self::STANDARD_COMPRESSION);
                     break;
 
                 default:
@@ -436,44 +436,11 @@ class Configuration
     }
 
     /**
-     * @param array $template
+     * @param Template $template
      */
-    public function setTemplate(array $template)
+    public function setTemplate(Template $template)
     {
-        $count = count($template);
-
-        if ($count !== self::TEMPLATE_ITEMS) {
-            throw new \InvalidArgumentException('Template must contains ' . self::TEMPLATE_ITEMS . " items, $count given");
-        }
-
         $this->template = $template;
-        $this->predefinedTemplateName = null;
-    }
-
-    /**
-     * @param string $filename
-     * @throws \Exception
-     */
-    public function loadTemplateFromFile($filename)
-    {
-        $content = file_get_contents($filename);
-
-        if (!$content) {
-            throw new \Exception("Template file $filename cannot be loaded");
-        }
-
-        $this->loadTemplateFromString($content);
-    }
-
-    /**
-     * @param string $content
-     */
-    public function loadTemplateFromString($content)
-    {
-        $content = strip_tags($content, '<span>');
-
-        $content = str_replace("\r\n", "\n", $content); // Unify newlines (because the output also only uses \n)
-        $this->setTemplate(explode('|', $content));
         $this->predefinedTemplateName = null;
     }
 
@@ -483,14 +450,20 @@ class Configuration
      */
     public function loadPredefinedTemplate($template)
     {
-        $predefined = $this->getPredefinedTemplates();
-
-        if (isset($predefined[$template])) {
-            $this->setTemplate($predefined[$template]);
-            $this->predefinedTemplateName = $template;
-        } else {
-            throw new \Exception("Predefined template with name '$template' not found");
+        $location = __DIR__ . "/templates/" . ucfirst($template) . ".php";
+        if (!file_exists($location)) {
+            throw new \Exception("File with predefined template '$template' not found in '$location'");
         }
+
+        require_once $location;
+
+        $className = "\\CSSTidy\\Template\\" . ucfirst($template);
+        if (!class_exists($className)) {
+            throw new \Exception("Predefined template with name '$template' not found in file '$location'");
+        }
+
+        $this->setTemplate(new $className);
+        $this->predefinedTemplateName = $template;
     }
 
     /**
@@ -507,7 +480,7 @@ class Configuration
     }
 
     /**
-     * @return array
+     * @return Template
      */
     public function getTemplate()
     {
@@ -546,81 +519,5 @@ class Configuration
             $type = gettype($bool);
             throw new \InvalidArgumentException("Method $method accept only bool data type, $type given");
         }
-    }
-
-    /**
-     * @return array
-     */
-    protected function getPredefinedTemplates()
-    {
-        return array(
-            self::DEFAULT_COMPRESSION => array(
-                '<span class="at">', //string before @rule
-                '</span> <span class="format">{</span>'."\n", //bracket after @-rule
-                '<span class="selector">', //string before selector
-                '</span> <span class="format">{</span>'."\n", //bracket after selector
-                '<span class="property">', //string before property
-                '</span><span class="value">', //string after property+before value
-                '</span><span class="format">;</span>'."\n", //string after value
-                '<span class="format">}</span>', //closing bracket - selector
-                "\n\n", //space between blocks {...}
-                "\n".'<span class="format">}</span>'. "\n\n", //closing bracket @-rule
-                '', //indent in @-rule
-                '<span class="comment">', // before comment
-                '</span>'."\n", // after comment
-                "\n", // after last line @-rule
-            ),
-
-            self::HIGH_COMPRESSION => array(
-                '<span class="at">',
-                '</span> <span class="format">{</span>'."\n",
-                '<span class="selector">',
-                '</span><span class="format">{</span>',
-                '<span class="property">',
-                '</span><span class="value">',
-                '</span><span class="format">;</span>',
-                '<span class="format">}</span>',
-                "\n",
-                "\n". '<span class="format">}'."\n".'</span>',
-                '',
-                '<span class="comment">', // before comment
-                '</span>', // after comment
-                "\n",
-            ),
-
-            self::HIGHEST_COMPRESSION => array(
-                '<span class="at">',
-                '</span><span class="format">{</span>',
-                '<span class="selector">',
-                '</span><span class="format">{</span>',
-                '<span class="property">',
-                '</span><span class="value">',
-                '</span><span class="format">;</span>',
-                '<span class="format">}</span>',
-                '',
-                '<span class="format">}</span>',
-                '',
-                '<span class="comment">', // before comment
-                '</span>', // after comment
-                '',
-            ),
-
-            self::LOW_COMPRESSION => array(
-                '<span class="at">',
-                '</span> <span class="format">{</span>'."\n",
-                '<span class="selector">',
-                '</span>'."\n".'<span class="format">{</span>'."\n",
-                "\t" . '<span class="property">',
-                '</span><span class="value">',
-                '</span><span class="format">;</span>'."\n",
-                '<span class="format">}</span>',
-                "\n\n",
-                "\n".'<span class="format">}</span>'."\n\n",
-                "\t",
-                '<span class="comment">', // before comment
-                '</span>'."\n", // after comment
-                "\n",
-            )
-        );
     }
 }

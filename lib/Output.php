@@ -244,7 +244,7 @@ html;
             $this->outputCss = $this->tokensToCss($template, false);
         }
 
-        $template = array_map('strip_tags', $template);
+        $template = $template->getWithoutHtml();
         $this->outputCssPlain = $this->tokensToCss($template, true);
 
         // If using spaces in the template, don't want these to appear in the plain output
@@ -252,16 +252,16 @@ html;
     }
 
     /**
-     * @param array $template
+     * @param Template $template
      * @param bool $plain
      * @return string
      */
-    protected function tokensToCss(array $template, $plain)
+    protected function tokensToCss(Template $template, $plain)
     {
         $output = '';
 
         if (!empty($this->parsed->charset)) {
-            $output .= $template[0] . '@charset ' . $template[5] . $this->parsed->charset . $template[6];
+            $output .= "{$template->beforeAtRule}@charset {$template->beforeValue}{$this->parsed->charset}{$template->afterValueWithSemicolon}";
         }
 
         foreach ($this->parsed->import as $import) {
@@ -272,7 +272,7 @@ html;
                 $this->logger->log('Optimised @import: Removed "url("', Logger::INFORMATION);
             }
 
-            $output .= $template[0] . '@import' . $template[5] . $import . $template[6];
+            $output .= "{$template->beforeAtRule}@import{$template->beforeValue}{$import}{$template->afterValueWithSemicolon}";
         }
 
         if (!empty($this->parsed->namespace)) {
@@ -280,10 +280,10 @@ html;
                 $this->parsed->namespace = '\'' . substr($this->parsed->namespace, 4, -1) . '\'';
                 $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
             }
-            $output .= $template[0] . '@namespace ' . $template[5] . $this->parsed->namespace . $template[6];
+            $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$this->parsed->namespace}{$template->afterValueWithSemicolon}";
         }
 
-        $output .= $template[13];
+        $output .= $template->lastLineInAtRule;
         $in_at_out = '';
         $out = & $output;
 
@@ -295,15 +295,15 @@ html;
                     } elseif ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
                         $token[1] = strtoupper($token[1]);
                     }
-                    $out .= $template[4] . $this->htmlsp($token[1], $plain) . ':' . $template[5];
+                    $out .= $template->beforeProperty . $this->htmlsp($token[1], $plain) . ':' . $template->beforeValue;
                     break;
 
                 case CSSTidy::VALUE:
                     $out .= $this->htmlsp($token[1], $plain);
                     if ($this->seekNoComment($key, 1) === CSSTidy::SEL_END && $this->configuration->getRemoveLastSemicolon()) {
-                        $out .= str_replace(';', '', $template[6]);
+                        $out .= str_replace(';', '', $template->afterValueWithSemicolon);
                     } else {
-                        $out .= $template[6];
+                        $out .= $template->afterValueWithSemicolon;
                     }
                     break;
 
@@ -311,30 +311,30 @@ html;
                     if ($this->configuration->getLowerCaseSelectors()) {
                         $token[1] = strtolower($token[1]);
                     }
-                    $out .= $template[ $token[1]{0} !== '@' ? 2 : 0 ] . $this->htmlsp($token[1], $plain) . $template[3];
+                    $out .= ($token[1]{0} !== '@' ? $template->beforeSelector : $template->beforeAtRule) . $this->htmlsp($token[1], $plain) . $template->selectorOpeningBracket;
                     break;
 
                 case CSSTidy::SEL_END:
-                    $out .= $template[7];
+                    $out .= $template->selectorClosingBracket;
                     if ($this->seekNoComment($key, 1) !== CSSTidy::AT_END) {
-                        $out .= $template[8];
+                        $out .= $template->spaceBetweenBlocks;
                     }
                     break;
 
                 case CSSTidy::AT_START:
-                    $out .= $template[0] . $this->htmlsp($token[1], $plain) . $template[1];
+                    $out .= $template->beforeAtRule . $this->htmlsp($token[1], $plain) . $template->bracketAfterAtRule;
                     $out = & $in_at_out;
                     break;
 
                 case CSSTidy::AT_END:
                     $out = & $output;
-                    $out .= $template[10] . str_replace("\n", "\n" . $template[10], $in_at_out);
+                    $out .= $template->indentInAtRule . str_replace("\n", "\n" . $template->indentInAtRule, $in_at_out);
                     $in_at_out = '';
-                    $out .= $template[9];
+                    $out .= $template->atRuleClosingBracket;
                     break;
 
                 case CSSTidy::COMMENT:
-                    $out .= $template[11] . '/*' . $this->htmlsp($token[1], $plain) . '*/' . $template[12];
+                    $out .= $template->beforeComment . '/*' . $this->htmlsp($token[1], $plain) . '*/' . $template->afterComment;
                     break;
             }
         }
