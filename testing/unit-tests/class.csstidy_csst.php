@@ -120,17 +120,28 @@ class csstidy_csst extends SimpleExpectation
     {
         $message = '<pre>'. htmlspecialchars($this->css) .'</pre>';
         $diff = new Text_Diff(
-						'auto',
-						array(
-								explode("\n", $this->print?$this->expect:var_export($this->expect,true)),
-								explode("\n", $this->print?$this->actual:var_export($this->actual,true))
-						)
-				);
+            'auto',
+            array(
+                $this->convertToDiff($this->expect),
+                $this->convertToDiff($this->actual)
+            )
+        );
+
         $renderer = new Text_Diff_Renderer_Parallel;
         $renderer->original = 'Expected';
         $renderer->final    = 'Actual';
+
         $message .= $renderer->render($diff);
         return $message;
+    }
+
+    /**
+     * @param string $data
+     * @return array
+     */
+    protected function convertToDiff($data)
+    {
+        return explode("\n", $this->print ? $data : var_export($data, true));
     }
 }
 

@@ -5,7 +5,7 @@ require_once 'class.csstidy_csst.php';
 /**
  * Performs the csst tests in csst/ folder
  */
-class csstidy_test_csst extends csstidy_harness
+class csstidy_test_csst extends \CSSTidy\Test\Harness
 {
     function testAll() {
         $files = globr(dirname(__FILE__) . '/csst', '*.csst');

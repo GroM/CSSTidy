@@ -1,9 +1,9 @@
 <?php
-
+namespace CSSTidy\Test;
 /**
  * Base test harness for CSSTidy, please make all tests inherit from this.
  */
-class csstidy_harness extends UnitTestCase
+class Harness extends \UnitTestCase
 {
     /**
      * Modified testing algorithm that allows a single test method to be

@@ -72,7 +72,7 @@ class UnitTests
         require_once $location . 'reporter.php';
 
         require_once __DIR__ . '/unit-tests/Reporter.php';
-        require_once __DIR__ . '/unit-tests/class.csstidy_harness.php';
+        require_once __DIR__ . '/unit-tests/Harness.php';
         require_once __DIR__ . '/unit-tests.inc';
     }
 
