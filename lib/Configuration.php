@@ -180,7 +180,7 @@ class Configuration
                     break;
 
                 default:
-                    $this->loadTemplateFromFile($configuration['template']);
+                    throw new \Exception("Cannot translate template name '{$configuration['template']}' to new version");
             }
         }
     }
