@@ -375,26 +375,35 @@ class CSSTidy
                             ++$i;
                             $from = 'is';
                         } elseif ($current === '@' && trim($selector) == '') {
-                            // Check for at-rule
-                            $invalidAtRule = true;
-                            foreach (self::$atRules as $name => $type) {
-                                if (!substr_compare($string, $name, $i, strlen($name), true)) {
-                                    ($type === 'at') ? $at = $name : $selector = $name;
-                                    $status = $type;
-                                    $i += strlen($name) - 1;
-                                    $invalidAtRule = false;
-                                }
-                            }
+                            $selector = '@';
+                            $tokensList = ' ' . str_replace('\\', '', self::$tokensList); // Add space ' ' and remove backslash
 
-                            if ($invalidAtRule) {
-                                $selector = '@';
-                                $invalidAtName = '';
-                                for ($j = $i + 1; $j < $size; ++$j) {
-                                    if (!ctype_alpha($string{$j})) {
-                                        break;
-                                    }
-                                    $invalidAtName .= $string{$j};
+                            do {
+                                $c = $string{++$i};
+                                if ($c === '\\') {
+                                    $selector .= $this->unicode($string, $i);
+                                } else if (strpos($tokensList, $c) !== false) {
+                                    --$i;
+                                    break;
+                                } else {
+                                    $selector .= $c;
                                 }
+                            } while (true);
+
+                            $selector = strtolower($selector);
+
+                            // Check for at-rule
+                            if (isset(self::$atRules[$selector])) {
+                                $type = self::$atRules[$selector];
+                                if ($type === 'at') {
+                                    $at = $selector;
+                                    $selector = '';
+                                }
+                                $status = $type;
+                            } else {
+                                $invalidAtRule = false;
+                                $invalidAtName = $selector;
+                                $selector = '@';
                                 $this->logger->log("Invalid @-rule: $invalidAtName (removed)", Logger::WARNING);
                             }
                         } elseif ($current === '"' || $current === "'") {

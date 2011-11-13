@@ -1,0 +1,13 @@
+--TEST--
+Import
+--CSS--
+@\N\000041 mes\pac\65  x "http://www.w3.org/1999/xhtml";
+@NAmespace  y "http://www.w3.org/1999/xhtml";
+a {color:red}
+--PRINT--
+@namespace x "http://www.w3.org/1999/xhtml";
+@namespace y "http://www.w3.org/1999/xhtml";
+
+a {
+color:red
+}
