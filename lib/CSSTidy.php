@@ -69,7 +69,7 @@ class CSSTidy
      * @var array
      * @version 1.0
      */
-    public static $whitespace = array(' ', "\n", "\r", "\x0B");
+    public static $whitespace = array(' ', "\n", "\t", "\x0B");
 
     /**
      * All CSS tokens used by csstidy
@@ -343,7 +343,7 @@ class CSSTidy
         // Initialize variables
         $preserveCss = $this->configuration->getPreserveCss();
         $currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
-        $quotedString = $strInStr = $invalidAtRule = false;
+        $quotedString = $invalidAtRule = false;
         $bracketCount = 0;
 
         /*
@@ -351,7 +351,8 @@ class CSSTidy
          * - is = in selector
          * - ip = in property
          * - iv = in value
-         * - instr = in string (started at " or ' or ( )
+         * - instr = in string (started at " or ')
+         * - inbrck = in bracket (started by ()
          * - ic = in comment (ignore everything)
          * - at = in @-block
          */
@@ -479,14 +480,15 @@ class CSSTidy
                             $status = 'ic';
                             ++$i;
                             $from = 'iv';
-                        } elseif (($current === '"' || $current === "'" || $current === '(')) {
+                        } elseif ($current === '"' || $current === "'") {
                             $currentString = $current;
-                            $stringChar = ($current === '(') ? ')' : $current;
-                            if ($current === '(') {
-                                $bracketCount = 1;
-                            }
                             $status = 'instr';
+                            $stringChar = $current;
                             $from = 'iv';
+                        } elseif ($current === '(') {
+                            $subValue .= $current;
+                            $bracketCount = 1;
+                            $status = 'inbrck';
                         } elseif ($current === ',') {
                             if (trim($subValue) != '') {
                                 $subValues[] = trim($subValue);
@@ -561,6 +563,7 @@ class CSSTidy
 
                             foreach ($subValues as &$sbv) {
                                 if (strncmp($sbv, 'format(', 7) == 0) {
+                                    // format() value must be inside quotes
                                     $sbv = str_replace(array('format(', ')'), array('format("', '")'), $sbv);
                                 }
                             }
@@ -606,58 +609,51 @@ class CSSTidy
                     }
                     break;
 
-                /* Case in string */
-                case 'instr':
-                    if ($stringChar === ')') {
+                /* Case data in bracket */
+                case 'inbrck':
+                    if (strpos("\"'() ,\n", $current) !== false) {
                         if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
-                            $strInStr = !$strInStr;
-                        } else if ($current === '(' && !$strInStr) {
+                            $status = 'instr';
+                            $from = 'inbrck';
+                            $currentString = $current;
+                            $stringChar = $current;
+                            continue;
+                        } else if ($current === '(') {
                             ++$bracketCount;
-                        } else if ($current === ')' && !$strInStr && --$bracketCount !== 0) {
-                            $currentString .= ')';
-                            break;
+                        } else if ($current === ')' && --$bracketCount === 0) {
+                            $status = 'iv'; // Go back to 'in value' parser
+                        } else if (($current === ' ' || $current === "\n") && (substr($subValue, -1) === ' ' || substr($subValue, -1) === ',')) {
+                            continue; // Remove multiple spaces and space after ','
+                        } else if ($current === ',' && substr($subValue, -1) === ' ') {
+                            $subValue = substr($subValue, 0, -1); // Remove space before ','
+                        } else if ($current === "\n") {
+                            $current = ' '; // Change new line character to normal space
                         }
                     }
 
+                    $subValue .= $current;
+                    break;
+
+                /* Case in string */
+                case 'instr':
                     // ...and no not-escaped backslash at the previous position
-                    $temp_add = $current;
                     if ($current === "\n" && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
-                        $temp_add = "\\A ";
+                        $current = "\\A ";
                         $this->logger->log('Fixed incorrect newline in string', Logger::WARNING);
                     }
-                    // this optimisation remove space in css3 properties (see vendor-prefixed/webkit-gradient.csst)
-                    //if (!($stringChar === ')' && in_array($current, self::$whitespace) && !$strInStr)) {
-                        $currentString .= $temp_add;
-                    //}
-                    if ($current === $stringChar && !self::escaped($string, $i) && !$strInStr) {
+
+                    $currentString .= $current;
+
+                    if ($current === $stringChar && !self::escaped($string, $i)) {
                         $status = $from;
                         if (!preg_match('|[' . implode('', self::$whitespace) . ']|uis', $currentString) && $property !== 'content' && $property !== 'quotes') {
                             if (!$quotedString) {
-                                if ($stringChar === '"' || $stringChar === '\'') {
-                                    // Temporarily disable this optimization to avoid problems with @charset rule, quote properties, and some attribute selectors...
-                                    // Attribute selectors fixed, added quotes to @chartset, no problems with properties detected. Enabled
-                                    $currentString = substr($currentString, 1, -1);
-                                } else if (isset($currentString{3}) && ($currentString{1} === '"' || $currentString{1} === '\'')) /* () */ {
-                                    $inside = substr($currentString, 2, -2);
-                                    if (strpos($inside, '(') === false) { // if inside string contains '(', don't remove quotations mark
-                                        $currentString = $currentString{0} . $inside  . substr($currentString, -1);
-                                    }
-                                }
+                                $currentString = $this->removeQuotes($currentString, $from);
                             } else {
                                 $quotedString = false;
                             }
                         }
-                        if ($from === 'iv') {
-                            if (!$quotedString) {
-                                if (strpos($currentString, ',') !== false) {
-                                    // we can on only remove space next to ','
-                                    $currentString = preg_replace('~\s*,\s*~', ',', $currentString);
-                                }
-                                // and multiple spaces (too expensive)
-                                if (strpos($currentString, '  ') !== false) {
-                                    $currentString = preg_replace('~\s{2,}~', ' ', $currentString);
-                                }
-                            }
+                        if ($from === 'iv' || $from === 'inbrck') {
                             $subValue .= $currentString;
                         } elseif ($from === 'is') {
                             $selector .= $currentString;
@@ -813,6 +809,21 @@ class CSSTidy
         }
 
         return ltrim($output, ' ');
+    }
+
+    /**
+     * @todo Check all possible bugs
+     * @param string $string
+     * @param string $from
+     * @return mixed
+     */
+    protected function removeQuotes($string, $from)
+    {
+        if ($from === 'inbrck' && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
+            return $string;
+        }
+
+        return substr($string, 1, -1);
     }
 
     /**
