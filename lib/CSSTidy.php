@@ -376,7 +376,8 @@ class CSSTidy
                             $from = 'is';
                         } elseif ($current === '@' && trim($selector) == '') {
                             $selector = '@';
-                            $tokensList = ' ' . str_replace('\\', '', self::$tokensList); // Add space ' ' and remove backslash
+                            // Add whitespaces and remove backslash
+                            $tokensList = implode('', self::$whitespace) . str_replace('\\', '', self::$tokensList);
 
                             do {
                                 $c = $string{++$i};
