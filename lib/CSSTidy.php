@@ -649,18 +649,15 @@ class CSSTidy
 
                     if ($current === $stringChar && !self::escaped($string, $i)) {
                         $status = $from;
-                        if (!preg_match('|[' . implode('', self::$whitespace) . ']|uis', $currentString) && $property !== 'content' && $property !== 'quotes') {
-                            if (!$quotedString) {
-                                $currentString = $this->removeQuotes($currentString, $from);
-                            } else {
-                                $quotedString = false;
-                            }
+                        if ($property !== 'content' && $property !== 'quotes' && !$quotedString) {
+                            $currentString = $this->removeQuotes($currentString, $from);
                         }
                         if ($from === 'iv' || $from === 'inbrck') {
                             $subValue .= $currentString;
                         } elseif ($from === 'is') {
                             $selector .= $currentString;
                         }
+                        $quotedString = false;
                     }
                     break;
 
@@ -822,6 +819,12 @@ class CSSTidy
      */
     protected function removeQuotes($string, $from)
     {
+        if (preg_match('|[' . implode('', self::$whitespace) . ']|uis', $string)) { // If string contains whitespace
+            if (strpos($string, '\"') === false) { // Convert all possible single quote to double quote
+                return '"' . substr($string, 1, -1) . '"';
+            }
+        }
+
         if ($from === 'inbrck' && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
             return $string;
         }
