@@ -560,11 +560,6 @@ class CSSTidy
                                 }
                             }
 
-                            /*$value = array_shift($subValues);
-                            while (!empty($subValues)) {
-                                $value .= ($value === ',' ? '' : ' ') . array_shift($subValues);
-                            }*/
-
                             $value = $this->mergeSubValues($subValues);
                             $value = $this->optimise->value($property, $value);
 
@@ -797,17 +792,20 @@ class CSSTidy
     protected function mergeSubValues(array $subValues)
     {
         $prev = false;
-        foreach ($subValues as &$subValue) {
+        $output = '';
+
+        foreach ($subValues as $subValue) {
             if ($subValue === ',') {
                 $prev = true;
             } else if (!$prev) {
-                $subValue = ' ' . $subValue;
+                $output .= ' ';
             } else {
                 $prev = false;
             }
+            $output .= $subValue;
         }
 
-        return ltrim(implode('', $subValues), ' ');
+        return ltrim($output, ' ');
     }
 
     /**
