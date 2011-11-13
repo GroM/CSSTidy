@@ -4,10 +4,17 @@ Test color optimisation
 div {
     background: red url(support/%27green%20block.png);
 }
+div2 {
+    background: red url(support/\'green\ block.png);
+}
 --EXPECT--
 array (
   'div' =>
   array (
     'background' => 'red url(support/%27green%20block.png)'
   ),
+   'div2' =>
+    array (
+      'background' => 'red url(support/\\\'green\\ block.png)',
+    ),
 )
