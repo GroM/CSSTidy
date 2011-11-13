@@ -1166,9 +1166,9 @@ class Optimise
      */
     protected function dissolveShortFont($value)
     {
-        static $font_weight = array('normal', 'bold', 'bolder', 'lighter', 100, 200, 300, 400, 500, 600, 700, 800, 900);
-        static $font_variant = array('normal', 'small-caps');
-        static $font_style = array('normal', 'italic', 'oblique');
+        static $fontWeight = array('normal', 'bold', 'bolder', 'lighter', 100, 200, 300, 400, 500, 600, 700, 800, 900);
+        static $fontVariant = array('normal', 'small-caps');
+        static $fontStyle = array('normal', 'italic', 'oblique');
 
         $important = '';
         $return = array('font-style' => null, 'font-variant' => null, 'font-weight' => null, 'font-size' => null, 'line-height' => null, 'font-family' => null);
@@ -1194,13 +1194,13 @@ class Optimise
         $value[0] = $this->explodeWs(' ', trim($value[0]));
 
         for ($j = 0; $j < count($value[0]); $j++) {
-            if ($have['weight'] === false && in_array($value[0][$j], $font_weight)) {
+            if ($have['weight'] === false && in_array($value[0][$j], $fontWeight)) {
                 $return['font-weight'] = $value[0][$j];
                 $have['weight'] = true;
-            } elseif ($have['variant'] === false && in_array($value[0][$j], $font_variant)) {
+            } elseif ($have['variant'] === false && in_array($value[0][$j], $fontVariant)) {
                 $return['font-variant'] = $value[0][$j];
                 $have['variant'] = true;
-            } elseif ($have['style'] === false && in_array($value[0][$j], $font_style)) {
+            } elseif ($have['style'] === false && in_array($value[0][$j], $fontStyle)) {
                 $return['font-style'] = $value[0][$j];
                 $have['style'] = true;
             } elseif ($have['size'] === false && (is_numeric($value[0][$j]{0}) || $value[0][$j]{0} === null || $value[0][$j]{0} === '.')) {
@@ -1221,7 +1221,7 @@ class Optimise
                 }
             }
         }
-        // add quotes if we have several qords in font-family
+        // add quotes if we have several words in font-family
         if ($multiwords !== false) {
             $return['font-family'] = '"' . $return['font-family'] . '"';
         }
