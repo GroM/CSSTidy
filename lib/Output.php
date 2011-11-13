@@ -265,8 +265,7 @@ html;
         }
 
         foreach ($this->parsed->import as $import) {
-            // Replace url('abc.css') with 'abc.css'
-            $replaced = preg_replace('~url\(["\']?([^\)\'"]*)["\']?\)~', '"$1"', $import);
+            $replaced = $this->removeUrl($import);
             if ($replaced !== $import) {
                 $import = $replaced;
                 $this->logger->log('Optimised @import: Removed "url("', Logger::INFORMATION);
@@ -276,8 +275,9 @@ html;
         }
 
         if (!empty($this->parsed->namespace)) {
-            if (substr($this->parsed->namespace, 0, 4) === 'url(' && substr($this->parsed->namespace, -1, 1) === ')') {
-                $this->parsed->namespace = '"' . substr($this->parsed->namespace, 4, -1) . '"';
+            $replaced = $this->removeUrl($this->parsed->namespace);
+            if ($replaced !== $this->parsed->namespace) {
+                $this->parsed->namespace = $replaced;
                 $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
             }
             $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$this->parsed->namespace}{$template->afterValueWithSemicolon}";
@@ -440,11 +440,21 @@ html;
      * @access private
      * @version 1.0
      */
-    protected  function htmlsp($string, $plain)
+    protected function htmlsp($string, $plain)
     {
         if (!$plain) {
             return htmlspecialchars($string, ENT_QUOTES, 'utf-8');
         }
         return $string;
+    }
+
+    /**
+     * Replace url('abc.css') with "abc.css"
+     * @param string $string
+     * @return string
+     */
+    protected function removeUrl($string)
+    {
+        return preg_replace('~url\(["\']?([^\)\'" ]*)["\']?[ ]?\)~', '"$1"', $string);
     }
 }
