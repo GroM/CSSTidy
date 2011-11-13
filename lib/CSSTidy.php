@@ -431,9 +431,12 @@ class CSSTidy
                             $selector .= $current;
                         }
                     } else {
-                        $lastpos = strlen($selector) - 1;
-                        if ($lastpos == -1 || !( (ctype_space($selector{$lastpos}) || $this->isToken($selector, $lastpos) && $selector{$lastpos} === ',') && ctype_space($current))) {
+                        if (!isset($selector{0})) {
                             $selector .= $current;
+                        } else {
+                            if (!(ctype_space($current) && (($last = substr($selector, -1)) === ',' || ctype_space($last)))) {
+                                $selector .= $current;
+                            }
                         }
                     }
                     break;
