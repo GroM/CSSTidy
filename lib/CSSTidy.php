@@ -845,7 +845,7 @@ class CSSTidy
         $add = '';
         $replaced = false;
 
-        while ($i < strlen($string) && (ctype_xdigit($string{$i}) || ctype_space($string{$i})) && strlen($add) < 6) {
+        while (isset($string{$i}) && (ctype_xdigit($string{$i}) || ctype_space($string{$i})) && !isset($add{6})) {
             $add .= $string{$i};
 
             if (ctype_space($string{$i})) {
@@ -860,10 +860,10 @@ class CSSTidy
             $add = chr($hexDecAdd);
             $replaced = true;
         } else {
-            $add = trim('\\' . $add);
+            $add = $add === ' ' ? '\\' . $add : trim('\\' . $add);
         }
 
-        if (@ctype_xdigit($string{$i + 1}) && ctype_space($string{$i})
+        if (isset($string{$i + 1}) && ctype_xdigit($string{$i + 1}) && ctype_space($string{$i})
                         && !$replaced || !ctype_space($string{$i})) {
             $i--;
         }
