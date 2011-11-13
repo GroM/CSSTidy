@@ -1,0 +1,13 @@
+--TEST--
+Test color optimisation
+--CSS--
+div {
+    background: red url(support/%27green%20block.png);
+}
+--EXPECT--
+array (
+  'div' =>
+  array (
+    'background' => 'red url(support/%27green%20block.png)'
+  ),
+)
