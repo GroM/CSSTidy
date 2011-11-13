@@ -7,6 +7,13 @@ a {
 b {
     quotes: "«" "»" "'" "'";
 }
+c {
+    content: "Ahoj
+svete";
+}
+d {
+    content: counter(par-num, upper-roman) ". "
+}
 --EXPECT--
 array (
   'a' =>
@@ -16,5 +23,13 @@ array (
   'b' =>
   array (
     'quotes' => '"«" "»" "\'" "\'"',
+  ),
+  'c' =>
+  array (
+    'content' => '"Ahoj\A svete"',
+  ),
+  'd' =>
+  array (
+    'content' => 'counter(par-num,upper-roman) ". "',
   ),
 )
