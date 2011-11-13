@@ -543,10 +543,6 @@ class CSSTidy
                                 $at = $parsed->newMediaSection(self::DEFAULT_AT);
                             }
 
-                            // case settings
-                            if ($this->configuration->getLowerCaseSelectors()) {
-                                $selector = strtolower($selector);
-                            }
                             $property = strtolower($property);
 
                             $subValue = $this->optimise->subValue($property, $subValue);
