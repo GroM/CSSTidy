@@ -1193,18 +1193,18 @@ class Optimise
 
         $value[0] = $this->explodeWs(' ', trim($value[0]));
 
-        for ($j = 0; $j < count($value[0]); $j++) {
-            if ($have['weight'] === false && in_array($value[0][$j], $fontWeight)) {
-                $return['font-weight'] = $value[0][$j];
+        foreach ($value[0] as $propertyValue) {
+            if ($have['weight'] === false && in_array($propertyValue, $fontWeight)) {
+                $return['font-weight'] = $propertyValue;
                 $have['weight'] = true;
-            } elseif ($have['variant'] === false && in_array($value[0][$j], $fontVariant)) {
-                $return['font-variant'] = $value[0][$j];
+            } elseif ($have['variant'] === false && in_array($propertyValue, $fontVariant)) {
+                $return['font-variant'] = $propertyValue;
                 $have['variant'] = true;
-            } elseif ($have['style'] === false && in_array($value[0][$j], $fontStyle)) {
-                $return['font-style'] = $value[0][$j];
+            } elseif ($have['style'] === false && in_array($propertyValue, $fontStyle)) {
+                $return['font-style'] = $propertyValue;
                 $have['style'] = true;
-            } elseif ($have['size'] === false && (is_numeric($value[0][$j]{0}) || $value[0][$j]{0} === null || $value[0][$j]{0} === '.')) {
-                $size = $this->explodeWs('/', trim($value[0][$j]));
+            } elseif ($have['size'] === false && (is_numeric($propertyValue{0}) || $propertyValue{0} === null || $propertyValue{0} === '.')) {
+                $size = $this->explodeWs('/', trim($propertyValue));
                 $return['font-size'] = $size[0];
                 if (isset($size[1])) {
                     $return['line-height'] = $size[1];
@@ -1214,10 +1214,10 @@ class Optimise
                 $have['size'] = true;
             } else {
                 if (isset($return['font-family'])) {
-                    $return['font-family'] .= ' ' . $value[0][$j];
+                    $return['font-family'] .= ' ' . $propertyValue;
                     $multiwords = true;
                 } else {
-                    $return['font-family'] = $value[0][$j];
+                    $return['font-family'] = $propertyValue;
                 }
             }
         }
@@ -1238,13 +1238,14 @@ class Optimise
             unset($return['font-weight']);
         }
 
-        foreach (self::$fontPropDefault as $font_prop => $default_value) {
-            if ($return[$font_prop] !== null) {
-                $return[$font_prop] = $return[$font_prop] . $important;
+        foreach (self::$fontPropDefault as $fontProperty => $default_value) {
+            if ($return[$fontProperty] !== null) {
+                $return[$fontProperty] = $return[$fontProperty] . $important;
             } else {
-                $return[$font_prop] = $default_value . $important;
+                $return[$fontProperty] = $default_value . $important;
             }
         }
+
         return $return;
     }
 
