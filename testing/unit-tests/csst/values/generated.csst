@@ -14,6 +14,19 @@ svete";
 d {
     content: counter(par-num, upper-roman) ". "
 }
+div p:before
+{
+    content:
+            counters(
+                chapter
+                    ,
+                        "."
+                            ,
+                                upper-roman
+                    )
+                    ;
+    counter-increment: chapter;
+}
 --EXPECT--
 array (
   'a' =>
@@ -31,5 +44,10 @@ array (
   'd' =>
   array (
     'content' => 'counter(par-num,upper-roman) ". "',
+  ),
+  'div p:before' =>
+  array (
+    'content' => 'counters(chapter,".",upper-roman)',
+    'counter-increment' => 'chapter',
   ),
 )

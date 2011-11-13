@@ -635,12 +635,14 @@ class CSSTidy
                             ++$bracketCount;
                         } else if ($current === ')' && --$bracketCount === 0) {
                             $status = 'iv'; // Go back to 'in value' parser
-                        } else if (($current === ' ' || $current === "\n") && (substr($subValue, -1) === ' ' || substr($subValue, -1) === ',')) {
-                            continue; // Remove multiple spaces and space after ','
-                        } else if ($current === ',' && substr($subValue, -1) === ' ') {
-                            $subValue = substr($subValue, 0, -1); // Remove space before ','
                         } else if ($current === "\n") {
                             $current = ' '; // Change new line character to normal space
+                        }
+
+                        if ($current === ' ' && in_array(substr($subValue, -1), array(' ', ',', '('))) {
+                            continue; // Remove multiple spaces and space after ','
+                        } else if (($current === ',' || $current === ')') && substr($subValue, -1) === ' ') {
+                            $subValue = substr($subValue, 0, -1); // Remove space before ',' or ')'
                         }
                     }
 
