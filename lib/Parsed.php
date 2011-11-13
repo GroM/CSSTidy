@@ -46,7 +46,7 @@ class Parsed
     public $import = array();
 
     /** @var string */
-    public $namespace = '';
+    public $namespace = array();
 
     /** @var int */
     protected $mergeSelectors;

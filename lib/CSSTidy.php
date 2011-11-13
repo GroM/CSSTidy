@@ -526,7 +526,7 @@ class CSSTidy
                                         break;
 
                                     case '@namespace':
-                                        $parsed->namespace = implode(' ', $subValues);
+                                        $parsed->namespace[] = implode(' ', $subValues);
                                         if (!empty($parsed->css)) {
                                             $this->logger->log("@namespace must be before selectors", Logger::WARNING);
                                         }

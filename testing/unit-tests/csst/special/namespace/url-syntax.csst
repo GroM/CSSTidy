@@ -2,5 +2,15 @@
 Import
 --CSS--
 @namespace url("http://example.com/");
+@namespace a url(test-a);
+@namespace b url('test-b');
+@namespace c url("test-c");
+@namespace d 'test-d';
+@namespace e "test-e";
 --PRINT--
 @namespace"http://example.com/";
+@namespace a "test-a";
+@namespace b "test-b";
+@namespace c "test-c";
+@namespace d "test-d";
+@namespace e "test-e";

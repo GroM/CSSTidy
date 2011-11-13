@@ -274,13 +274,13 @@ html;
             $output .= "{$template->beforeAtRule}@import{$template->beforeValue}{$import}{$template->afterValueWithSemicolon}";
         }
 
-        if (!empty($this->parsed->namespace)) {
-            $replaced = $this->removeUrl($this->parsed->namespace);
-            if ($replaced !== $this->parsed->namespace) {
-                $this->parsed->namespace = $replaced;
+        foreach ($this->parsed->namespace as $namespace) {
+            $replaced = $this->removeUrl($namespace);
+            if ($replaced !== $namespace) {
+                $namespace = $replaced;
                 $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
             }
-            $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$this->parsed->namespace}{$template->afterValueWithSemicolon}";
+            $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$namespace}{$template->afterValueWithSemicolon}";
         }
 
         $output .= $template->lastLineInAtRule;
