@@ -337,8 +337,6 @@ class Optimise
             $value = $this->optimizeGradients($value);
         }
 
-        $value = $this->optimizeCalc($value);
-
         // Remove whitespace at ! important
         $tmp = $this->compressImportant($value);
         if ($value != $tmp) {
@@ -400,6 +398,8 @@ class Optimise
                 $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", Logger::INFORMATION);
                 $subValue = $optimized;
             }
+
+            return $subValue . $important;
         }
 
         $temp = $this->compressNumbers($property, $subValue);
@@ -424,6 +424,8 @@ class Optimise
                 $subValue = $temp;
             }
         }
+
+        $subValue = $this->optimizeCalc($subValue);
 
         return $subValue . $important;
     }
@@ -1369,26 +1371,20 @@ class Optimise
     {
         static $supportedTypes = array('min' => true, 'max' => true, 'calc' => true);
 
-        $multiples = $this->explodeWs(' ', $string);
+        $type = strstr($string, '(', true);
 
-        foreach ($multiples as &$multiple) {
-            $type = strstr($multiple, '(', true);
-
-            if ($type === false || !isset($supportedTypes[$type])) {
-                continue;
-            }
-
-            $multiple = substr($multiple, strlen($type) + 1, -1); // Remove calc()
-            $parts = $this->explodeWs(',', $multiple);
-
-            foreach ($parts as &$part) {
-                $part = str_replace(' ', '', $part);
-            }
-
-            $multiple = "$type(" . implode(',', $parts) . ')';
+        if ($type === false || !isset($supportedTypes[$type])) {
+            return $string;
         }
 
-        return implode(' ', $multiples);
+        $string = substr($string, strlen($type) + 1, -1); // Remove calc()
+        $parts = $this->explodeWs(',', $string);
+
+        foreach ($parts as &$part) {
+            $part = str_replace(' ', '', $part);
+        }
+
+        return "$type(" . implode(',', $parts) . ')';
     }
 
      /**
