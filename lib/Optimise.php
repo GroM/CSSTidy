@@ -771,7 +771,9 @@ class Optimise
 
         $return[0] = $this->compressNumber($string);
 
-        /*preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches);
+        if (!preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches)) {
+            return false; // Value is not a number
+        }
 
         if ($matches[1] === '') {
             return false;
@@ -780,26 +782,7 @@ class Optimise
         $return[1] = trim($matches[3]);
 
         if ($return[1] !== '' && !in_array($return[1], self::$units)) {
-            return false;
-        }*/
-
-        // TODO: Optimize
-        // Look for unit and split from value if exists
-        foreach (self::$units as $unit) {
-            if (!($unitInString = stristr($string, $unit))) { // mb_strpos() fails with "false"
-                continue;
-            }
-            $expectUnitAt = strlen($string) - strlen($unit);
-            $actualPosition = strpos($string, $unitInString);
-            if ($expectUnitAt === $actualPosition) {
-                $return[1] = $unit;
-                $string = substr($string, 0, - strlen($unit));
-                break;
-            }
-        }
-
-        if (!is_numeric($string)) {
-            return false;
+            return false; // Unit is not supported
         }
 
         return $return;
