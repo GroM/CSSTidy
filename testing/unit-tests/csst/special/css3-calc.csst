@@ -15,11 +15,11 @@ p2 {
 }
 --PRINT--
 section {
-width:calc(100%/3 - 2*1em - 2*1px)
+width:calc(100%/3-2*1em-2*1px)
 }
 
 p {
-margin:calc(1rem - 2px) calc(1rem - 1px)
+margin:calc(1rem-2px) calc(1rem-1px)
 }
 
 p2 {
@@ -27,5 +27,5 @@ font-size:min(10px,3em)
 }
 
 .box {
-width:min(10% + 20px,300px)
+width:min(10%+20px,300px)
 }

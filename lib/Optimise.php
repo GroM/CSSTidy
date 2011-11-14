@@ -337,6 +337,8 @@ class Optimise
             $value = $this->optimizeGradients($value);
         }
 
+        $value = $this->optimizeCalc($value);
+
         // Remove whitespace at ! important
         $tmp = $this->compressImportant($value);
         if ($value != $tmp) {
@@ -1313,7 +1315,7 @@ class Optimise
     protected function optimizeGradients($string)
     {
         /*
-         * Gradinet functions and color start from
+         * Gradient functions and color start from
          * -webkit-gradient syntax is not supported
          */
         static $supportedGradients = array(
@@ -1356,6 +1358,37 @@ class Optimise
         }
 
         return "$type(" . implode(',', $parts) . ')';
+    }
+
+    /**
+     * Optimize calc(), min(), max()
+     * @param string $string
+     * @return string
+     */
+    protected function optimizeCalc($string)
+    {
+        static $supportedTypes = array('min' => true, 'max' => true, 'calc' => true);
+
+        $multiples = $this->explodeWs(' ', $string);
+
+        foreach ($multiples as &$multiple) {
+            $type = strstr($multiple, '(', true);
+
+            if ($type === false || !isset($supportedTypes[$type])) {
+                continue;
+            }
+
+            $multiple = substr($multiple, strlen($type) + 1, -1); // Remove calc()
+            $parts = $this->explodeWs(',', $multiple);
+
+            foreach ($parts as &$part) {
+                $part = str_replace(' ', '', $part);
+            }
+
+            $multiple = "$type(" . implode(',', $parts) . ')';
+        }
+
+        return implode(' ', $multiples);
     }
 
      /**
