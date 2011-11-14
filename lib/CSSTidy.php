@@ -377,7 +377,19 @@ class CSSTidy
                 /* Case in-selector */
                 case 'is':
                     if ($this->isToken($string, $i)) {
-                        if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        if ($current === '{') {
+                            $status = 'ip';
+                            if (!$preserveCss) {
+                                if ($at === '') {
+                                    $at = $parsed->newMediaSection(self::DEFAULT_AT);
+                                }
+                                $selector = $parsed->newSelector($at, $selector);
+                                $parsed->addToken(self::SEL_START, $selector);
+                            }
+                        } elseif ($current === ',') {
+                            $selector = trim($selector) . ',';
+                            $selectorSeparate[] = strlen($selector);
+                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from = 'is';
@@ -424,22 +436,10 @@ class CSSTidy
                         } elseif ($invalidAtRule && $current === ';') {
                             $invalidAtRule = false;
                             $status = 'is';
-                        } elseif ($current === '{') {
-                            $status = 'ip';
-                            if (!$preserveCss) {
-                                if ($at === '') {
-                                    $at = $parsed->newMediaSection(self::DEFAULT_AT);
-                                }
-                                $selector = $parsed->newSelector($at, $selector);
-                                $parsed->addToken(self::SEL_START, $selector);
-                            }
                         } elseif ($current === '}') {
                             if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
                             $at = $selector = '';
                             $selectorSeparate = array();
-                        } elseif ($current === ',') {
-                            $selector = trim($selector) . ',';
-                            $selectorSeparate[] = strlen($selector);
                         } elseif ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
                         } elseif ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
