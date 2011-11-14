@@ -76,21 +76,18 @@ class Parsed
      * @param string $selector
      * @param string $property
      * @param string $newValue
-     * @access private
-     * @version 1.2
      */
     public function addProperty($media, $selector, $property, $newValue)
     {
-        if (trim($newValue) == '') {
-            return;
-        }
-
         if (isset($this->css[$media][$selector][$property])) {
-            if ((CSSTidy::isImportant($this->css[$media][$selector][$property]) && CSSTidy::isImportant($newValue)) || !CSSTidy::isImportant($this->css[$media][$selector][$property])) {
-                $this->css[$media][$selector][$property] = trim($newValue);
+            if (
+                !CSSTidy::isImportant($this->css[$media][$selector][$property]) ||
+                (CSSTidy::isImportant($this->css[$media][$selector][$property]) && CSSTidy::isImportant($newValue))
+            ) {
+                $this->css[$media][$selector][$property] = $newValue;
             }
         } else {
-            $this->css[$media][$selector][$property] = trim($newValue);
+            $this->css[$media][$selector][$property] = $newValue;
         }
     }
 
@@ -104,6 +101,10 @@ class Parsed
     public function mergeCssBlocks($media, $selector, array $cssToAdd)
     {
         foreach ($cssToAdd as $property => $value) {
+            $value = trim($value);
+            if ($value == '') {
+                continue;
+            }
             $this->addProperty($media, $selector, $property, $value);
         }
     }
