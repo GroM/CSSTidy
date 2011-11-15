@@ -21,7 +21,7 @@ multiples cursor rules
 
 }
 --PRINT--
-@keyframes wobble {
+@keyframes 'wobble' {
 from {
 left:100px
 }

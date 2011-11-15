@@ -700,9 +700,7 @@ class CSSTidy
                             $at = trim($at) . ',';
                         } elseif ($current === '\\') {
                             $at .= $this->unicode($string, $i);
-                        }
-                        // fix for complicated media, i.e @media screen and (-webkit-min-device-pixel-ratio:0)
-                        elseif (in_array($current, array('(', ')', ':'))) {
+                        } else {
                             $at .= $current;
                         }
                     } else {
