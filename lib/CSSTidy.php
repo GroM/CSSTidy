@@ -461,22 +461,22 @@ class CSSTidy
                 /* Case in-property */
                 case 'ip':
                     if ($this->isToken($string, $i)) {
-                        if (($current === ':' || $current === '=') && $property != '') {
+                        if (($current === ':' || $current === '=') && $property !== '') {
                             $status = 'iv';
                             if (!$preserveCss && (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property))) {
                                 $property = $parsed->newProperty($at, $selector, $property);
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
-                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
-                            $status = 'ic';
-                            ++$i;
-                            $from = 'ip';
                         } elseif ($current === '}') {
                             $this->explodeSelectors($selector, $at);
                             $status = 'is';
                             $invalidAtRule = false;
                             if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
                             $selector = $property = '';
+                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                            $status = 'ic';
+                            ++$i;
+                            $from = 'ip';
                         } elseif ($current === ';') {
                             $property = '';
                         } elseif ($current === '\\') {
@@ -581,13 +581,6 @@ class CSSTidy
                                 $subValue = '';
                             }
 
-                            foreach ($subValues as &$sbv) {
-                                if (strncmp($sbv, 'format(', 7) == 0) {
-                                    // format() value must be inside quotes
-                                    $sbv = str_replace(array('format(', ')'), array('format("', '")'), $sbv);
-                                }
-                            }
-
                             $value = $this->mergeSubValues($property, $subValues);
                             $value = $this->optimise->value($property, $value);
 
@@ -645,7 +638,7 @@ class CSSTidy
                         }
 
                         if ($current === ' ' && in_array(substr($subValue, -1), array(' ', ',', '('))) {
-                            continue; // Remove multiple spaces and space after ','
+                            continue; // Remove multiple spaces and space after token
                         } else if (($current === ',' || $current === ')') && substr($subValue, -1) === ' ') {
                             $subValue = substr($subValue, 0, -1); // Remove space before ',' or ')'
                         }
@@ -813,6 +806,11 @@ class CSSTidy
         $output = '';
 
         foreach ($subValues as $subValue) {
+            if (strncmp($subValue, 'format(', 7) === 0) {
+                // format() value must be inside quotes
+                $subValue = str_replace(array('format(', ')'), array('format("', '")'), $subValue);
+            }
+
             if ($subValue === ',') {
                 $prev = true;
             } else if (!$prev) {
