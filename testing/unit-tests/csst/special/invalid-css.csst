@@ -1,0 +1,13 @@
+--TEST--
+Add semicolon test with invalid CSS
+--CSS--
+a {
+color: red
+height: 12px
+--EXPECT--
+array(
+  'a' => array(
+    'color' => 'red',
+    'height' => '12px',
+  ),
+)
