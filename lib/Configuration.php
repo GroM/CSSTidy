@@ -121,6 +121,9 @@ class Configuration
     protected $compressColors = true;
 
     /** @var bool */
+    protected $convertUnit = false;
+
+    /** @var bool */
     protected $addTimestamp = false;
 
     /** @var string */
@@ -146,6 +149,7 @@ class Configuration
             'css_level'                  => array('cssLevel', 'string'),
             'merge_selectors'            => array('mergeSelectors', 'int'),
             'compress_font-weight'       => array('compressFontWeight', 'bool'),
+            'convert_unit'               => array('convertUnit', 'bool'),
         );
         
         foreach ($configuration as $key => $value) {
@@ -218,6 +222,23 @@ class Configuration
     public function getCompressColors()
     {
         return $this->compressColors;
+    }
+
+    /**
+     * @param boolean $convertUnit
+     */
+    public function setConvertUnit($convertUnit)
+    {
+        $this->checkBool(__FUNCTION__, $convertUnit);
+        $this->convertUnit = $convertUnit;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getConvertUnit()
+    {
+        return $this->convertUnit;
     }
 
     /**

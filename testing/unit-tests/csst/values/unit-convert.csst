@@ -1,0 +1,19 @@
+--TEST--
+Tests unit convertion
+--CSS--
+a { font-size:10mm; height:9mm; width:15.3mm; min-height:96px; max-height:100px; min-width: 12pt; max-width: 12pc }
+--EXPECT--
+array (
+  'a' => 
+  array (
+    'font-size' => '1cm',
+    'height' => '9mm',
+    'width' => '1.53cm',
+    'min-height' => '1in',
+    'max-height' => '75pt',
+    'min-width' => '1pc',
+    'max-width' => '2in',
+  ),
+)
+--SETTINGS--
+convert_unit=true

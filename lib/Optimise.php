@@ -402,16 +402,7 @@ class Optimise
             return $subValue . $important;
         }
 
-        $temp = $this->compressNumbers($property, $subValue);
-
-        if (strcasecmp($temp, $subValue) !== 0) {
-            if (strlen($temp) > strlen($subValue)) {
-                $this->logger->log("Fixed invalid number: Changed '{$subValue}' to '{$temp}'", Logger::WARNING);
-            } else {
-                $this->logger->log("Optimised number: Changed '{$subValue}' to '{$temp}'", Logger::INFORMATION);
-            }
-            $subValue = $temp;
-        }
+        $subValue = $this->compressNumbers($property, $subValue);
 
         if ($this->configuration->getCompressColors()) {
             $temp = $this->cutColor($subValue);
@@ -736,15 +727,21 @@ class Optimise
 
             // Fix bad colors
             if (isset(self::$colorValues[$property])) {
-                $part = '#' . $part;
-                continue;
+                if ($this->checkHexValue($part)) {
+                    $part = '#' . $part;
+                    continue;
+                } else {
+                    $this->logger->log("Invalid color value '$part' for property '$property'", Logger::ERROR);
+                }
             }
 
             if (abs($number[0]) > 0) {
                 if ($number[1] === '' && in_array($property, self::$unitValues, true)) {
                     $number[1] = 'px';
+                    $this->logger->log("Fixed invalid number: Added 'px' unit to '$part'", Logger::WARNING);
                 }
             } else {
+                $this->logger->log("Optimised number: Removed unit '{$number[1]}' from '{$part}'", Logger::INFORMATION);
                 $number[1] = '';
             }
 
@@ -765,31 +762,38 @@ class Optimise
         // most simple checks first
         if (!isset($string{0}) || $string{0} === '#' || ctype_alpha($string{0})) {
             return false;
-        }
-
-        $return = array(0, '');
-
-        if ($string === '0') {
-            return $return;
-        }
-
-        $return[0] = $this->compressNumber($string);
-
-        if (!preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches)) {
+        } else if ($string === '0') {
+            return array(0, '');
+        } else if (!preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches)) {
             return false; // Value is not a number
         }
 
-        if ($matches[1] === '') {
+        list(, $value, , $unit) = $matches;
+
+        if ($value === '') {
             return false;
         }
 
-        $return[1] = trim($matches[3]);
+        $value = $optimisedValue = trim($value);
+        $unit = $optimisedUnit = trim($unit);
 
-        if ($return[1] !== '' && !in_array($return[1], self::$units)) {
+        if ($unit !== '' && !in_array($unit, self::$units)) {
             return false; // Unit is not supported
         }
 
-        return $return;
+        if ($this->configuration->getConvertUnit()) {
+            list($optimisedValue, $optimisedUnit) = $this->unitConvert($value, $unit);
+        }
+
+        $optimisedValue = $this->compressNumber($optimisedValue);
+
+        if ($optimisedUnit !== $unit) {
+            $this->logger->log("Optimised number: Converted from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
+        } else if ($optimisedValue != $value) {
+            $this->logger->log("Optimised number: Optimised from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
+        }
+
+        return array($optimisedValue, $optimisedUnit);
     }
 
     /**
@@ -1385,6 +1389,54 @@ class Optimise
         }
 
         return "$type(" . implode(',', $parts) . ')';
+    }
+
+    /**
+     * Convert from
+     * @param string $value
+     * @param string $unit
+     * @return array value, unit
+     */
+    protected function unitConvert($value, $unit)
+    {
+        $convert = array(
+            'px' => array(0.75, 'pt'),
+            'pt' => array(1/12, 'pc'),
+            'pc' => array(1/6, 'in'),
+            'mm' => array(0.1, 'cm'),
+        );
+
+        $options = array($unit => $value);
+        while (isset($convert[$unit])) {
+            $value = $convert[$unit][0] * $value;
+            $unit = $convert[$unit][1];
+            $options[$unit] = $value;
+        }
+
+        uasort($options, function($a, $b) {
+            return strlen($a) > strlen($b);
+        });
+
+        return array(current($options), key($options));
+    }
+
+    /**
+     * @param string $string HEX color value
+     * @return bool
+     */
+    protected function checkHexValue($string)
+    {
+        if (!isset($string{5}) && !isset($string{2})) {
+            return false;
+        }
+
+        for ($i = 0, $size = strlen($string); $i < $size; $i++) {
+            if (!ctype_digit($string{$i}) && !in_array($string{$i}, array('a', 'b', 'c', 'd', 'e', 'f'))) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
      /**
