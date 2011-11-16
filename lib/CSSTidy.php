@@ -103,6 +103,7 @@ class CSSTidy
         '@keyframes' => 'at',
         '@-moz-keyframes' => 'at', // vendor prefixed
         '@-webkit-keyframes' => 'at',
+        '@-ms-keyframes' => 'at',
         //'@font-feature-values ' => 'at', // Not fully supported yet
     );
 
