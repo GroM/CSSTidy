@@ -1417,11 +1417,22 @@ class Optimise
     protected function unitConvert($value, $unit)
     {
         $convert = array(
+            // Absolute lengths
             'px' => array(0.75, 'pt'),
             'pt' => array(1/12, 'pc'),
             'mm' => array(6/25.4,'pc'),
             'pc' => array(2.54/6, 'cm'),
             'cm' => array(1/2.54, 'in'),
+
+            // Frequency
+            'hz' => array(1/1000, 'khz'),
+
+            // Angle, radians are ugly
+            'grad' => array(0.9, 'deg'),
+            'deg' => array(1/360, 'turn'),
+
+            // Time
+            'ms' => array(1/1000, 's'),
         );
 
         $options = array($unit => $value);
@@ -1431,12 +1442,18 @@ class Optimise
             $options[$unit] = $value;
         }
 
-        // Sort from shorter to longer value
-        uasort($options, function($a, $b) {
-            return strlen($a) > strlen($b);
-        });
+        // Find smaller string with unit
+        $smaller = 0;
+        $smallerUnit = '';
+        foreach ($options as $unit => $value) {
+            $current = strlen($value . $unit);
+            if ($current < $smaller || $smaller === 0) {
+                $smaller = $current;
+                $smallerUnit = $unit;
+            }
+        }
 
-        return array(current($options), key($options));
+        return array($options[$smallerUnit], $smallerUnit);
     }
 
     /**
