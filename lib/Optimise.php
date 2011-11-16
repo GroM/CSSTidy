@@ -1392,18 +1392,23 @@ class Optimise
     }
 
     /**
-     * Convert from
+     * Convert unit to greater with shorter value
+     *
+     * For example 100px is converted to 75pt and 10mm to 1cm
+     *
+     * @see http://www.w3.org/TR/css3-values/#absolute-lengths
      * @param string $value
      * @param string $unit
-     * @return array value, unit
+     * @return array [value, unit]
      */
     protected function unitConvert($value, $unit)
     {
         $convert = array(
             'px' => array(0.75, 'pt'),
             'pt' => array(1/12, 'pc'),
-            'pc' => array(1/6, 'in'),
-            'mm' => array(0.1, 'cm'),
+            'mm' => array(6/25.4,'pc'),
+            'pc' => array(2.54/6, 'cm'),
+            'cm' => array(1/2.54, 'in'),
         );
 
         $options = array($unit => $value);
@@ -1413,6 +1418,7 @@ class Optimise
             $options[$unit] = $value;
         }
 
+        // Sort from shorter to longer value
         uasort($options, function($a, $b) {
             return strlen($a) > strlen($b);
         });
@@ -1421,22 +1427,19 @@ class Optimise
     }
 
     /**
+     * Check is string is valid 3 or 6 character color value without # character
      * @param string $string HEX color value
      * @return bool
      */
     protected function checkHexValue($string)
     {
-        if (!isset($string{5}) && !isset($string{2})) {
+        $size = strlen($string);
+
+        if ($size !== 3 && $size !== 6) {
             return false;
         }
 
-        for ($i = 0, $size = strlen($string); $i < $size; $i++) {
-            if (!ctype_digit($string{$i}) && !in_array($string{$i}, array('a', 'b', 'c', 'd', 'e', 'f'))) {
-                return false;
-            }
-        }
-
-        return true;
+        return ctype_xdigit($string);
     }
 
      /**

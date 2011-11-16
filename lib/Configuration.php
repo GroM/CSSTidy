@@ -227,7 +227,7 @@ class Configuration
     /**
      * @param boolean $convertUnit
      */
-    public function setConvertUnit($convertUnit)
+    public function setConvertUnit($convertUnit = true)
     {
         $this->checkBool(__FUNCTION__, $convertUnit);
         $this->convertUnit = $convertUnit;
