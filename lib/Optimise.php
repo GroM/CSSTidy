@@ -325,7 +325,7 @@ class Optimise
             if ($property === 'border-radius') {
                 $temp = $this->borderRadiusShorthand($value);
             } else {
-                $temp = $this->shorthand($value); // FIXME - move
+                $temp = $this->compressShorthand($value); // FIXME - move
             }
             if ($temp != $value) {
                 $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
@@ -456,7 +456,7 @@ class Optimise
         }
 
         foreach ($parts as &$part) {
-            $part = $this->shorthand(trim($part));
+            $part = $this->compressShorthand(trim($part));
         }
 
         return implode('/', $parts);
@@ -468,15 +468,28 @@ class Optimise
      * @return string
      * @version 1.0
      */
-    protected function shorthand($value)
+    protected function compressShorthand($value)
     {
-        $important = '';
+        $important = false;
         if (CSSTidy::isImportant($value)) {
             $value = CSSTidy::removeImportant($value, false);
-            $important = '!important';
+            $important = true;
         }
 
         $values = $this->explodeWs(' ', $value);
+
+        return $this->compressShorthandValues($values, $important);
+    }
+
+    /**
+     * @param array $values
+     * @param bool $isImportant
+     * @return string
+     */
+    protected function compressShorthandValues(array $values, $isImportant)
+    {
+        $important = $isImportant ? '!important' : '';
+
         switch (count($values)) {
             case 4:
                 if ($values[0] == $values[1] && $values[0] == $values[2] && $values[0] == $values[3]) {
@@ -503,7 +516,7 @@ class Optimise
                 break;
         }
 
-        return $value;
+        return implode(' ', $values);
     }
 
     /**
@@ -605,8 +618,11 @@ class Optimise
     }
 
     /**
-     * @param array $parts
-     * @return array
+     * Convert from [R, G, B] array to hex string. Array item must be number from 0-255 or
+     * percentage value.
+     *
+     * @param array $parts [R, G, B]
+     * @return string
      */
     protected function convertRgbToHex(array $parts)
     {
@@ -622,9 +638,9 @@ class Optimise
     }
 
     /**
-     * Convert color from HSL to RGB
-     * @param array $parts (H, S, L)
-     * @return array (R, G, B)
+     * Convert color from HSL to HEX RGB
+     * @param array $parts [H, S, L]
+     * @return string HEX color
      */
     protected function convertHslToHex(array $parts)
     {
@@ -679,8 +695,9 @@ class Optimise
     }
 
     /**
-     * @param array $array
-     * @return string
+     * Convert array with three item from 0-255 to corresponding HEX value.
+     * @param array $array [R, G, B]
+     * @return string Color (in format #ffffff)
      */
     protected function threeByteArrayToHex(array $array)
     {
@@ -907,8 +924,6 @@ class Optimise
      * @param string $property
      * @param string $value
      * @return array
-     * @version 1.0
-     * @see merge_4value_shorthands()
      */
     protected function dissolveFourValueShorthands($property, $value)
     {
@@ -939,7 +954,7 @@ class Optimise
 
             case 2:
                 for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$i]] = (($i % 2 != 0)) ? $values[1] . $important : $values[0] . $important;
+                    $return[$shorthands[$i]] = $values[$i % 2] . $important;
                 }
                 break;
 
@@ -954,35 +969,35 @@ class Optimise
     }
 
     /**
-     * Merges Shorthand properties again, the opposite of dissolve_4value_shorthands()
+     * Merges Shorthand properties again, the opposite of self::dissolveFourValueShorthands
      * @param array $array
      * @return array
-     * @version 1.2
      */
-    function mergeFourValueShorthands(array $array)
+    protected function mergeFourValueShorthands(array $array)
     {
-        $return = $array;
+        foreach (self::$shorthands as $shorthand => $properties) {
+            if (isset($array[$properties[0]]) && isset($array[$properties[1]])
+                && isset($array[$properties[2]]) && isset($array[$properties[3]])) {
 
-        foreach (self::$shorthands as $key => $value) {
-            if (isset($array[$value[0]]) && isset($array[$value[1]])
-                            && isset($array[$value[2]]) && isset($array[$value[3]]) && $value !== 0) {
-                $return[$key] = '';
+                $important = false;
+                $values = array();
 
-                $important = '';
-                for ($i = 0; $i < 4; $i++) {
-                    $val = $array[$value[$i]];
+                foreach ($properties as $property) {
+                    $val = $array[$property];
                     if (CSSTidy::isImportant($val)) {
-                        $important = '!important';
-                        $return[$key] .= CSSTidy::removeImportant($val, false) . ' ';
+                        $important = true;
+                        $values[] = CSSTidy::removeImportant($val, false);
                     } else {
-                        $return[$key] .= $val . ' ';
+                        $values[] = $val;
                     }
-                    unset($return[$value[$i]]);
+                    unset($array[$property]);
                 }
-                $return[$key] = $this->shorthand(trim($return[$key] . $important));
+
+                $array[$shorthand] = $this->compressShorthandValues($values, $important);
             }
         }
-        return $return;
+
+        return $array;
     }
 
     /**
@@ -1244,8 +1259,6 @@ class Optimise
      * Merges all fonts properties
      * @param array $inputCss
      * @return array
-     * @version 1.3
-     * @see dissolve_short_font()
      */
     protected function mergeFont($inputCss)
     {
@@ -1322,7 +1335,7 @@ class Optimise
     {
         /*
          * Gradient functions and color start from
-         * -webkit-gradient syntax is not supported
+         * -webkit-gradient syntax is not supported, because is deprecated
          */
         static $supportedGradients = array(
             '-webkit-repeating-linear-gradient' => 1,
@@ -1392,7 +1405,7 @@ class Optimise
     }
 
     /**
-     * Convert unit to greater with shorter value
+     * Convert unit to greather with shorter value
      *
      * For example 100px is converted to 75pt and 10mm to 1cm
      *
