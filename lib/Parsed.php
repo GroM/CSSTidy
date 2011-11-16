@@ -127,9 +127,8 @@ class Parsed
         }
 
         end($this->css);
-        list($at,) = each($this->css);
 
-        if ($at == $media) {
+        if (key($this->css) == $media) {
             return $media;
         }
 
@@ -140,6 +139,7 @@ class Parsed
                 $media .= " ";
             }
         }
+
         return $media;
     }
 
@@ -159,8 +159,8 @@ class Parsed
     public function newSelector($media, $selector)
     {
         $selector = trim($selector);
-        if (strncmp($selector, "@font-face", 10) != 0) {
-            if ($this->mergeSelectors != Configuration::DO_NOT_CHANGE) {
+        if ($selector !== "@font-face") {
+            if ($this->mergeSelectors !== Configuration::DO_NOT_CHANGE) {
                 return $selector;
             }
 
@@ -170,9 +170,8 @@ class Parsed
 
             // if last is the same, keep it
             end($this->css[$media]);
-            list($sel,) = each($this->css[$media]);
 
-            if ($sel == $selector) {
+            if (key($this->css[$media]) === $selector) {
                 return $selector;
             }
         }
