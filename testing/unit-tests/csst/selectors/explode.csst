@@ -1,0 +1,17 @@
+--TEST--
+Child selector
+--CSS--
+a,b{color:red}
+--EXPECT--
+array (
+  'a' =>
+  array (
+    'color' => 'red',
+  ),
+  'b' =>
+  array (
+    'color' => 'red',
+  ),
+)
+--SETTINGS--
+merge_selectors=1

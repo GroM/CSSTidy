@@ -388,7 +388,7 @@ class CSSTidy
                             }
                         } elseif ($current === ',') {
                             $selector = trim($selector) . ',';
-                            $selectorSeparate[] = strlen($selector);
+                            $this->selectorSeparate[] = strlen($selector);
                         } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
@@ -439,7 +439,7 @@ class CSSTidy
                         } elseif ($current === '}') {
                             if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
                             $at = $selector = '';
-                            $selectorSeparate = array();
+                            $this->selectorSeparate = array();
                         } elseif ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
                         } elseif ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
@@ -560,7 +560,7 @@ class CSSTidy
                                         break;
                                 }
 
-                                $subValues = $selectorSeparate = array();
+                                $subValues = $this->selectorSeparate = array();
                                 $subValue = $selector = '';
                             } else {
                                 $status = 'ip';
@@ -781,10 +781,8 @@ class CSSTidy
             }
 
             if (count($newSelectors) > 1) {
-                foreach ($newSelectors as $selector) {
-                    if (isset($this->parsed->css[$at][$selector])) {
-                        $this->parsed->mergeCssBlocks($at, $selector, $this->parsed->css[$at][$selector]);
-                    }
+                foreach ($newSelectors as $newSelector) {
+                    $this->parsed->mergeCssBlocks($at, $newSelector, $this->parsed->css[$at][$selector]);
                 }
                 unset($this->parsed->css[$at][$selector]);
             }
@@ -934,24 +932,28 @@ class CSSTidy
 
     /**
      * Checks if the next word in a string from pos is a CSS property
-     * @param string $istring
+     * @param string $string
      * @param integer $pos
      * @return bool
      * @access private
      * @version 1.2
      */
-    protected function propertyIsNext($istring, $pos)
+    protected function propertyIsNext($string, $pos)
     {
-        $istring = substr($istring, $pos);
-        $pos = strpos($istring, ':');
-        if ($pos === false) {
+        $string = substr($string, $pos);
+        $string = strstr($string, ':', true);
+
+        if ($string === false) {
             return false;
         }
-        $istring = strtolower(trim(substr($istring, 0, $pos)));
-        if (isset(self::$allProperties[$istring])) {
+
+        $string = strtolower(trim($string));
+
+        if (isset(self::$allProperties[$string])) {
             $this->logger->log('Added semicolon to the end of declaration', Logger::WARNING);
             return true;
         }
+
         return false;
     }
 
