@@ -620,7 +620,7 @@ class CSSTidy
 
                 /* Case data in bracket */
                 case 'inbrck':
-                    if (strpos("\"'() ,\n", $current) !== false) {
+                    if (strpos("\"'() ,\n", $current) !== false && !self::escaped($string, $i)) {
                         if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
                             $status = 'instr';
                             $from = 'inbrck';

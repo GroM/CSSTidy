@@ -4,6 +4,7 @@ multiples cursor rules
 a {col\*or: red} /* escape inside property */
 b {color: r\*ed} /* escape inside value */
 st\*rong {color: red} /* escape inside selector */
+d {background: gradient(top, \'ahoj\'); /* escape inside bracket */
 --PRINT--
 a {
 col\*or:red
@@ -15,4 +16,8 @@ color:r\*ed
 
 st\*rong {
 color:red
+}
+
+d {
+background:gradient(top,\'ahoj\')
 }
