@@ -87,7 +87,7 @@ class CSSTidy
 
 
     /**
-     * Available at-rules
+     * Non 'at' at rules
      *
      * @static
      * @var array
@@ -98,13 +98,7 @@ class CSSTidy
         '@font-face' => 'is',
         '@charset' => 'iv',
         '@import' => 'iv',
-        '@namespace' => 'iv',
-        '@media' => 'at',
-        '@keyframes' => 'at',
-        '@-moz-keyframes' => 'at', // vendor prefixed
-        '@-webkit-keyframes' => 'at',
-        '@-ms-keyframes' => 'at',
-        //'@font-feature-values ' => 'at', // Not fully supported yet
+        '@namespace' => 'iv'
     );
 
 
@@ -351,7 +345,7 @@ class CSSTidy
         // Initialize variables
         $preserveCss = $this->configuration->getPreserveCss();
         $currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
-        $quotedString = $invalidAtRule = false;
+        $quotedString = false;
         $bracketCount = 0;
 
         /*
@@ -394,7 +388,7 @@ class CSSTidy
                             $status = 'ic';
                             ++$i;
                             $from = 'is';
-                        } else if ($current === '@' && trim($selector) == '') {
+                        } else if ($current === '@' && ctype_space($selector)) {
                             $selector = '@';
                             // Add whitespaces and remove backslash
                             $tokensList = self::$whitespace . str_replace('\\', '', self::$tokensList);
@@ -413,19 +407,12 @@ class CSSTidy
 
                             $selector = strtolower($selector);
 
-                            // Check for at-rule
                             if (isset(self::$atRules[$selector])) {
-                                $type = self::$atRules[$selector];
-                                if ($type === 'at') {
-                                    $at = $selector;
-                                    $selector = '';
-                                }
-                                $status = $type;
+                                $status = self::$atRules[$selector];
                             } else {
-                                $invalidAtRule = false;
-                                $invalidAtName = $selector;
-                                $selector = '@';
-                                $this->logger->log("Invalid @-rule: $invalidAtName (removed)", Logger::WARNING);
+                                $status = 'at';
+                                $at = $selector;
+                                $selector = '';
                             }
                         } else if ($current === '"' || $current === "'") {
                             $currentString = $current;
@@ -434,9 +421,6 @@ class CSSTidy
                             $from = 'is';
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
-                        } else if ($invalidAtRule && $current === ';') {
-                            $invalidAtRule = false;
-                            $status = 'is';
                         } else if ($current === '}') {
                             if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
                             $at = $selector = '';
@@ -474,7 +458,6 @@ class CSSTidy
                         } else if ($current === '}') {
                             $this->explodeSelectors($selector, $at);
                             $status = 'is';
-                            $invalidAtRule = false;
                             if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
                             $selector = $property = '';
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
@@ -592,7 +575,7 @@ class CSSTidy
                             $value = $this->optimise->value($property, $value);
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
-                            if ((!$invalidAtRule || $preserveCss) && (!$this->configuration->getDiscardInvalidProperties() || $valid)) {
+                            if (!$this->configuration->getDiscardInvalidProperties() || $valid) {
                                 if (!$preserveCss) {
                                     $parsed->addProperty($at, $selector, $property, $value);
                                     $parsed->addToken(self::VALUE, $value);
@@ -617,7 +600,6 @@ class CSSTidy
                             $this->explodeSelectors($selector, $at);
                             if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
                             $status = 'is';
-                            $invalidAtRule = false;
                             $selector = '';
                         }
                     } else if (!$pn) {
