@@ -1,7 +1,7 @@
 --TEST--
 Tests unit conversion
 --CSS--
-a { font-size:10mm; height:9mm; width:15.3mm; min-height:96px; max-height:100px; min-width: 12pt; max-width: 12pc }
+a { font-size:10mm; height:9mm; width:15.3mm; min-height:96px; max-height:100px; min-width: 12pt; max-width: 12pc; pitch: 1000Hz; animation-duration: 1000ms }
 --EXPECT--
 array (
   'a' => 
@@ -9,10 +9,12 @@ array (
     'font-size' => '1cm',
     'height' => '9mm',
     'width' => '15.3mm',
-    'min-height' => '1in',
+    'min-height' => '6pc',
     'max-height' => '75pt',
     'min-width' => '1pc',
     'max-width' => '2in',
+    'pitch' => '1khz',
+    'animation-duration' => '1s',
   ),
 )
 --SETTINGS--

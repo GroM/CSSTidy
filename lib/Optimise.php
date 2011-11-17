@@ -313,41 +313,6 @@ class Optimise
     }
 
     /**
-     * Optimises values
-     * @param string $property
-     * @param string $value
-     * @return string
-     */
-    public function value($property, $value)
-    {
-        // optimise shorthand properties
-        if (isset(self::$shorthands[$property])) {
-            if ($property === 'border-radius') {
-                $temp = $this->borderRadiusShorthand($value);
-            } else {
-                $temp = $this->compressShorthand($value); // FIXME - move
-            }
-            if ($temp != $value) {
-                $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
-            }
-            $value = $temp;
-        }
-
-        if ($property === 'background-image' && $this->configuration->getCompressColors()) {
-            $value = $this->optimizeGradients($value);
-        }
-
-        // Remove whitespace at ! important
-        $tmp = $this->compressImportant($value);
-        if ($value != $tmp) {
-            $value = $tmp;
-            $this->logger->log('Optimised !important', Logger::INFORMATION);
-        }
-
-        return $value;
-    }
-
-    /**
      * Optimize shorhands
      * @param Parsed $parsed
      * @param string $at
@@ -373,6 +338,43 @@ class Optimise
             $parsed->mergeCssBlocks($at, $selector, $this->dissolveFourValueShorthands($property, $value));
             $parsed->css[$at][$selector][$property] = '';
         }
+    }
+
+    /**
+     * Optimises values
+     * @param string $property
+     * @param string $value
+     * @return string
+     */
+    public function value($property, $value)
+    {
+        // optimise shorthand properties
+        if (isset(self::$shorthands[$property])) {
+            if ($property === 'border-radius') {
+                $temp = $this->borderRadiusShorthand($value);
+            } else {
+                $temp = $this->compressShorthand($value); // FIXME - move
+            }
+            if ($temp != $value) {
+                $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
+            }
+            $value = $temp;
+        }
+
+        if ($property === 'background-image' && $this->configuration->getCompressColors()) {
+            $value = $this->optimizeGradients($value);
+        } else if ($this->removeVendorPrefix($property) === 'transform') {
+            $value = $this->optimizeTransform($value);
+        }
+
+        // Remove whitespace at ! important
+        $tmp = $this->compressImportant($value);
+        if ($value != $tmp) {
+            $value = $tmp;
+            $this->logger->log('Optimised !important', Logger::INFORMATION);
+        }
+
+        return $value;
     }
 
     /**
@@ -757,7 +759,7 @@ class Optimise
                     $number[1] = 'px';
                     $this->logger->log("Fixed invalid number: Added 'px' unit to '$part'", Logger::WARNING);
                 }
-            } else {
+            } else if ($number[1] !== '') {
                 $this->logger->log("Optimised number: Removed unit '{$number[1]}' from '{$part}'", Logger::INFORMATION);
                 $number[1] = '';
             }
@@ -792,7 +794,7 @@ class Optimise
         }
 
         $value = $optimisedValue = trim($value);
-        $unit = $optimisedUnit = trim($unit);
+        $unit = $optimisedUnit = strtolower(trim($unit));
 
         if ($unit !== '' && !in_array($unit, self::$units)) {
             return false; // Unit is not supported
@@ -1338,31 +1340,20 @@ class Optimise
          * -webkit-gradient syntax is not supported, because is deprecated
          */
         static $supportedGradients = array(
-            '-webkit-repeating-linear-gradient' => 1,
-            '-moz-repeating-linear-gradient' => 1,
-            '-o-repeating-linear-gradient' => 1,
             'repeating-linear-gradient' => 1,
-            '-webkit-linear-gradient' => 1,
-            '-moz-linear-gradient' => 1,
-            '-o-linear-gradient' => 1,
             'linear-gradient' => 1,
-            '-webkit-repeating-radial-gradient' => 2,
-            '-moz-repeating-radial-gradient' => 2,
-            '-o-repeating-radial-gradient' => 2,
             'repeating-radial-gradient' => 2,
-            '-webkit-radial-gradient' => 2,
-            '-moz-radial-gradient' => 2,
-            '-o-radial-gradient' => 2,
             'radial-gradient' => 2,
         );
 
-        $type = strstr($string, '(', true);
+        $originalType = strstr($string, '(', true);
+        $type = $this->removeVendorPrefix($originalType);
 
         if ($type === false || !isset($supportedGradients[$type])) {
             return $string; // value is not gradient or unsupported type
         }
 
-        $string = substr($string, strlen($type) + 1, -1); // Remove linear-gradient()
+        $string = substr($string, strlen($originalType) + 1, -1); // Remove linear-gradient()
         $parts = $this->explodeWs(',', $string);
 
         $start = $supportedGradients[$type];
@@ -1376,11 +1367,13 @@ class Optimise
             $part = implode(' ', $colorAndLength);
         }
 
-        return "$type(" . implode(',', $parts) . ')';
+        return "$originalType(" . implode(',', $parts) . ')';
     }
 
     /**
      * Optimize calc(), min(), max()
+     *
+     * @see http://www.w3.org/TR/css3-values/#calc
      * @param string $string
      * @return string
      */
@@ -1405,6 +1398,84 @@ class Optimise
     }
 
     /**
+     * @param $string
+     * @return string
+     */
+    protected function optimizeTransform($string)
+    {
+        static $supportedTypes = array(
+            'perspective' => true,
+            'matrix' => true,
+            'matrix3d' => true,
+            'translate' => true,
+            'translate3d' => true,
+            'translateX' => true,
+            'translateY' => true,
+            'translateZ' => true,
+            'scale3d' => true,
+            'scaleX' => true,
+            'scaleY' => true,
+            'scaleZ' => true,
+            'rotate3d' => true,
+            'rotateX' => true,
+            'rotateY' => true,
+            'rotateZ' => true,
+            'rotate' => true,
+            'skewX' => true,
+            'skewY' => true,
+            'skew' => true,
+        );
+
+        $functions = $this->explodeWs(' ', $string);
+
+        $output = array();
+        foreach ($functions as $function) {
+            $type = strstr($function, '(', true);
+
+            if ($type === false || !isset($supportedTypes[$type])) {
+                $output[] = $function;
+                continue;
+            }
+
+            $function = substr($function, strlen($type) + 1, -1); // Remove function()
+            $parts = $this->explodeWs(',', $function);
+
+            foreach ($parts as &$part) {
+                $part = $this->compressNumbers(null, $part);
+            }
+
+            $output[$type] = implode(',', $parts);
+        }
+
+        // 3D transform
+        foreach (array('scale', 'translate') as $mergeFunction) {
+            if (isset($output[$mergeFunction . 'X']) && isset($output[$mergeFunction . 'Y']) && isset($output[$mergeFunction . 'Z'])) {
+                $output[$mergeFunction . '3d'] = "{$output[$mergeFunction . 'X']},{$output[$mergeFunction . 'Y']},{$output[$mergeFunction . 'Z']}";
+                unset($output[$mergeFunction . 'X'], $output[$mergeFunction . 'Y'], $output[$mergeFunction . 'Z']);
+            }
+        }
+
+        // 2D transform
+        foreach (array('skew', 'scale', 'translate', 'rotate') as $mergeFunction) {
+            if (isset($output[$mergeFunction . 'X']) && isset($output[$mergeFunction . 'Y'])) {
+                $output[$mergeFunction] = "{$output[$mergeFunction . 'X']},{$output[$mergeFunction . 'Y']}";
+                unset($output[$mergeFunction . 'X'], $output[$mergeFunction . 'Y']);
+            }
+        }
+
+        $outputString = '';
+        foreach ($output as $name => $value) {
+            if (is_numeric($name)) {
+                $outputString .= $value . ' ';
+            } else {
+                $outputString .= "$name($value) ";
+            }
+        }
+
+        return rtrim($outputString);
+    }
+
+    /**
      * Convert unit to greather with shorter value
      *
      * For example 100px is converted to 75pt and 10mm to 1cm
@@ -1425,21 +1496,20 @@ class Optimise
             'cm' => array(1/2.54, 'in'),
 
             // Frequency
-            'hz' => array(1/1000, 'khz'),
+            'hz' => array(0.001, 'khz'),
 
             // Angle, radians are ugly
             'grad' => array(0.9, 'deg'),
             'deg' => array(1/360, 'turn'),
 
             // Time
-            'ms' => array(1/1000, 's'),
+            'ms' => array(0.001, 's'),
         );
 
         $options = array($unit => $value);
         while (isset($convert[$unit])) {
-            $value = $convert[$unit][0] * $value;
-            $unit = $convert[$unit][1];
-            $options[$unit] = $value;
+            list($coefficient , $unit) = $convert[$unit];
+            $options[$unit] = $value *= $coefficient;
         }
 
         // Find smaller string with unit
@@ -1509,5 +1579,19 @@ class Optimise
         }
 
         return $output;
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    protected function removeVendorPrefix($string)
+    {
+        if ($string{0} === '-') {
+            $pos = strpos($string, '-', 1);
+            return substr($string, $pos + 1);
+        }
+
+        return $string;
     }
 }

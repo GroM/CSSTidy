@@ -2,12 +2,14 @@
 Test color optimisation
 --CSS--
 div {
-  transform: translate(80px, 80px) scale(1.5, 1.5) rotate(45deg);
+  transform: translate(80px, 80px) scaleX(1.5)  scaleY(0.5) rotate(360deg);
 }
 --EXPECT--
 array (
   'div' =>
   array (
-    'transform' => 'translate(80px,80px) scale(1.5,1.5) rotate(45deg)'
+    'transform' => 'translate(5pc,5pc) rotate(1turn) scale(1.5,.5)'
   ),
 )
+--SETTINGS--
+convert_unit=true
