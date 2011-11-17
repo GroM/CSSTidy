@@ -52,7 +52,7 @@ class Optimise
      * Properties that allow <color> as value
      *
      * @todo CSS3 properties
-     * @see compress_numbers();
+     * @see compressNumbers();
      * @static
      * @var array
      */
@@ -70,32 +70,52 @@ class Optimise
     /**
      * All CSS units (CSS 3 units included)
      *
-     * @see compress_numbers()
+     * @see http://www.w3.org/TR/css3-values/
+     * @see compressNumbers()
      * @static
      * @var array
      */
-    public static $units = array('in','cm','mm','pt','pc','px','rem','em','%','ex','gd','vw','vh','vm','deg','grad','rad','ms','s','khz','hz','dpi','dpcm','dppx', 'fr', 'gr');
+    public static $units = array(
+        // Absolute lengths
+        'px','in','cm','mm','pt','pc',
+        // Relative lengths
+        '%','em','rem','ex','ch','vw','vh','vm',
+        // Angle
+        'deg','grad','rad','turn',
+        // Time
+        'ms','s',
+        // Frequency
+        'khz','hz',
+        // Layout-specific
+        'fr', 'gr',
+        // Resolution
+        'dpi','dpcm','dppx'
+    );
 
     /**
      * Properties that need a value with unit
      *
      * @todo CSS3 properties
-     * @see compress_numbers();
+     * @see compressNumbers();
      * @static
      * @var array
      */
-    public static $unitValues = array ('background', 'background-position', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left', 'border-width',
-                                'border-top-width', 'border-right-width', 'border-left-width', 'border-bottom-width', 'bottom', 'border-spacing',
-                                'font-size', 'height', 'left', 'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left', 'max-height',
-                                'max-width', 'min-height', 'min-width', 'outline', 'outline-width', 'padding', 'padding-top', 'padding-right',
-                                'padding-bottom', 'padding-left', 'right', 'top', 'text-indent', 'letter-spacing', 'word-spacing', 'width');
+    public static $unitValues = array (
+        'background', 'background-position', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
+        'border-width', 'border-top-width', 'border-right-width', 'border-left-width', 'border-bottom-width', 'bottom',
+        'border-spacing', 'font-size', 'height', 'left', 'margin', 'margin-top', 'margin-right', 'margin-bottom',
+        'margin-left', 'max-height', 'max-width', 'min-height', 'min-width', 'outline', 'outline-width', 'padding',
+        'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'right', 'top', 'text-indent',
+        'letter-spacing', 'word-spacing', 'width'
+    );
 
     /**
      * A list of all shorthand properties that are devided into four properties and/or have four subvalues
      *
      * @todo Are there new ones in CSS3?
-     * @see dissolve_4value_shorthands()
-     * @see merge_4value_shorthands()
+     * @see dissolveFourValueShorthands()
+     * @see mergeFourValueShorthands()
+     * @var array
      */
     public static $shorthands = array(
         'border-color' => array('border-top-color','border-right-color','border-bottom-color','border-left-color'),
@@ -105,7 +125,13 @@ class Optimise
         'padding' => array('padding-top','padding-right','padding-bottom','padding-left'),
         'border-radius' => array('border-radius-top-left', 'border-radius-top-right', 'border-radius-bottom-right', 'border-radius-bottom-left')
     );
-    
+
+    /**
+     * A list of non-W3C color names which get replaced by their hex-codes
+     *
+     * @see cutColor()
+     * @var array
+     */
     public static $replaceColors = array(
         'aliceblue' => '#f0f8ff',
         'antiquewhite' => '#faebd7',
@@ -235,6 +261,14 @@ class Optimise
         'yellowgreen' => '#9acd32'
     );
 
+    /**
+     * Default values for the background properties
+     *
+     * @todo Possibly property names will change during CSS3 development
+     * @see dissolveShortBackground()
+     * @see merge_bg()
+     * @var array
+     */
     public static $backgroundPropDefault = array(
         'background-image' => 'none',
         'background-size' => 'auto',
@@ -246,6 +280,12 @@ class Optimise
         'background-color' => 'transparent'
     );
 
+    /**
+     * Default values for the font properties
+     *
+     * @see mergeFonts()
+     * @var array
+     */
     public static $fontPropDefault = array(
         'font-style' => 'normal',
         'font-variant' => 'normal',
@@ -266,14 +306,16 @@ class Optimise
     }
 
     /**
-     * Optimises $css after parsing
-     * @param array $css
+     * @param Parsed $parsed
+     * @return mixed
      */
-    public function postparse(array &$css)
+    public function postparse(Parsed $parsed)
     {
         if ($this->configuration->getPreserveCss()) {
             return;
         }
+
+        $css = $parsed->css;
 
         if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
             foreach ($css as $medium => $value) {
@@ -522,7 +564,8 @@ class Optimise
     }
 
     /**
-     * Color compression function. Converts all rgb() values to #-values and uses the short-form if possible. Also replaces 4 color names by #-values.
+     * Color compression function. Converts all rgb() values to #-values and uses the short-form if possible.
+     * Also replaces 4 color names by #-values.
      * @param string $color
      * @return string
      * @version 1.1
@@ -1021,9 +1064,18 @@ class Optimise
         static $origin = array('border', 'padding', 'content');
         static $pos = array('top', 'center', 'bottom', 'left', 'right');
 
-        $important = '';
-        $return = array('background-image' => null, 'background-size' => null, 'background-repeat' => null, 'background-position' => null, 'background-attachment' => null, 'background-clip' => null, 'background-origin' => null, 'background-color' => null);
+        $return = array(
+            'background-image' => null,
+            'background-size' => null,
+            'background-repeat' => null,
+            'background-position' => null,
+            'background-attachment' => null,
+            'background-clip' => null,
+            'background-origin' => null,
+            'background-color' => null
+        );
 
+        $important = '';
         if (CSSTidy::isImportant($str_value)) {
             $important = ' !important';
             $str_value = CSSTidy::removeImportant($str_value, false);
@@ -1315,8 +1367,9 @@ class Optimise
 
             // Delete all font-properties
             foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
-                if ($fontProperty !== 'font' || !$new_font_value)
+                if ($fontProperty !== 'font' || !$new_font_value) {
                     unset($inputCss[$fontProperty]);
+                }
             }
 
             // Add new font property

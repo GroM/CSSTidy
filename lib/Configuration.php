@@ -193,7 +193,9 @@ class Configuration
     public function setCaseProperties($caseProperties)
     {
         if (!in_array($caseProperties, array(self::NONE, self::UPPERCASE, self::LOWERCASE))) {
-            throw new \InvalidArgumentException("caseProperties must be NONE, UPPERCASE or LOWERCASE constants, $caseProperties given");
+            throw new \InvalidArgumentException(
+                "caseProperties must be NONE, UPPERCASE or LOWERCASE constants, $caseProperties given"
+            );
         }
 
         $this->caseProperties = $caseProperties;
@@ -264,7 +266,9 @@ class Configuration
     public function setCssLevel($cssLevel)
     {
         if (!in_array($cssLevel, array(self::CSS1_0, self::CSS2_0, self::CSS2_1, self::CSS3_0), true)) {
-            throw new \InvalidArgumentException("cssLevel must be CSS1_0, CSS2_0, CSS2_1 or CSS3_0 constants, $cssLevel given");
+            throw new \InvalidArgumentException(
+                "cssLevel must be CSS1_0, CSS2_0, CSS2_1 or CSS3_0 constants, $cssLevel given"
+            );
         }
 
         $this->cssLevel = $cssLevel;
@@ -335,7 +339,9 @@ class Configuration
     public function setMergeSelectors($mergeSelectors)
     {
         if (!in_array($mergeSelectors, array(self::DO_NOT_CHANGE, self::SEPARATE_SELECTORS, self::MERGE_SELECTORS), true)) {
-            throw new \InvalidArgumentException("mergeSelectors must be DO_NOT_CHANGE, SEPARATE_SELECTORS or MERGE_SELECTORS constants, $mergeSelectors given");
+            throw new \InvalidArgumentException(
+                "mergeSelectors must be DO_NOT_CHANGE, SEPARATE_SELECTORS or MERGE_SELECTORS constants, $mergeSelectors given"
+            );
         }
 
         $this->mergeSelectors = $mergeSelectors;
@@ -355,7 +361,9 @@ class Configuration
     public function setOptimiseShorthands($optimiseShorthands)
     {
         if (!in_array($optimiseShorthands, array(self::NOTHING, self::COMMON, self::FONT, self::BACKGROUND), true)) {
-            throw new \InvalidArgumentException("optimizeShorthands must be COMMON, FONT or BACKGROUND constants, $optimiseShorthands given");
+            throw new \InvalidArgumentException(
+                "optimizeShorthands must be COMMON, FONT or BACKGROUND constants, $optimiseShorthands given"
+            );
         }
 
         $this->optimiseShorthands = $optimiseShorthands;

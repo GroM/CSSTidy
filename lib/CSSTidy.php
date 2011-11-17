@@ -453,7 +453,10 @@ class CSSTidy
                         if ($last !== 0) {
                             $selector .= substr($string, $i, $last);
                             $i += $last - 1;
-                        } else if (!isset($selector{0}) || !(($last = substr($selector, -1)) === ',' || ctype_space($last))) {
+                        } else if (
+                            !isset($selector{0}) ||
+                            !(($last = substr($selector, -1)) === ',' || ctype_space($last))
+                        ) {
                             $selector .= $current;
                         }
                     }
@@ -482,9 +485,7 @@ class CSSTidy
                             $property = '';
                         } else if ($current === '\\') {
                             $property .= $this->unicode($string, $i);
-                        }
-                        // else this is dumb IE a hack, keep it
-                        else if ($property == '' && !ctype_space($current)) {
+                        } else if ($property == '' && !ctype_space($current)) {
                             $property .= $current;
                         }
                     } else {
@@ -721,7 +722,7 @@ class CSSTidy
             }
         }
 
-        $this->optimise->postparse($parsed->css);
+        $this->optimise->postparse($parsed);
 
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 

@@ -130,7 +130,7 @@ class Output
             $css = "\n\n" . '<link rel="stylesheet" type="text/css" href="cssparsed.css">';
         }
 
-        return <<<html
+        return <<<HTML
 <!DOCTYPE html>
 <html>
     <head>
@@ -141,7 +141,7 @@ class Output
         <code id="copytext">{$this->formatted()}</code>
     </body>
 </html>
-html;
+HTML;
     }
 
     /**
@@ -237,7 +237,10 @@ html;
         $template = $this->configuration->getTemplate();
 
         if ($this->configuration->getAddTimestamp()) {
-            array_unshift($this->parsed->tokens, array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' '));
+            array_unshift(
+                $this->parsed->tokens,
+                array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' ')
+            );
         }
 
         if (!$plain) {
@@ -285,7 +288,7 @@ html;
         }
 
         $output .= $template->lastLineInAtRule;
-        $in_at_out = '';
+        $inAtOut = '';
         $out = & $output;
 
         foreach ($this->parsed->tokens as $key => $token) {
@@ -324,18 +327,18 @@ html;
 
                 case CSSTidy::AT_START:
                     $out .= $template->beforeAtRule . $this->htmlsp($token[1], $plain) . $template->bracketAfterAtRule;
-                    $out = & $in_at_out;
+                    $out = & $inAtOut;
                     break;
 
                 case CSSTidy::AT_END:
                     $out = & $output;
-                    $out .= $template->indentInAtRule . str_replace("\n", "\n" . $template->indentInAtRule, $in_at_out);
-                    $in_at_out = '';
+                    $out .= $template->indentInAtRule . str_replace("\n", "\n" . $template->indentInAtRule, $inAtOut);
+                    $inAtOut = '';
                     $out .= $template->atRuleClosingBracket;
                     break;
 
                 case CSSTidy::COMMENT:
-                    $out .= $template->beforeComment . '/*' . $this->htmlsp($token[1], $plain) . '*/' . $template->afterComment;
+                    $out .= "$template->beforeComment/*{$this->htmlsp($token[1], $plain)}*/$template->afterComment";
                     break;
             }
         }
@@ -411,7 +414,7 @@ html;
                             return strcasecmp(substr($a, 1), substr($b, 1));
                         } else {
                             return $ieHacks[$a{0}] > $ieHacks[$b{0}] ? 1 : -1;
-                         }
+                        }
                     });
                 }
                 $this->parsed->addToken(CSSTidy::SEL_START, $selector);
