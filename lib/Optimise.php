@@ -315,7 +315,7 @@ class Optimise
             return;
         }
 
-        $css = $parsed->css;
+        $css = &$parsed->css;
 
         if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
             foreach ($css as $medium => $value) {
