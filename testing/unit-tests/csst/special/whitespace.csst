@@ -15,7 +15,13 @@ multiples cursor rules
 ;
 
 }
+
+a {color:rgba(	255,	3,	1, 0.3)}
 --PRINT--
 p {
 color:green
+}
+
+a {
+color:rgba(255,3,1,.3)
 }

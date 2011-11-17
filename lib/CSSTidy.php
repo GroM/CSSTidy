@@ -620,7 +620,7 @@ class CSSTidy
 
                 /* Case data in bracket */
                 case 'inbrck':
-                    if (strpos("\"'() ,\n", $current) !== false && !self::escaped($string, $i)) {
+                    if (strpos("\"'() ,\n" . self::$whitespace, $current) !== false && !self::escaped($string, $i)) {
                         if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
                             $status = 'instr';
                             $from = 'inbrck';
@@ -635,7 +635,10 @@ class CSSTidy
                             $current = ' '; // Change new line character to normal space
                         }
 
-                        if ($current === ' ' && in_array(substr($subValue, -1), array(' ', ',', '('))) {
+                        if (
+                            strpos(self::$whitespace, $current) !== false &&
+                            in_array(substr($subValue, -1), array(' ', ',', '('))
+                        ) {
                             continue; // Remove multiple spaces and space after token
                         } else if (($current === ',' || $current === ')') && substr($subValue, -1) === ' ') {
                             $subValue = substr($subValue, 0, -1); // Remove space before ',' or ')'
