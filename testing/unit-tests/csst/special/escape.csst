@@ -1,0 +1,18 @@
+--TEST--
+multiples cursor rules
+--CSS--
+a {col\*or: red} /* escape inside property */
+b {color: r\*ed} /* escape inside value */
+st\*rong {color: red} /* escape inside selector */
+--PRINT--
+a {
+col\*or:red
+}
+
+b {
+color:r\*ed
+}
+
+st\*rong {
+color:red
+}

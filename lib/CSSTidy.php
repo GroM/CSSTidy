@@ -493,6 +493,8 @@ class CSSTidy
                         if ($last !== 0) {
                             $property .= substr($string, $i, $last);
                             $i += $last - 1;
+                        } else if (!ctype_space($current)) {
+                            $property .= $current;
                         }
                     }
                     break;
@@ -601,7 +603,10 @@ class CSSTidy
                                 if ($this->configuration->getDiscardInvalidProperties()) {
                                     $this->logger->log("Removed invalid property: $property", Logger::WARNING);
                                 } else {
-                                    $this->logger->log("Invalid property in {$this->configuration->getCssLevel()}: $property", Logger::WARNING);
+                                    $this->logger->log(
+                                        "Invalid property in {$this->configuration->getCssLevel()}: $property",
+                                        Logger::WARNING
+                                    );
                                 }
                             }
 
@@ -620,11 +625,13 @@ class CSSTidy
                         if ($last !== 0) {
                             $subValue .= substr($string, $i, $last);
                             $i += $last - 1;
-                        } else {
+                        } else if (ctype_space($current)) {
                             if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
                                 $subValues[] = $trimmed;
                                 $subValue = '';
                             }
+                        } else {
+                            $subValue .= $current;
                         }
                     }
                     break;
