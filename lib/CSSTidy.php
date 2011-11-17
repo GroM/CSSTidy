@@ -388,7 +388,7 @@ class CSSTidy
                             $status = 'ic';
                             ++$i;
                             $from = 'is';
-                        } else if ($current === '@' && ctype_space($selector)) {
+                        } else if ($current === '@' && trim($selector) == '') {
                             $selector = '@';
                             // Add whitespaces and remove backslash
                             $tokensList = self::$whitespace . str_replace('\\', '', self::$tokensList);
