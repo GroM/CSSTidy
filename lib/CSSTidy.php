@@ -449,12 +449,12 @@ class CSSTidy
                             $selector .= $current;
                         }
                     } else {
-                        if (!isset($selector{0})) {
+                        $last = strcspn($string, self::$tokensList . self::$whitespace, $i);
+                        if ($last !== 0) {
+                            $selector .= substr($string, $i, $last);
+                            $i += $last - 1;
+                        } else if (!isset($selector{0}) || !(($last = substr($selector, -1)) === ',' || ctype_space($last))) {
                             $selector .= $current;
-                        } else {
-                            if (!(ctype_space($current) && (($last = substr($selector, -1)) === ',' || ctype_space($last)))) {
-                                $selector .= $current;
-                            }
                         }
                     }
                     break;
@@ -487,9 +487,12 @@ class CSSTidy
                         elseif ($property == '' && !ctype_space($current)) {
                             $property .= $current;
                         }
-                    }
-                    elseif (!ctype_space($current)) {
-                        $property .= $current;
+                    } else {
+                        $last = strcspn($string, self::$tokensList . self::$whitespace, $i);
+                        if ($last !== 0) {
+                            $property .= substr($string, $i, $last);
+                            $i += $last - 1;
+                        }
                     }
                     break;
 
@@ -612,11 +615,15 @@ class CSSTidy
                             $selector = '';
                         }
                     } elseif (!$pn) {
-                        $subValue .= $current;
-
-                        if (ctype_space($current) && ($trimmed = trim($subValue, self::$whitespace)) !== '') {
-                            $subValues[] = $trimmed;
-                            $subValue = '';
+                        $last = strcspn($string, self::$tokensList . self::$whitespace, $i);
+                        if ($last !== 0) {
+                            $subValue .= substr($string, $i, $last);
+                            $i += $last - 1;
+                        } else {
+                            if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
+                                $subValues[] = $trimmed;
+                                $subValue = '';
+                            }
                         }
                     }
                     break;
