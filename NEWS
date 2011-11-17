@@ -31,6 +31,7 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 ! Normalize all possible single quotes to double quotes (for smaller gzipped file)
 ! Convert unit to most smaller (for example 100px -> 75pt)
 ! Merge transform functions and optimise their parameters
+! Merge overflow-y and overflow-x to overflow property
 - Added localizations for css_optimiser.php
 - Fixed bug with cookie setting for custom templates
 - Minor security problem in css_optimiser.php fixed

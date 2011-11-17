@@ -333,6 +333,7 @@ class Optimise
             foreach ($css as $medium => $value) {
                 foreach ($value as $selector => $foo) {
                     $css[$medium][$selector] = $this->mergeFourValueShorthands($css[$medium][$selector]);
+                    $css[$medium][$selector] = $this->mergeOverflowShorthands($css[$medium][$selector]);
 
                     if ($this->configuration->getOptimiseShorthands() < Configuration::FONT) {
                         continue;
@@ -1040,6 +1041,33 @@ class Optimise
 
                 $array[$shorthand] = $this->compressShorthandValues($values, $important);
             }
+        }
+
+        return $array;
+    }
+
+    /**
+     * @param array $array
+     * @return array
+     */
+    protected function mergeOverflowShorthands(array $array)
+    {
+        if (isset($array['overflow-x']) && isset($array['overflow-y'])) {
+            $x = $array['overflow-x'];
+            $y = $array['overflow-y'];
+
+            if (CSSTidy::isImportant($x) || CSSTidy::isImportant($y)) {
+                return $array;
+            }
+
+            if ($x == $y) {
+                $output = $x;
+            } else {
+                $output = "$x $y";
+            }
+
+            $array['overflow'] = $output;
+            unset($array['overflow-x'], $array['overflow-y']);
         }
 
         return $array;

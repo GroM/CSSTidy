@@ -1,0 +1,25 @@
+--TEST--
+Test padding optimization (no optimization)
+--CSS--
+a { 
+    overflow-x: scroll;
+    overflow-y: hidden;
+}
+
+b {
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+--EXPECT--
+array (
+  'a' => 
+  array (
+    'overflow' => 'scroll hidden',
+  ),
+  'b' =>
+  array (
+    'overflow' => 'hidden',
+  ),
+)
+--SETTINGS--
+optimise_shorthands=1
