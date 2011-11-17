@@ -174,7 +174,7 @@ html;
 
         if ($diff > 0) {
             return '+' . $diff;
-        } elseif ($diff == 0) {
+        } else if ($diff == 0) {
             return '+-' . $diff;
         }
 
@@ -261,6 +261,7 @@ html;
         $output = '';
 
         if (!empty($this->parsed->charset)) {
+            // After @charset must be space!
             $output .= "{$template->beforeAtRule}@charset {$template->beforeValue}{$this->parsed->charset}{$template->afterValueWithSemicolon}";
         }
 
@@ -292,7 +293,7 @@ html;
                 case CSSTidy::PROPERTY:
                     if ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
                         $token[1] = strtolower($token[1]);
-                    } elseif ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
+                    } else if ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
                         $token[1] = strtoupper($token[1]);
                     }
                     $out .= $template->beforeProperty . $this->htmlsp($token[1], $plain) . ':' . $template->beforeValue;
@@ -386,7 +387,7 @@ html;
 
             if ($medium < CSSTidy::DEFAULT_AT) {
                 $this->parsed->addToken(CSSTidy::AT_START, $medium);
-            } elseif ($defaultMedia) {
+            } else if ($defaultMedia) {
                 $this->parsed->addToken(CSSTidy::AT_START, $defaultMedia);
             }
             
@@ -425,7 +426,7 @@ html;
 
             if ($medium < CSSTidy::DEFAULT_AT) {
                 $this->parsed->addToken(CSSTidy::AT_END, $medium);
-            } elseif ($defaultMedia) {
+            } else if ($defaultMedia) {
                 $this->parsed->addToken(CSSTidy::AT_END, $defaultMedia);
             }
         }

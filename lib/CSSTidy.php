@@ -387,14 +387,14 @@ class CSSTidy
                                 $selector = $parsed->newSelector($at, $selector);
                                 $parsed->addToken(self::SEL_START, $selector);
                             }
-                        } elseif ($current === ',') {
+                        } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $this->selectorSeparate[] = strlen($selector);
-                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from = 'is';
-                        } elseif ($current === '@' && trim($selector) == '') {
+                        } else if ($current === '@' && trim($selector) == '') {
                             $selector = '@';
                             // Add whitespaces and remove backslash
                             $tokensList = self::$whitespace . str_replace('\\', '', self::$tokensList);
@@ -427,23 +427,23 @@ class CSSTidy
                                 $selector = '@';
                                 $this->logger->log("Invalid @-rule: $invalidAtName (removed)", Logger::WARNING);
                             }
-                        } elseif ($current === '"' || $current === "'") {
+                        } else if ($current === '"' || $current === "'") {
                             $currentString = $current;
                             $status = 'instr';
                             $stringChar = $current;
                             $from = 'is';
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
-                        } elseif ($invalidAtRule && $current === ';') {
+                        } else if ($invalidAtRule && $current === ';') {
                             $invalidAtRule = false;
                             $status = 'is';
-                        } elseif ($current === '}') {
+                        } else if ($current === '}') {
                             if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
                             $at = $selector = '';
                             $this->selectorSeparate = array();
-                        } elseif ($current === '\\') {
+                        } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
-                        } elseif ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
+                        } else if ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
                             // remove unnecessary universal selector, FS#147
                         } else {
                             $selector .= $current;
@@ -468,23 +468,23 @@ class CSSTidy
                                 $property = $parsed->newProperty($at, $selector, $property);
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
-                        } elseif ($current === '}') {
+                        } else if ($current === '}') {
                             $this->explodeSelectors($selector, $at);
                             $status = 'is';
                             $invalidAtRule = false;
                             if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
                             $selector = $property = '';
-                        } elseif ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from = 'ip';
-                        } elseif ($current === ';') {
+                        } else if ($current === ';') {
                             $property = '';
-                        } elseif ($current === '\\') {
+                        } else if ($current === '\\') {
                             $property .= $this->unicode($string, $i);
                         }
                         // else this is dumb IE a hack, keep it
-                        elseif ($property == '' && !ctype_space($current)) {
+                        else if ($property == '' && !ctype_space($current)) {
                             $property .= $current;
                         }
                     } else {
@@ -504,24 +504,24 @@ class CSSTidy
                             $status = 'ic';
                             ++$i;
                             $from = 'iv';
-                        } elseif ($current === '"' || $current === "'") {
+                        } else if ($current === '"' || $current === "'") {
                             $currentString = $current;
                             $status = 'instr';
                             $stringChar = $current;
                             $from = 'iv';
-                        } elseif ($current === '(') {
+                        } else if ($current === '(') {
                             $subValue .= $current;
                             $bracketCount = 1;
                             $status = 'inbrck';
-                        } elseif ($current === ',') {
+                        } else if ($current === ',') {
                             if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
                                 $subValues[] = $trimmed;
                                 $subValues[] = ',';
                                 $subValue = '';
                             }
-                        } elseif ($current === '\\') {
+                        } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
-                        } elseif ($current === ';' || $pn) {
+                        } else if ($current === ';' || $pn) {
                             if ($selector{0} === '@' && isset(self::$atRules[$selector]) && self::$atRules[$selector] === 'iv') {
                                 $subValues[] = trim($subValue, self::$whitespace);
 
@@ -569,7 +569,7 @@ class CSSTidy
                             } else {
                                 $status = 'ip';
                             }
-                        } elseif ($current !== '}') {
+                        } else if ($current !== '}') {
                             $subValue .= $current;
                         }
 
@@ -614,7 +614,7 @@ class CSSTidy
                             $invalidAtRule = false;
                             $selector = '';
                         }
-                    } elseif (!$pn) {
+                    } else if (!$pn) {
                         $last = strcspn($string, self::$tokensList . self::$whitespace, $i);
                         if ($last !== 0) {
                             $subValue .= substr($string, $i, $last);
@@ -672,7 +672,7 @@ class CSSTidy
                         }
                         if ($from === 'iv' || $from === 'inbrck') {
                             $subValue .= $currentString;
-                        } elseif ($from === 'is') {
+                        } else if ($from === 'is') {
                             $selector .= $currentString;
                         }
                         $quotedString = false;
@@ -698,15 +698,15 @@ class CSSTidy
                             $status = 'ic';
                             ++$i;
                             $from = 'at';
-                        } elseif ($current === '{') {
+                        } else if ($current === '{') {
                             $status = 'is';
                             if (!$preserveCss) {
                                 $at = $parsed->newMediaSection($at);
                                 $parsed->addToken(self::AT_START, $at);
                             }
-                        } elseif ($current === ',') {
+                        } else if ($current === ',') {
                             $at = trim($at) . ',';
-                        } elseif ($current === '\\') {
+                        } else if ($current === '\\') {
                             $at .= $this->unicode($string, $i);
                         } else {
                             $at .= $current;

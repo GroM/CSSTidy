@@ -496,9 +496,9 @@ class Optimise
             case 4:
                 if ($values[0] == $values[1] && $values[0] == $values[2] && $values[0] == $values[3]) {
                     return $values[0] . $important;
-                } elseif ($values[1] == $values[3] && $values[0] == $values[2]) {
+                } else if ($values[1] == $values[3] && $values[0] == $values[2]) {
                     return $values[0] . ' ' . $values[1] . $important;
-                } elseif ($values[1] == $values[3]) {
+                } else if ($values[1] == $values[3]) {
                     return $values[0] . ' ' . $values[1] . ' ' . $values[2] . $important;
                 }
                 break;
@@ -506,7 +506,7 @@ class Optimise
             case 3:
                 if ($values[0] == $values[1] && $values[0] == $values[2]) {
                     return $values[0] . $important;
-                } elseif ($values[0] == $values[2]) {
+                } else if ($values[0] == $values[2]) {
                     return $values[0] . ' ' . $values[1] . $important;
                 }
                 break;
@@ -1048,21 +1048,21 @@ class Optimise
                 if ($have['bg'] === false && (substr($current, 0, 4) === 'url(' || $current === 'none')) {
                     $return['background-image'] .= $current . ',';
                     $have['bg'] = true;
-                } elseif (in_array($current, $repeat, true)) {
+                } else if (in_array($current, $repeat, true)) {
                     $return['background-repeat'] .= $current . ',';
-                } elseif (in_array($current, $attachment, true)) {
+                } else if (in_array($current, $attachment, true)) {
                     $return['background-attachment'] .= $current . ',';
-                } elseif (in_array($current, $clip, true) && !$have['clip']) {
+                } else if (in_array($current, $clip, true) && !$have['clip']) {
                     $return['background-clip'] .= $current . ',';
                     $have['clip'] = true;
-                } elseif (in_array($current, $origin, true)) {
+                } else if (in_array($current, $origin, true)) {
                     $return['background-origin'] .= $current . ',';
-                } elseif ($current{0} === '(') {
+                } else if ($current{0} === '(') {
                     $return['background-size'] .= substr($current, 1, -1) . ',';
-                } elseif (in_array($current, $pos, true) || is_numeric($current{0}) || $current{0} === null || $current{0} === '-' || $current{0} === '.') {
+                } else if (in_array($current, $pos, true) || is_numeric($current{0}) || $current{0} === null || $current{0} === '-' || $current{0} === '.') {
                     $return['background-position'] .= $current . ($have['pos'] ? ',' : ' ');
                     $have['pos'] = true;
-                } elseif (!$have['color']) {
+                } else if (!$have['color']) {
                     $return['background-color'] .= $current . ',';
                     $have['color'] = true;
                 }
@@ -1158,7 +1158,7 @@ class Optimise
         // Add new background property
         if ($newBackgroundValue !== '') {
             $inputCss['background'] = $newBackgroundValue . $important;
-        } elseif (isset($inputCss['background'])) {
+        } else if (isset($inputCss['background'])) {
             $inputCss['background'] = 'none';
         }
 
@@ -1205,13 +1205,13 @@ class Optimise
             if ($have['weight'] === false && in_array($propertyValue, $fontWeight)) {
                 $return['font-weight'] = $propertyValue;
                 $have['weight'] = true;
-            } elseif ($have['variant'] === false && in_array($propertyValue, $fontVariant)) {
+            } else if ($have['variant'] === false && in_array($propertyValue, $fontVariant)) {
                 $return['font-variant'] = $propertyValue;
                 $have['variant'] = true;
-            } elseif ($have['style'] === false && in_array($propertyValue, $fontStyle)) {
+            } else if ($have['style'] === false && in_array($propertyValue, $fontStyle)) {
                 $return['font-style'] = $propertyValue;
                 $have['style'] = true;
-            } elseif ($have['size'] === false && (is_numeric($propertyValue{0}) || $propertyValue{0} === null || $propertyValue{0} === '.')) {
+            } else if ($have['size'] === false && (is_numeric($propertyValue{0}) || $propertyValue{0} === null || $propertyValue{0} === '.')) {
                 $size = $this->explodeWs('/', trim($propertyValue));
                 $return['font-size'] = $size[0];
                 if (isset($size[1])) {
