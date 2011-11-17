@@ -8,7 +8,7 @@ div {
 array (
   'div' =>
   array (
-    'transform' => 'translate(5pc,5pc) rotate(1turn) scale(1.5,.5)'
+    'transform' => 'translate(5pc,5pc) rotate(360deg) scale(1.5,.5)'
   ),
 )
 --SETTINGS--

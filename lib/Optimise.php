@@ -1553,7 +1553,7 @@ class Optimise
 
             // Angle, radians are ugly
             'grad' => array(0.9, 'deg'),
-            'deg' => array(1/360, 'turn'),
+            //'deg' => array(1/360, 'turn'), // turn unit is not supported by major browser
 
             // Time
             'ms' => array(0.001, 's'),
