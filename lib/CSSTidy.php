@@ -449,7 +449,7 @@ class CSSTidy
                 /* Case in-property */
                 case 'ip':
                     if ($this->isToken($string, $i)) {
-                        if (($current === ':' || $current === '=') && $property !== '') {
+                        if (($current === ':' || $current === '=') && isset($property{0})) {
                             $status = 'iv';
                             if (!$preserveCss && (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property))) {
                                 $property = $parsed->newProperty($at, $selector, $property);
