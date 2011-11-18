@@ -343,7 +343,6 @@ class CSSTidy
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
-        $preserveCss = $this->configuration->getPreserveCss();
         $currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
         $quotedString = false;
         $bracketCount = 0;
@@ -374,13 +373,11 @@ class CSSTidy
                     if ($this->isToken($string, $i)) {
                         if ($current === '{') {
                             $status = 'ip';
-                            if (!$preserveCss) {
-                                if ($at === '') {
-                                    $at = $parsed->newMediaSection(self::DEFAULT_AT);
-                                }
-                                $selector = $parsed->newSelector($at, $selector);
-                                $parsed->addToken(self::SEL_START, $selector);
+                            if ($at === '') {
+                                $at = $parsed->newMediaSection(self::DEFAULT_AT);
                             }
+                            $selector = $parsed->newSelector($at, $selector);
+                            $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $this->selectorSeparate[] = strlen($selector);
@@ -422,7 +419,7 @@ class CSSTidy
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
                         } else if ($current === '}') {
-                            if (!$preserveCss) $parsed->addToken(self::AT_END, $at);
+                            $parsed->addToken(self::AT_END, $at);
                             $at = $selector = '';
                             $this->selectorSeparate = array();
                         } else if ($current === '\\') {
@@ -451,14 +448,14 @@ class CSSTidy
                     if ($this->isToken($string, $i)) {
                         if (($current === ':' || $current === '=') && isset($property{0})) {
                             $status = 'iv';
-                            if (!$preserveCss && (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property))) {
+                            if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
                                 $property = $parsed->newProperty($at, $selector, $property);
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
                         } else if ($current === '}') {
                             $this->explodeSelectors($selector, $at);
                             $status = 'is';
-                            if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
+                            $parsed->addToken(self::SEL_END, $selector);
                             $selector = $property = '';
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
@@ -560,7 +557,7 @@ class CSSTidy
                         }
 
                         if (($current === '}' || $current === ';' || $pn) && !empty($selector)) {
-                            if ($at == '' && !$preserveCss) {
+                            if ($at == '') {
                                 $at = $parsed->newMediaSection(self::DEFAULT_AT);
                             }
 
@@ -576,10 +573,8 @@ class CSSTidy
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
                             if (!$this->configuration->getDiscardInvalidProperties() || $valid) {
-                                if (!$preserveCss) {
-                                    $parsed->addProperty($at, $selector, $property, $value);
-                                    $parsed->addToken(self::VALUE, $value);
-                                }
+                                $parsed->addProperty($at, $selector, $property, $value);
+                                $parsed->addToken(self::VALUE, $value);
                                 $this->optimise->shorthands($parsed, $at, $selector, $property, $value);
                             }
                             if (!$valid) {
@@ -598,7 +593,7 @@ class CSSTidy
                         }
                         if ($current === '}') {
                             $this->explodeSelectors($selector, $at);
-                            if (!$preserveCss) $parsed->addToken(self::SEL_END, $selector);
+                            $parsed->addToken(self::SEL_END, $selector);
                             $status = 'is';
                             $selector = '';
                         }
@@ -677,7 +672,7 @@ class CSSTidy
                     if ($current === '*' && $string{$i + 1} === '/') {
                         $status = $from;
                         $i++;
-                        if (!$preserveCss) $parsed->addToken(self::COMMENT, $currentComment);
+                        $parsed->addToken(self::COMMENT, $currentComment);
                         $currentComment = '';
                     } else {
                         $currentComment .= $current;
@@ -693,10 +688,8 @@ class CSSTidy
                             $from = 'at';
                         } else if ($current === '{') {
                             $status = 'is';
-                            if (!$preserveCss) {
-                                $at = $parsed->newMediaSection($at);
-                                $parsed->addToken(self::AT_START, $at);
-                            }
+                            $at = $parsed->newMediaSection($at);
+                            $parsed->addToken(self::AT_START, $at);
                         } else if ($current === ',') {
                             $at = trim($at) . ',';
                         } else if ($current === '\\') {
