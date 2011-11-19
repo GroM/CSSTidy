@@ -1,0 +1,39 @@
+--TEST--
+Don't merge multiples occurences of same @media
+--SETTINGS--
+merge_selectors = 0
+--CSS--
+BODY {
+color: black;
+}
+
+@media screen, tv, projection {
+BODY {
+background-color: red;
+}
+}
+
+@media screen, tv, projection {
+BODY {
+color: green;
+}
+}
+
+BODY {
+background-color: white;
+}
+
+--PRINT--
+BODY {
+color:#000
+}
+
+@media screen,tv,projection {
+BODY {
+background-color:red;
+color:green
+}}
+
+BODY {
+background-color:#fff
+}

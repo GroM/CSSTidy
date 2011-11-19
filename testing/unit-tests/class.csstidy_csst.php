@@ -21,12 +21,6 @@ class csstidy_csst extends SimpleExpectation
     
     /** Expected var_export() output of $css->css[41] (no at block) */
     var $expect = '';
-    
-    /** Boolean whether or not to use $css->css instead for $expect */
-    var $fullexpect = false;
-
-		/** Print form of CSS that can be tested **/
-    var $print = false;
 
     /** Actual result */
     var $actual;
@@ -56,33 +50,18 @@ class csstidy_csst extends SimpleExpectation
                 case '--CSS--':
                     $this->css .= $line . "\n";
                     break;
-                case '--FULLEXPECT--':
-                    $this->fullexpect = true;
-                    $this->expect .= $line . "\n";
-                    break;
-                case '--EXPECT--':
-                    $this->expect .= $line . "\n";
-                    break;
                 case '--SETTINGS--':
                     list($n, $v) = array_map('trim', explode('=', $line, 2));
                     $v = eval("return $v;");
                     $this->settings[$n] = $v;
                     break;
                 case '--PRINT--':
-                    $this->print = true;
                     $this->expect .= $line . "\n";
                     break;
             }
         }
 
-        if ($this->print) {
-            $this->expect = trim($this->expect);
-        } else {
-            if ($this->expect)
-                $this->expect = eval("return ".$this->expect.";");
-            if (!$this->fullexpect)
-                $this->expect = array(41 => $this->expect);
-        }
+        $this->expect = trim($this->expect);
     }
     
     /**
@@ -93,14 +72,14 @@ class csstidy_csst extends SimpleExpectation
     {
         if ($filename) $this->load($filename);
         $configure = new CSSTidy\Configuration($this->settings);
-        $css = new CSSTidyTest($configure);
-        $output = $css->parse($this->css);
 
-        if ($this->print) {
-            $this->actual = $output->plain();
-        } else {
-            $this->actual = $css->getParsed()->css;
+        if (!isset($this->settings['template'])) {
+            $configure->setTemplate(new TestingTemplate);
         }
+
+        $css = new \CSSTidy\CSSTidy($configure);
+        $output = $css->parse($this->css);
+        $this->actual = $output->plain();
         return $this->expect === $this->actual;
     }
     
@@ -141,14 +120,6 @@ class csstidy_csst extends SimpleExpectation
      */
     protected function convertToDiff($data)
     {
-        return explode("\n", $this->print ? $data : var_export($data, true));
-    }
-}
-
-class CSSTidyTest extends CSSTidy\CSSTidy
-{
-    public function getParsed()
-    {
-        return $this->parsed;
+        return explode("\n", $data);
     }
 }

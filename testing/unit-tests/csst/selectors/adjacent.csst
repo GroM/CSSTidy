@@ -2,10 +2,7 @@
 Adjacent selector
 --CSS--
 a + b {display: inherit;}
---EXPECT--
-array (
-  'a + b' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a + b {
+display:inherit
+}

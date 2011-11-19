@@ -1,5 +1,5 @@
 --TEST--
-multiples cursor rules
+Animations @keyframes rule
 --CSS--
 @keyframes 'wobble' {
 
@@ -21,7 +21,7 @@ multiples cursor rules
 
 }
 --PRINT--
-@keyframes 'wobble' {
+@keyframes "wobble" {
 from {
 left:100px
 }
@@ -36,5 +36,4 @@ left:75px
 
 to {
 left:100px
-}
-}
+}}

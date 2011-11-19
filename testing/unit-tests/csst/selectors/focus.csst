@@ -2,10 +2,7 @@
 Dynamic focus selector
 --CSS--
 a:focus {display: inherit;}
---EXPECT--
-array (
-  'a:focus' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a:focus {
+display:inherit
+}

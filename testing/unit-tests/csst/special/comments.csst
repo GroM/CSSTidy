@@ -1,5 +1,5 @@
 --TEST--
-multiples cursor rules
+Comments
 --CSS--
 div {
     /* *\/*/color: green;
@@ -24,34 +24,31 @@ div6 {
 div7 {
     /\*;color: green;*/
 }
---EXPECT--
-array (
-  'div' =>
-  array (
-    'color' => 'green',
-  ),
-  'div2' =>
-  array (
-    'color' => 'green',
-  ),
-  'div3' =>
-  array (
-    'color' => 'green',
-  ),
-  'div4' =>
-  array (
-    'color' => 'green',
-  ),
-  'div5' =>
-  array (
-    'color' => 'green',
-  ),
-  'div6' =>
-  array (
-    'color' => 'green',
-  ),
-  'div7' =>
-  array (
-    'color' => 'green',
-  ),
-)
+--PRINT--
+div {
+color:green
+}
+
+div2 {
+color:green
+}
+
+div3 {
+color:green
+}
+
+div4 {
+color:green
+}
+
+div5 {
+color:green
+}
+
+div6 {
+color:green
+}
+
+div7 {
+color:green
+}

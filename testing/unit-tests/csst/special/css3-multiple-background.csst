@@ -4,10 +4,7 @@ multiples cursor rules
 a {background: url("http://demos.hacks.mozilla.org/(openweb/resources/images/logos/firefox-48.png"),
         -moz-linear-gradient(left, rgba(255, 255, 255, 0),  rgba(255, 255, 255, 1)),
         url(http://demos.hacks.mozilla.org/openweb/resources/images/patterns/flowers-pattern.jpg)}
---EXPECT--
-array (
-'a' =>
-    array (
-      'background' => 'url("http://demos.hacks.mozilla.org/(openweb/resources/images/logos/firefox-48.png"),-moz-linear-gradient(left,rgba(255,255,255,0),rgba(255,255,255,1)),url(http://demos.hacks.mozilla.org/openweb/resources/images/patterns/flowers-pattern.jpg)',
-    )
-)
+--PRINT--
+a {
+background:url("http://demos.hacks.mozilla.org/(openweb/resources/images/logos/firefox-48.png"),-moz-linear-gradient(left,rgba(255,255,255,0),rgba(255,255,255,1)),url(http://demos.hacks.mozilla.org/openweb/resources/images/patterns/flowers-pattern.jpg)
+}

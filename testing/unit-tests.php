@@ -79,6 +79,7 @@ class UnitTests
     protected function includeLibrary()
     {
         require_once __DIR__ . '/../lib/CSSTidy.php';
+        require_once __DIR__ . '/unit-tests/Template.php';
     }
 }
 

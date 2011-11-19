@@ -7,14 +7,11 @@ a {
 b { 
     border-radius: 0 10px 0 0 / 1px 1px 1px 1px;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'border-radius' => '0 0 10px',
-  ),
-  'b' => 
-  array (
-    'border-radius' => '0 10px 0 0/1px',
-  ),
-)
+--PRINT--
+a {
+border-radius:0 0 10px
+}
+
+b {
+border-radius:0 10px 0 0/1px
+}

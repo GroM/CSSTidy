@@ -2,10 +2,7 @@
 Visited link selector
 --CSS--
 a:visited {display: inherit;}
---EXPECT--
-array (
-  'a:visited' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a:visited {
+display:inherit
+}

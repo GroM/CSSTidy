@@ -5,11 +5,8 @@
 	font-family: "Unibody8SmallCaps Regular";
 	src:url('fonts/unibody_8-smallcaps-webfont.woff') format('woff'), url(fonts/unibody_8-smallcaps-webfont.ttf) format('truetype');
 }
---EXPECT--
-array (
-  '@font-face' =>
-  array (
-		'font-family' => '"Unibody8SmallCaps Regular"',
-		'src' => 'url(fonts/unibody_8-smallcaps-webfont.woff) format("woff"),url(fonts/unibody_8-smallcaps-webfont.ttf) format("truetype")',
-  ),
-)
+--PRINT--
+@font-face {
+font-family:"Unibody8SmallCaps Regular";
+src:url(fonts/unibody_8-smallcaps-webfont.woff) format("woff"),url(fonts/unibody_8-smallcaps-webfont.ttf) format("truetype")
+}

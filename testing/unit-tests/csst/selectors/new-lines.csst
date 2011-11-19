@@ -1,0 +1,26 @@
+--TEST--
+Adjacent selector
+--CSS--
+p[example="public class foo\
+{\
+    private int x;\
+\
+    foo(int x, int y) {\
+        this.x = x + y;\
+    }\
+\
+}"] { color: red }
+--PRINT--
+p[example="public class foo\
+{\
+    private int x;\
+\
+    foo(int x, int y) {\
+        this.x = x + y;\
+    }\
+\
+}"] {
+color:red
+}
+--SETTINGS--
+discard_invalid_selectors=1

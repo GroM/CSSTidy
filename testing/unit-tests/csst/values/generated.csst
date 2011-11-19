@@ -27,27 +27,24 @@ div p:before
                     ;
     counter-increment: chapter;
 }
---EXPECT--
-array (
-  'a' =>
-  array (
-    'quotes' => '"" ""',
-  ),
-  'b' =>
-  array (
-    'quotes' => '"«" "»" "\'" "\'"',
-  ),
-  'c' =>
-  array (
-    'content' => '"Ahoj\A svete"',
-  ),
-  'd' =>
-  array (
-    'content' => 'counter(par-num,upper-roman) ". "',
-  ),
-  'div p:before' =>
-  array (
-    'content' => 'counters(chapter,".",upper-roman)',
-    'counter-increment' => 'chapter',
-  ),
-)
+--PRINT--
+a {
+quotes:"" ""
+}
+
+b {
+quotes:"«" "»" "'" "'"
+}
+
+c {
+content:"Ahoj\A svete"
+}
+
+d {
+content:counter(par-num,upper-roman) ". "
+}
+
+div p:before {
+content:counters(chapter,".",upper-roman);
+counter-increment:chapter
+}

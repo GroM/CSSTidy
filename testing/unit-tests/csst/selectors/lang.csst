@@ -2,10 +2,7 @@
 Language selector
 --CSS--
 div:lang(en) {display: inherit;}
---EXPECT--
-array (
-  'div:lang(en)' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+div:lang(en) {
+display:inherit
+}

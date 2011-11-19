@@ -8,16 +8,13 @@ a {
     background-position: 1px 1px;
     background-attachment: scroll;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'background-color' => '#fff',
-    'background-image' => 'url(123)',
-    'background-repeat' => 'no-repeat',
-    'background-position' => '1px 1px',
-    'background-attachment' => 'scroll',
-  ),
-)
+--PRINT--
+a {
+background-color:#fff;
+background-image:url(123);
+background-repeat:no-repeat;
+background-position:1px 1px;
+background-attachment:scroll
+}
 --SETTINGS--
 optimise_shorthands=1

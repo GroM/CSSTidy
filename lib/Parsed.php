@@ -31,11 +31,12 @@
  */
 namespace CSSTidy;
 
-class Parsed
-{
-    /** @var array */
-    public $css = array();
+require_once __DIR__ . '/Selector.php';
+require_once __DIR__ . '/AtBlock.php';
+require_once __DIR__ . '/LineAt.php';
 
+class Parsed extends AtBlock
+{
     /** @var array */
     public $tokens = array();
 
@@ -48,15 +49,12 @@ class Parsed
     /** @var string */
     public $namespace = array();
 
-    /** @var int */
-    protected $mergeSelectors;
-
     /**
      * @param Configuration $configuration
      */
     public function __construct(Configuration $configuration)
     {
-        $this->mergeSelectors = $configuration->getMergeSelectors();
+        AtBlock::$mergeSelectors = $configuration->getMergeSelectors();
     }
 
     /**
@@ -65,144 +63,8 @@ class Parsed
      * @param string $data
      * @return void
      */
-    public function addToken($type, $data)
+    public function addToken($type, $data = null)
     {
         $this->tokens[] = array($type, ($type === CSSTidy::COMMENT) ? $data : trim($data));
-    }
-
-    /**
-     * Adds a property with value to the existing CSS code
-     * @param string $media
-     * @param string $selector
-     * @param string $property
-     * @param string $newValue
-     */
-    public function addProperty($media, $selector, $property, $newValue)
-    {
-        if (isset($this->css[$media][$selector][$property])) {
-            if (
-                !CSSTidy::isImportant($this->css[$media][$selector][$property]) ||
-                (CSSTidy::isImportant($this->css[$media][$selector][$property]) && CSSTidy::isImportant($newValue))
-            ) {
-                $this->css[$media][$selector][$property] = $newValue;
-            }
-        } else {
-            $this->css[$media][$selector][$property] = $newValue;
-        }
-    }
-
-    /**
-     * Adds CSS to an existing media/selector
-     * @param string $media
-     * @param string $selector
-     * @param array $cssToAdd
-     * @version 1.1
-     */
-    public function mergeCssBlocks($media, $selector, array $cssToAdd)
-    {
-        foreach ($cssToAdd as $property => $value) {
-            $value = trim($value);
-            if ($value == '') {
-                continue;
-            }
-            $this->addProperty($media, $selector, $property, $value);
-        }
-    }
-
-    /**
-     * Start a new media section.
-     * Check if the media is not already known,
-     * else rename it with extra spaces
-     * to avoid merging
-     *
-     * @param string $media
-     * @return string
-     */
-    public function newMediaSection($media)
-    {
-        // if the last @media is the same as this
-        // keep it
-        if (!$this->css || !is_array($this->css) || empty($this->css)) {
-            return $media;
-        }
-
-        end($this->css);
-
-        if (key($this->css) == $media) {
-            return $media;
-        }
-
-        while (isset($this->css[$media])) {
-            if (is_numeric($media)) {
-                $media++;
-            } else {
-                $media .= " ";
-            }
-        }
-
-        return $media;
-    }
-
-    /**
-     * Start a new selector.
-     * If already referenced in this media section,
-     * rename it with extra space to avoid merging
-     * except if merging is required,
-     * or last selector is the same (merge siblings)
-     *
-     * never merge @font-face
-     *
-     * @param string $media
-     * @param string $selector
-     * @return string
-     */
-    public function newSelector($media, $selector)
-    {
-        $selector = trim($selector);
-        if ($selector !== "@font-face") {
-            if ($this->mergeSelectors !== Configuration::DO_NOT_CHANGE) {
-                return $selector;
-            }
-
-            if (!$this->css || !isset($this->css[$media]) || !$this->css[$media]) {
-                return $selector;
-            }
-
-            // if last is the same, keep it
-            end($this->css[$media]);
-
-            if (key($this->css[$media]) === $selector) {
-                return $selector;
-            }
-        }
-
-        while (isset($this->css[$media][$selector])) {
-            $selector .= " ";
-        }
-
-        return $selector;
-    }
-
-    /**
-     * Start a new property
-     * If already references in this selector,
-     * rename it with extra space to avoid override
-     *
-     * @param string $media
-     * @param string $selector
-     * @param string $property
-     * @return string
-     */
-    public function newProperty($media, $selector, $property)
-    {
-        if (!$this->css || !isset($this->css[$media][$selector]) || !$this->css[$media][$selector]) {
-            return $property;
-        }
-
-        while (isset($this->css[$media][$selector][$property])) {
-            $property .= ' ';
-        }
-
-        return $property;
     }
 }

@@ -7,15 +7,12 @@ line-height:1.0;
 color:123456;
 font:1em/1.0 verdana;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'font-size' => '1px',
-    'line-height' => '1',
-    'color' => '#123456',
-    'font' => '1em/1 verdana',
-  ),
-)
+--PRINT--
+a {
+font-size:1px;
+line-height:1;
+color:#123456;
+font:1em/1 verdana
+}
 --SETTINGS--
 optimise_shorthands=0

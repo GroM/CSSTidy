@@ -7,16 +7,13 @@ a {
 b { 
     font-weight: normal;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'font-weight' => '700',
-  ),
-  'b' => 
-  array (
-    'font-weight' => '400',
-  ),
-)
+--PRINT--
+a {
+font-weight:700
+}
+
+b {
+font-weight:400
+}
 --SETTINGS--
 compress_font-weight=true

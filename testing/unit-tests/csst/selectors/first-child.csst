@@ -2,10 +2,7 @@
 First child selector
 --CSS--
 p:first-child {display: inherit;}
---EXPECT--
-array (
-  'p:first-child' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+p:first-child {
+display:inherit
+}

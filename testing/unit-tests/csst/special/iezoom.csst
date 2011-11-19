@@ -4,10 +4,7 @@ IE Zoom
 #content {
 zoom: 1;
 }
---EXPECT--
-array (
-  '#content' =>
-  array (
-    'zoom' => '1',
-  ),
-)
+--PRINT--
+#content {
+zoom:1
+}

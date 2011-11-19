@@ -2,10 +2,7 @@
 Begins hyphen-separated attribute list selector
 --CSS--
 a[foo|="en"] {display: inherit;}
---EXPECT--
-array (
-  'a[foo|="en"]' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a[foo|="en"] {
+display:inherit
+}

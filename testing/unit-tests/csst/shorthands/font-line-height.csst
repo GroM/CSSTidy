@@ -1,0 +1,10 @@
+--TEST--
+Test font-weight optimization (full)
+--CSS--
+a {font:100%;line-height:1.2}
+--PRINT--
+a {
+font:100%/1.2
+}
+--SETTINGS--
+optimise_shorthands=2

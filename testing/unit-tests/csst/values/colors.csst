@@ -17,23 +17,20 @@ a {
     hsla2:hsla(355,50%,50%,0.3);
     doublergba:inset 0 1px 3px rgba(0, 0, 0, 0.1),0 0 8px rgba(82, 168, 236, 0.6);
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'foo' => '#000',
-    'bar' => '#000',
-    'baz' => '#fab',
-    'qux' => 'red',
-    'quux' => '#ffebcd',
-    'rgb' => '#000001',
-    'rgb2' => '#fff',
-    'hsl' => '#ff6a00',
-    'hsl2' => '#0080ff',
-    'hsl3' => '#403050',
-    'rgba' => 'rgba(200,200,200,.5)',
-    'hsla' => 'hsla(120,50%,50%,.3)',
-    'hsla2' => 'hsla(-5,50%,50%,.3)',
-    'doublergba' => 'inset 0 1px 3px rgba(0,0,0,.1),0 0 8px rgba(82,168,236,.6)',
-  ),
-)
+--PRINT--
+a {
+foo:#000;
+bar:#000;
+baz:#fab;
+qux:red;
+quux:#ffebcd;
+rgb:#000001;
+rgb2:#fff;
+hsl:#ff6a00;
+hsl2:#0080ff;
+hsl3:#403050;
+rgba:rgba(200,200,200,.5);
+hsla:hsla(120,50%,50%,.3);
+hsla2:hsla(-5,50%,50%,.3);
+doublergba:inset 0 1px 3px rgba(0,0,0,.1),0 0 8px rgba(82,168,236,.6)
+}

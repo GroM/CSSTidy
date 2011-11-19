@@ -5,11 +5,8 @@ a {
     cursor: pointer;
     cursor: hand;
 }
---EXPECT--
-array (
-  'a' =>
-  array (
-    'cursor' => 'pointer',
-	'cursor ' => 'hand',
-  ),
-)
+--PRINT--
+a {
+cursor:pointer;
+cursor:hand
+}

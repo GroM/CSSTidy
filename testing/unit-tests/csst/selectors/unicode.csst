@@ -31,48 +31,45 @@ h\36.si\78te\65n {  /* "h6.sixteen" */
 .test {
     color:\0020yellow;
 }
---EXPECT--
-array (
-    '.three' =>
-    array (
-      'color' => 'blue',
-    ),
-    '.four' =>
-    array (
-      'color' => '#f0f',
-    ),
-    '.five' =>
-    array (
-      'color' => 'gray',
-    ),
-    '.six' =>
-    array (
-      'color' => 'green',
-    ),
-    '.seven' =>
-    array (
-      'color' => 'lime',
-    ),
-    'blockquote' =>
-    array (
-      'color' => 'silver',
-    ),
-    'h6.sixteen' =>
-    array (
-      'color' => 'teal',
-    ),
-    '.css1p' =>
-    array (
-      'color' => '#ff0',
-      'background' => 'red',
-    ),
-    '.css2p' =>
-    array (
-      'color' => '#fff',
-      'background' => 'green',
-    ),
-    '.test' =>
-    array (
-      'color' => '\\0020yellow',
-    ),
-  )
+--PRINT--
+.three {
+color:blue
+}
+
+.four {
+color:#f0f
+}
+
+.five {
+color:gray
+}
+
+.six {
+color:green
+}
+
+.seven {
+color:lime
+}
+
+blockquote {
+color:silver
+}
+
+h6.sixteen {
+color:teal
+}
+
+.css1p {
+color:#ff0;
+background:red
+}
+
+.css2p {
+color:#fff;
+background:green
+}
+
+.test {
+color:\0020yellow
+}

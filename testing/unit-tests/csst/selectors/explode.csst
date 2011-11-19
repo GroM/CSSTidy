@@ -1,17 +1,14 @@
 --TEST--
-Child selector
+Explode selectors
 --CSS--
 a,b{color:red}
---EXPECT--
-array (
-  'a' =>
-  array (
-    'color' => 'red',
-  ),
-  'b' =>
-  array (
-    'color' => 'red',
-  ),
-)
+--PRINT--
+a {
+color:red
+}
+
+b {
+color:red
+}
 --SETTINGS--
 merge_selectors=1

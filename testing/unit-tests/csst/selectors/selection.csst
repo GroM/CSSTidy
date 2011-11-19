@@ -2,10 +2,7 @@
 ::selection selector
 --CSS--
 ::selection {color: red;}
---EXPECT--
-array (
-  '::selection' =>
-  array (
-    'color' => 'red',
-  ),
-)
+--PRINT--
+::selection {
+color:red
+}

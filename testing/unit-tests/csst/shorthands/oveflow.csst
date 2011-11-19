@@ -10,16 +10,13 @@ b {
     overflow-x: hidden;
     overflow-y: hidden;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'overflow' => 'scroll hidden',
-  ),
-  'b' =>
-  array (
-    'overflow' => 'hidden',
-  ),
-)
+--PRINT--
+a {
+overflow:scroll hidden
+}
+
+b {
+overflow:hidden
+}
 --SETTINGS--
 optimise_shorthands=1

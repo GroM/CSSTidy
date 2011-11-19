@@ -1,0 +1,6 @@
+--TEST--
+Unknown line at rule
+--CSS--
+@unknwon 'Ahoj' svete;
+--PRINT--
+@unknwon "Ahoj" svete;

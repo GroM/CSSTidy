@@ -25,22 +25,19 @@ d {
     margin-top: 10px;
     margin-bottom: 3px;
 }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'margin' => '10px',
-  ),
-  'b' => 
-  array (
-    'margin' => '10px 6px',
-  ),
-  'c' => 
-  array (
-    'margin' => '10px 6px 1px',
-  ),
-  'd' => 
-  array (
-    'margin' => '10px 6px 3px 1px',
-  ),
-)
+--PRINT--
+a {
+margin:10px
+}
+
+b {
+margin:10px 6px
+}
+
+c {
+margin:10px 6px 1px
+}
+
+d {
+margin:10px 6px 3px 1px
+}

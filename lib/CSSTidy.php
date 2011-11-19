@@ -60,10 +60,9 @@ class CSSTidy
         PROPERTY = 5,
         VALUE = 6,
         COMMENT = 7,
-        DEFAULT_AT = 41;
-
+        LINE_AT = 8;
     /**
-     * All whitespace allowed in CSS
+     * All whitespace allowed in CSS without '\r', because is changed to '\n' before parsing
      * @static
      * @var string
      */
@@ -84,23 +83,6 @@ class CSSTidy
      * @version 1.0
      */
     public static $tokensList = '/@}{;:=\'"(,\\!$%&)*+.<>?[]^`|~';
-
-
-    /**
-     * Non 'at' at rules
-     *
-     * @static
-     * @var array
-     * @version 1.0
-     */
-    public static $atRules = array(
-        '@page' => 'is',
-        '@font-face' => 'is',
-        '@charset' => 'iv',
-        '@import' => 'iv',
-        '@namespace' => 'iv'
-    );
-
 
     /**
      * All properties, value contains comma separated CSS supported versions
@@ -297,9 +279,6 @@ class CSSTidy
     /** @var \CSSTidy\Logger */
     public $logger;
 
-    /** @var \CSSTidy\Parsed */
-    protected $parsed;
-
     /** @var \CSSTidy\Configuration */
     public $configuration;
 
@@ -321,6 +300,7 @@ class CSSTidy
         $this->configuration = $configuration ?: new Configuration();
         $this->logger = new Logger;
 
+        // Prepare array of all CSS whitespaces
         self::$whitespaceArray = str_split(self::$whitespace);
     }
 
@@ -337,13 +317,13 @@ class CSSTidy
         @setlocale(LC_ALL, 'C');
 
         $this->optimise = new Optimise($this->logger, $this->configuration);
-        $this->parsed = $parsed = new Parsed($this->configuration, $string);
+        $parsed = new Parsed($this->configuration, $string);
 
         // Normalize new line characters
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
-        $currentComment = $currentString = $stringChar = $from = $subValue = $value = $property = $selector = $at = '';
+        $currentComment = $currentString = $stringChar = $subValue = $value = $property = $selector = '';
         $quotedString = false;
         $bracketCount = 0;
 
@@ -358,7 +338,9 @@ class CSSTidy
          * - at = in @-block
          */
         $status = 'is';
-        $subValues = array();
+        $subValues = $from = array();
+
+        $stack = array($parsed);
 
         for ($i = 0, $size = strlen($string); $i < $size; $i++) {
             $current = $string{$i};
@@ -372,11 +354,9 @@ class CSSTidy
                 case 'is':
                     if ($this->isToken($string, $i)) {
                         if ($current === '{') {
+                            $from[] = 'is';
                             $status = 'ip';
-                            if ($at === '') {
-                                $at = $parsed->newMediaSection(self::DEFAULT_AT);
-                            }
-                            $selector = $parsed->newSelector($at, $selector);
+                            $stack[] = end($stack)->addSelector(new Selector(trim($selector)));
                             $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
@@ -384,43 +364,19 @@ class CSSTidy
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
-                            $from = 'is';
+                            $from[] = 'is';
                         } else if ($current === '@' && trim($selector) == '') {
-                            $selector = '@';
-                            // Add whitespaces and remove backslash
-                            $tokensList = self::$whitespace . str_replace('\\', '', self::$tokensList);
-
-                            do {
-                                $c = $string{++$i};
-                                if ($c === '\\') {
-                                    $selector .= $this->unicode($string, $i);
-                                } else if (strpos($tokensList, $c) !== false) {
-                                    --$i;
-                                    break;
-                                } else {
-                                    $selector .= $c;
-                                }
-                            } while (true);
-
-                            $selector = strtolower($selector);
-
-                            if (isset(self::$atRules[$selector])) {
-                                $status = self::$atRules[$selector];
-                            } else {
-                                $status = 'at';
-                                $at = $selector;
-                                $selector = '';
-                            }
+                            $status = 'at';
                         } else if ($current === '"' || $current === "'") {
-                            $currentString = $current;
+                            $currentString = $stringChar = $current;
                             $status = 'instr';
-                            $stringChar = $current;
-                            $from = 'is';
+                            $from[] = 'is';
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
                         } else if ($current === '}') {
-                            $parsed->addToken(self::AT_END, $at);
-                            $at = $selector = '';
+                            //$parsed->addToken(self::AT_END);
+                            array_pop($stack);
+                            $selector = '';
                             $this->selectorSeparate = array();
                         } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
@@ -449,18 +405,18 @@ class CSSTidy
                         if (($current === ':' || $current === '=') && isset($property{0})) {
                             $status = 'iv';
                             if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
-                                $property = $parsed->newProperty($at, $selector, $property);
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
                         } else if ($current === '}') {
-                            $this->explodeSelectors($selector, $at);
-                            $status = 'is';
-                            $parsed->addToken(self::SEL_END, $selector);
+                            $this->explodeSelectors($selector, $stack);
+                            $status = array_pop($from);
+                            $parsed->addToken(self::SEL_END);
+                            array_pop($stack);
                             $selector = $property = '';
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
-                            $from = 'ip';
+                            $from[] = 'ip';
                         } else if ($current === ';') {
                             $property = '';
                         } else if ($current === '\\') {
@@ -486,16 +442,16 @@ class CSSTidy
                         if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
-                            $from = 'iv';
+                            $from[] = 'iv';
                         } else if ($current === '"' || $current === "'") {
-                            $currentString = $current;
+                            $currentString = $stringChar = $current;
                             $status = 'instr';
-                            $stringChar = $current;
-                            $from = 'iv';
+                            $from[] = 'iv';
                         } else if ($current === '(') {
                             $subValue .= $current;
                             $bracketCount = 1;
                             $status = 'inbrck';
+                            $from[] = 'iv';
                         } else if ($current === ',') {
                             if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
                                 $subValues[] = $trimmed;
@@ -505,62 +461,12 @@ class CSSTidy
                         } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } else if ($current === ';' || $pn) {
-                            if ($selector{0} === '@' && isset(self::$atRules[$selector]) && self::$atRules[$selector] === 'iv') {
-                                $subValues[] = trim($subValue, self::$whitespace);
-
-                                $status = 'is';
-
-                                if ($selector === '@namespace' && isset($subValues[1])) {
-                                    $stringPosition = 1;
-                                    $subValues[0] = ' ' . $subValues[0];
-                                } else {
-                                    $stringPosition = 0;
-                                }
-
-                                if (substr_compare($subValues[$stringPosition], 'url(', 0, 4) !== 0) {
-                                    $subValues[$stringPosition] = '"' . $subValues[$stringPosition] . '"';
-                                }
-
-                                switch ($selector) {
-                                    case '@charset':
-                                        $parsed->charset = $subValues[0];
-                                        if (!empty($parsed->css) || !empty($parsed->import) || !empty($parsed->namespace)) {
-                                            $this->logger->log("@charset must be before anything", Logger::WARNING);
-                                        }
-                                        break;
-
-                                    case '@namespace':
-                                        $parsed->namespace[] = implode(' ', $subValues);
-                                        if (!empty($parsed->css)) {
-                                            $this->logger->log("@namespace must be before selectors", Logger::WARNING);
-                                        }
-                                        break;
-
-                                    case '@import':
-                                        $parsed->import[] = $this->mergeSubValues(null, $subValues);
-                                        if (!empty($parsed->css)) {
-                                            $this->logger->log("@import must be before anything selectors", Logger::WARNING);
-                                        } else if (!empty($at)) {
-                                            $this->logger->log("@import cannot be inside @media", Logger::WARNING);
-                                        }
-
-                                        break;
-                                }
-
-                                $subValues = $this->selectorSeparate = array();
-                                $subValue = $selector = '';
-                            } else {
-                                $status = 'ip';
-                            }
+                            $status = 'ip';
                         } else if ($current !== '}') {
                             $subValue .= $current;
                         }
 
                         if (($current === '}' || $current === ';' || $pn) && !empty($selector)) {
-                            if ($at == '') {
-                                $at = $parsed->newMediaSection(self::DEFAULT_AT);
-                            }
-
                             $property = strtolower($property);
 
                             if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
@@ -573,9 +479,8 @@ class CSSTidy
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
                             if (!$this->configuration->getDiscardInvalidProperties() || $valid) {
-                                $parsed->addProperty($at, $selector, $property, $value);
+                                end($stack)->addProperty($property, $value);
                                 $parsed->addToken(self::VALUE, $value);
-                                $this->optimise->shorthands($parsed, $at, $selector, $property, $value);
                             }
                             if (!$valid) {
                                 if ($this->configuration->getDiscardInvalidProperties()) {
@@ -592,9 +497,10 @@ class CSSTidy
                             $subValues = array();
                         }
                         if ($current === '}') {
-                            $this->explodeSelectors($selector, $at);
-                            $parsed->addToken(self::SEL_END, $selector);
-                            $status = 'is';
+                            $this->explodeSelectors($selector, $stack);
+                            $parsed->addToken(self::SEL_END);
+                            array_pop($stack);
+                            $status = array_pop($from);
                             $selector = '';
                         }
                     } else if (!$pn) {
@@ -618,14 +524,13 @@ class CSSTidy
                     if (strpos("\"'() ,\n" . self::$whitespace, $current) !== false && !self::escaped($string, $i)) {
                         if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
                             $status = 'instr';
-                            $from = 'inbrck';
-                            $currentString = $current;
-                            $stringChar = $current;
+                            $from[] = 'inbrck';
+                            $currentString = $stringChar = $current;
                             continue;
                         } else if ($current === '(') {
                             ++$bracketCount;
                         } else if ($current === ')' && --$bracketCount === 0) {
-                            $status = 'iv'; // Go back to 'in value' parser
+                            $status = array_pop($from); // Go back to prev parser
                         } else if ($current === "\n") {
                             $current = ' '; // Change new line character to normal space
                         }
@@ -654,14 +559,16 @@ class CSSTidy
                     $currentString .= $current;
 
                     if ($current === $stringChar && !self::escaped($string, $i)) {
-                        $status = $from;
+                        $status = array_pop($from);
                         if ($property !== 'content' && $property !== 'quotes' && !$quotedString) {
-                            $currentString = $this->removeQuotes($currentString, $from);
+                            $currentString = self::removeQuotes($currentString, $status === 'ibrck');
+                        } else {
+                            $currentString = self::normalizeQuotes($currentString);
                         }
-                        if ($from === 'iv' || $from === 'inbrck') {
-                            $subValue .= $currentString;
-                        } else if ($from === 'is') {
+                        if ($status === 'is') {
                             $selector .= $currentString;
+                        } else {
+                            $subValue .= $currentString;
                         }
                         $quotedString = false;
                     }
@@ -670,7 +577,7 @@ class CSSTidy
                 /* Case in-comment */
                 case 'ic':
                     if ($current === '*' && $string{$i + 1} === '/') {
-                        $status = $from;
+                        $status = array_pop($from);
                         $i++;
                         $parsed->addToken(self::COMMENT, $currentComment);
                         $currentComment = '';
@@ -682,40 +589,78 @@ class CSSTidy
                 /* Case in at-block */
                 case 'at':
                     if ($this->isToken($string, $i)) {
-                        if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        if ($current === '"' || $current === '\'') {
+                            $status = 'instr';
+                            $from[] = 'at';
+                            $quotedString = true;
+                            $currentString = $stringChar = $current;
+                        } else if ($current === '(') {
+                            $subValue .= $current;
+                            $status = 'inbrck';
+                            $bracketCount = 1;
+                            $from[] = 'at';
+                        } else if ($current === ';') {
+                            $subValues[] = $subValue;
+                            $this->processAtRule($subValues, $stack);
+                            $subValues = array();
+                            $subValue = '';
+                            $status = 'is';
+                        } else if ($current === ',') {
+                            $subValues[] = $subValue;
+                            $subValues[] = ',';
+                            $subValue = '';
+                        } else if ($current === '{') {
+                            $subValues[] = $subValue;
+                            $data = '@' . $this->mergeSubValues(null, $subValues);
+
+                            if ($subValues[0] === 'font-face' || $subValues[0] === 'page') {
+                                //--$i;
+                                $selector = $data;
+                                $status = 'ip';
+                            } else {
+                                //$parsed->addToken(self::AT_START, $data);
+                                $status = 'is';
+                            }
+
+                            $stack[] = end($stack)->addSelector(new AtBlock($data));
+
+
+                            $subValues = array();
+                            $subValue = '';
+                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
-                            $from = 'at';
-                        } else if ($current === '{') {
-                            $status = 'is';
-                            $at = $parsed->newMediaSection($at);
-                            $parsed->addToken(self::AT_START, $at);
-                        } else if ($current === ',') {
-                            $at = trim($at) . ',';
+                            $from[] = 'at';
                         } else if ($current === '\\') {
-                            $at .= $this->unicode($string, $i);
+                            $subValue .= $this->unicode($string, $i);
                         } else {
-                            $at .= $current;
+                            $subValue .= $current;
+                        }
+                    } else if (ctype_space($current)) {
+                        if (trim($subValue) !== '') {
+                            $subValues[] = $subValue;
+                            $subValue = '';
                         }
                     } else {
-                        $lastpos = strlen($at) - 1;
-                        if (!( (ctype_space($at{$lastpos}) || $this->isToken($at, $lastpos) && $at{$lastpos} === ',') && ctype_space($current))) {
-                            $at .= $current;
-                        }
+                        $subValue .= $current;
                     }
                     break;
             }
         }
 
-        $this->optimise->postparse($parsed);
+        /*echo '<pre>';
+        var_export($parsed->properties);
+        echo '</pre>';*/
 
+        $this->optimise->postparse($parsed);
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 
-        if (!(empty($parsed->css) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->tokens) && empty($parsed->namespace))) {
+        if (!(empty($parsed->properties) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->tokens) && empty($parsed->namespace))) {
             return new Output($this->configuration, $this->logger, $original, $parsed);
         } else {
             throw new \Exception("Invalid CSS");
         }
+
     }
 
     /**
@@ -754,9 +699,9 @@ class CSSTidy
     /**
      * Explodes selectors
      * @param string $selector
-     * @param string $at
+     * @param array $top
      */
-    protected function explodeSelectors($selector, $at)
+    protected function explodeSelectors($selector, array $top)
     {
         // Explode multiple selectors
         if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
@@ -775,10 +720,15 @@ class CSSTidy
             }
 
             if (count($newSelectors) > 1) {
+                $selectorObj = end($top);
+                $parentSelectorObj = prev($top);
                 foreach ($newSelectors as $newSelector) {
-                    $this->parsed->mergeCssBlocks($at, $newSelector, $this->parsed->css[$at][$selector]);
+                    $newSelectorObj = clone $selectorObj;
+                    $newSelectorObj->name = $newSelector;
+                    $parentSelectorObj->addSelector($newSelectorObj);
                 }
-                unset($this->parsed->css[$at][$selector]);
+                $parentSelectorObj->removeSelector($selectorObj);
+                end($top);
             }
         }
 
@@ -817,25 +767,81 @@ class CSSTidy
     }
 
     /**
-     * @todo Check all possible bugs
-     * @param string $string
-     * @param string $from
-     * @return mixed
+     * Process charset, namespace or import at rule
+     * @param array $subValues
      */
-    protected function removeQuotes($string, $from)
+    protected function processAtRule(array $subValues, array $stack)
     {
-        if (preg_match('|[' . self::$whitespace . ']|uis', $string)) { // If string contains whitespace
-            if (strpos($string, '"') === false) { // Convert all possible single quote to double quote
-                return '"' . substr($string, 1, -1) . '"';
-            }
-            return $string;
+        /** @var Parsed $parsed */
+        $parsed = $stack[0];
+        $rule = strtolower(array_shift($subValues));
+
+        switch ($rule) {
+            case 'charset':
+                $parsed->charset = $subValues[0];
+                if (!empty($parsed->properties) || !empty($parsed->import) || !empty($parsed->namespace)) {
+                    $this->logger->log("@charset must be before anything", Logger::WARNING);
+                }
+                break;
+
+            case 'namespace':
+                if (isset($subValues[1])) {
+                    $subValues[0] = ' ' . $subValues[0];
+                }
+
+                $parsed->namespace[] = implode(' ', $subValues);
+                if (!empty($parsed->properties)) {
+                    $this->logger->log("@namespace must be before selectors", Logger::WARNING);
+                }
+                break;
+
+            case 'import':
+                $parsed->import[] = $this->mergeSubValues(null, $subValues);
+                if (!empty($parsed->properties)) {
+                    $this->logger->log("@import must be before anything selectors", Logger::WARNING);
+                } else if (isset($stack[1])) {
+                    $this->logger->log("@import cannot be inside @media", Logger::WARNING);
+                }
+                break;
+
+            default:
+                $data = $this->mergeSubValues(null, $subValues);
+                $lineAt = new LineAt($rule, $data);
+                $parsed->addToken(self::LINE_AT, $lineAt->__toString());
+                end($stack)->addLineAt($lineAt);
+                break;
+        }
+    }
+
+    /**
+     * @param string $string
+     * @param int $i
+     * @return string Parser section name
+    */
+    protected function nextParserInAtRule($string, $i)
+    {
+        ++$i;
+        $nextColon = strpos($string, ':', $i);
+
+        if ($nextColon === false) {
+            return 'is';
         }
 
-        if ($from === 'inbrck' && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
-            return $string;
+        $nextCurlyBracket = strpos($string, '{', $i);
+
+        if ($nextCurlyBracket === false) {
+            return 'ip';
         }
 
-        return substr($string, 1, -1);
+        while (self::escaped($string, $nextColon)) {
+            $nextColon = strpos($string, ':', $nextColon);
+        }
+
+        while (self::escaped($string, $nextCurlyBracket)) {
+            $nextCurlyBracket = strpos($string, '{', $i);
+        }
+
+        return $nextColon < $nextCurlyBracket ? 'is' : 'ip';
     }
 
     /**
@@ -881,47 +887,6 @@ class CSSTidy
             $this->logger->log('Removed unnecessary backslash', Logger::INFORMATION);
         }
         return '';
-    }
-
-    /**
-     * Checks if a character is escaped (and returns true if it is)
-     * @param string $string
-     * @param integer $pos
-     * @return bool
-     */
-    public static function escaped($string, $pos)
-    {
-        return !((!isset($string{$pos - 1}) || $string{$pos - 1} !== '\\') || self::escaped($string, $pos - 1));
-    }
-
-    /**
-     * Checks if $value is !important.
-     * @param string $value
-     * @return bool
-     */
-    public static function isImportant($value)
-    {
-        return isset($value{9}) && substr_compare(str_replace(self::$whitespaceArray, '', $value), '!important', -10, 10, true) === 0;
-    }
-
-    /**
-     * Returns a value without !important
-     * @param string $value
-     * @param bool $check Check if important in value exists
-     * @return string
-     */
-    public static function removeImportant($value, $check = true)
-    {
-        if (!$check || self::isImportant($value)) {
-            $value = trim($value);
-            $value = substr($value, 0, -9);
-            $value = rtrim($value);
-            $value = substr($value, 0, -1);
-            $value = rtrim($value);
-            return $value;
-        }
-
-        return $value;
     }
 
     /**
@@ -973,6 +938,80 @@ class CSSTidy
     {
         return (isset(self::$allProperties[$property]) &&
             strpos(self::$allProperties[$property], $this->configuration->getCssLevel()) !== false);
+    }
+
+    /**
+     * Checks if a character is escaped (and returns true if it is)
+     * @param string $string
+     * @param integer $pos
+     * @return bool
+     */
+    public static function escaped($string, $pos)
+    {
+        return !((!isset($string{$pos - 1}) || $string{$pos - 1} !== '\\') || self::escaped($string, $pos - 1));
+    }
+
+    /**
+     * Checks if $value is !important.
+     * @param string $value
+     * @return bool
+     */
+    public static function isImportant($value)
+    {
+        return isset($value{9}) && substr_compare(str_replace(self::$whitespaceArray, '', $value), '!important', -10, 10, true) === 0;
+    }
+
+    /**
+     * Returns a value without !important
+     * @param string $value
+     * @param bool $check Check if important in value exists
+     * @return string
+     */
+    public static function removeImportant($value, $check = true)
+    {
+        if (!$check || self::isImportant($value)) {
+            $value = trim($value);
+            $value = substr($value, 0, -9);
+            $value = rtrim($value);
+            $value = substr($value, 0, -1);
+            $value = rtrim($value);
+            return $value;
+        }
+
+        return $value;
+    }
+
+    /**
+     * @todo Check all possible bugs
+     * @param string $string
+     * @param bool $bracketInsideStringAllowed
+     * @return mixed
+     */
+    public static function removeQuotes($string, $bracketInsideStringAllowed = true)
+    {
+        if (preg_match('|[' . self::$whitespace . ']|uis', $string)) { // If string contains whitespace
+            return self::normalizeQuotes($string);
+        }
+
+        if (!$bracketInsideStringAllowed && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
+            return $string;
+        }
+
+        return substr($string, 1, -1);
+    }
+
+    /**
+     * Convert all possible single quote to double quote
+     * @param string $string
+     * @return string
+     */
+    public static function normalizeQuotes($string)
+    {
+        if (strpos($string, '"') === false) {
+            return '"' . substr($string, 1, -1) . '"';
+        }
+
+        return $string;
     }
 
     /**

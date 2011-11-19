@@ -14,6 +14,13 @@ if (isset($_POST['input'])) {
     $cssTidy = new \CSSTidy\CSSTidy;
     $cssTidy->configuration->loadPredefinedTemplate($_POST['template']);
     $cssTidy->configuration->setCssLevel(\CSSTidy\Configuration::CSS3_0);
+    $cssTidy->configuration->setMergeSelectors(\CSSTidy\Configuration::MERGE_SELECTORS);
+    $cssTidy->configuration->setOptimiseShorthands(\CSSTidy\Configuration::BACKGROUND);
+    $cssTidy->configuration->setDiscardInvalidSelectors();
+    //$cssTidy->configuration->setSortProperties();
+    //$cssTidy->configuration->setLowerCaseSelectors();
+    //$cssTidy->configuration->setConvertUnit();
+    //$cssTidy->configuration->setPreserveCss();
 
     try {
         $output = $cssTidy->parse($inputCss);
@@ -27,7 +34,7 @@ if (isset($_POST['input'])) {
     <head>
         <meta charset="utf-8">
         <title>CSSTidy - the best CSS minifier</title>
-        <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
+        <link rel="stylesheet" href="bootstrap.min.css">
         <script type="text/javascript" src="http://bowser.effectgames.com/~jhuckaby/zeroclipboard/ZeroClipboard.js"></script>
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
         <script type="text/javascript">
@@ -74,7 +81,7 @@ if (isset($_POST['input'])) {
                         <select name="template" id="template" class="span6">
                             <option value="<?php echo \CSSTidy\Configuration::HIGHEST_COMPRESSION ?>" selected>Highest (no readability, smallest size)</option>
                             <option value="<?php echo \CSSTidy\Configuration::HIGH_COMPRESSION ?>">High (moderate readability, smaller size)</option>
-                            <option value="<?php echo \CSSTidy\Configuration::DEFAULT_COMPRESSION ?>">Standard (balance between readability and size)</option>
+                            <option value="<?php echo \CSSTidy\Configuration::STANDARD_COMPRESSION ?>">Standard (balance between readability and size)</option>
                             <option value="<?php echo \CSSTidy\Configuration::LOW_COMPRESSION ?>">Low (higher readability)</option>
                         </select>
                         </div>

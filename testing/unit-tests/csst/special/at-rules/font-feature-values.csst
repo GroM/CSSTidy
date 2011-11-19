@@ -1,0 +1,9 @@
+--TEST--
+@font-feature-values
+--CSS--
+@font-feature-values Jupiter Sans {
+  @swash delicate 1, flowing 2;
+}
+--PRINT--
+@font-feature-values Jupiter Sans {
+@swash delicate 1,flowing 2;}

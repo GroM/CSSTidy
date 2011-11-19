@@ -1,0 +1,6 @@
+--TEST--
+At @charset rule
+--CSS--
+@charset "ISO-8859-1";
+--PRINT--
+@charset "ISO-8859-1";

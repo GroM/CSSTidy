@@ -16,6 +16,7 @@
         <severity>0</severity>
     </rule>
     <rule ref="PEAR.Functions.ValidDefaultValue"/>
+    <rule ref="Generic.Functions.OpeningFunctionBraceBsdAllman"/>
 
     <rule ref="Generic.PHP.DisallowShortOpenTag"/>
     <rule ref="Generic.PHP.LowerCaseConstant"/>
@@ -23,6 +24,8 @@
     <rule ref="Squiz.PHP.GlobalKeyword"/>
     <rule ref="Squiz.PHP.LowercasePHPFunctions"/>
     <rule ref="Squiz.PHP.NonExecutableCode"/>
+    <rule ref="Generic.PHP.ForbiddenFunctions"/>
+    <rule ref="Generic.PHP.DeprecatedFunctions"/>
 
     <rule ref="Generic.Strings.UnnecessaryStringConcat"/>
 
@@ -41,6 +44,7 @@
         </properties>
     </rule>
     <rule ref="Zend.Files.ClosingTag"/>
+    <rule ref="Generic.Files.LineEndings"/>
 
     <rule ref="Generic.NamingConventions.ConstructorName"/>
     <rule ref="Generic.NamingConventions.UpperCaseConstantName"/>
@@ -50,14 +54,18 @@
 
     <rule ref="Generic.CodeAnalysis.EmptyStatement"/>
     <rule ref="Generic.CodeAnalysis.UselessOverridingMethod"/>
+    <rule ref="Generic.CodeAnalysis.ForLoopShouldBeWhileLoop"/>
+    <rule ref="Generic.CodeAnalysis.JumbledIncrementer"/>
+    <rule ref="Generic.CodeAnalysis.UnconditionalIfStatement"/>
+    <rule ref="Generic.CodeAnalysis.UnnecessaryFinalModifier"/>
 
     <rule ref="PEAR.Commenting.InlineComment"/>
 
     <rule ref="Generic.Formatting.SpaceAfterCast"/>
+    <rule ref="Generic.Formatting.DisallowMultipleStatements"/>
 
     <rule ref="Squiz.Arrays.ArrayBracketSpacing"/>
     <rule ref="Squiz.ControlStructures.ElseIfDeclaration"/>
+    <rule ref="Squiz.WhiteSpace.SemicolonSpacing"/>
 
-    <rule ref="Generic.PHP.ForbiddenFunctions"/>
-    <rule ref="Generic.PHP.DeprecatedFunctions"/>
 </ruleset>

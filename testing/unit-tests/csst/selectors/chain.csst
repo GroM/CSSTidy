@@ -2,10 +2,7 @@
 Chained selector
 --CSS--
 a * > div[attr="value"].class + div#id:hover {display: inherit;}
---EXPECT--
-array (
-  'a * > div[attr="value"].class + div#id:hover' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a * > div[attr="value"].class + div#id:hover {
+display:inherit
+}

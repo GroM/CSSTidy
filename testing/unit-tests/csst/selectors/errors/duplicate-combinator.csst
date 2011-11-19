@@ -2,8 +2,7 @@
 Duplicate combinator selector
 --CSS--
 div + + b {display: inherit;}
---EXPECT--
-array (
-)
+--PRINT--
+
 --SETTINGS--
 discard_invalid_selectors=1

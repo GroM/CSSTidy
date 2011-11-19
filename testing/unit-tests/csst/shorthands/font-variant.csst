@@ -1,0 +1,28 @@
+--TEST--
+Test general font-variant shorthand in CSS3
+--CSS--
+a {
+    font-variant: small-caps;
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 2em;
+    font-family: 'Arial', "Trebuchet MS", serif;
+}
+b {
+    font-variant: swash(flowing);
+    font-weight: bold;
+    font-size: 12px;
+    line-height: 2em;
+    font-family: 'Arial', "Trebuchet MS", serif;
+}
+--PRINT--
+a {
+font:small-caps 700 12px/2em Arial,"Trebuchet MS",serif
+}
+
+b {
+font-variant:swash(flowing);
+font:700 12px/2em Arial,"Trebuchet MS",serif
+}
+--SETTINGS--
+optimise_shorthands=2

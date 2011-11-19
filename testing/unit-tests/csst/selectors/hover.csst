@@ -2,10 +2,7 @@
 Dynamic hover selector
 --CSS--
 a:hover {display: inherit;}
---EXPECT--
-array (
-  'a:hover' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a:hover {
+display:inherit
+}

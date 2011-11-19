@@ -2,10 +2,7 @@
 Attribute equals selector
 --CSS--
 a[foo="warning"] {display: inherit;}
---EXPECT--
-array (
-  'a[foo="warning"]' => 
-  array (
-    'display' => 'inherit',
-  ),
-)
+--PRINT--
+a[foo="warning"] {
+display:inherit
+}

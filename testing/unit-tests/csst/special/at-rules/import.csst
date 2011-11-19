@@ -1,8 +1,6 @@
 --TEST--
-Import
+At import rule
 --CSS--
-@charset "ISO-8859-1";
-@namespace "http://www.w3.org/1999/xhtml";
 @import url("bluish.css");
 @import url(bluish.css);
 @import url('bluish.css');
@@ -10,11 +8,7 @@ Import
 @import "bluish.css";
 @import url("bluish.css") projection, tv;
 @import "bluish.css" screen and (orientation:landscape);
-@page :pseudo-class {
-  margin:2in;
-}
 --PRINT--
-@charset "ISO-8859-1";
 @import"bluish.css";
 @import"bluish.css";
 @import"bluish.css";
@@ -22,8 +16,3 @@ Import
 @import"bluish.css";
 @import"bluish.css" projection,tv;
 @import"bluish.css" screen and (orientation:landscape);
-@namespace"http://www.w3.org/1999/xhtml";
-
-@page :pseudo-class {
-margin:2in
-}

@@ -1,0 +1,26 @@
+--TEST--
+@page rules
+--CSS--
+@page {
+  margin: 10%;
+
+  @top-left {
+    color: red;
+  }
+  @top-right {
+    color: green;
+  }
+}
+--EXPECT--
+array (
+  '@page' =>
+  array (
+    'margin' => '10%',
+    '@top-left' => array(
+      'color' => 'red',
+    ),
+    '@top-right' => array(
+      'color' => 'green',
+    ),
+  ),
+)

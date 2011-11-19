@@ -304,7 +304,8 @@ HTML;
 
                 case CSSTidy::VALUE:
                     $out .= $this->htmlsp($token[1], $plain);
-                    if ($this->seekNoComment($key, 1) === CSSTidy::SEL_END && $this->configuration->getRemoveLastSemicolon()) {
+                    $nextToken = $this->seekNoComment($key);
+                    if (($nextToken === CSSTidy::SEL_END || $nextToken === CSSTidy::AT_END) && $this->configuration->getRemoveLastSemicolon()) {
                         $out .= str_replace(';', '', $template->afterValueWithSemicolon);
                     } else {
                         $out .= $template->afterValueWithSemicolon;
@@ -320,7 +321,7 @@ HTML;
 
                 case CSSTidy::SEL_END:
                     $out .= $template->selectorClosingBracket;
-                    if ($this->seekNoComment($key, 1) !== CSSTidy::AT_END) {
+                    if ($this->seekNoComment($key) !== CSSTidy::AT_END) {
                         $out .= $template->spaceBetweenBlocks;
                     }
                     break;
@@ -340,6 +341,10 @@ HTML;
                 case CSSTidy::COMMENT:
                     $out .= "$template->beforeComment/*{$this->htmlsp($token[1], $plain)}*/$template->afterComment";
                     break;
+
+                case CSSTidy::LINE_AT:
+                    $out .= $token[1];
+                    break;
             }
         }
 
@@ -347,27 +352,22 @@ HTML;
     }
 
     /**
-     * Gets the next token type which is $move away from $key, excluding comments
+     * Gets the next token type, excluding comments
      * @param integer $key current position
-     * @param integer $move move this far
      * @return int a token type
-     * @version 1.0
      */
-    protected function seekNoComment($key, $move)
+    protected function seekNoComment($key)
     {
-        $go = ($move > 0) ? 1 : -1;
-        for ($i = $key + 1; abs($key - $i) - 1 < abs($move); $i += $go) {
-            if (!isset($this->parsed->tokens[$i])) {
-                return;
-            }
-
-            if ($this->parsed->tokens[$i][0] === CSSTidy::COMMENT) {
-                ++$move;
+        while (isset($this->parsed->tokens[++$key])) {
+            if ($this->parsed->tokens[$key][0] === CSSTidy::COMMENT) {
+                ++$key;
                 continue;
             }
 
-            return $this->parsed->tokens[$i][0];
+            return $this->parsed->tokens[$key][0];
         }
+
+        return 0;
     }
 
     /**
@@ -376,63 +376,100 @@ HTML;
      * @access private
      * @version 1.0
      */
-    protected function convertRawCss($defaultMedia = '')
+    protected function convertRawCss($defaultMediaIsCurrentlyNotSupported = '')
     {
         $this->parsed->tokens = array();
 
         $sortSelectors = $this->configuration->getSortSelectors();
         $sortProperties = $this->configuration->getSortProperties();
 
-        foreach ($this->parsed->css as $medium => $val) {
-            if ($sortSelectors) {
-                ksort($val);
-            }
+        $this->selectorToTokens($this->parsed, $sortSelectors, $sortProperties);
+    }
 
-            if ($medium < CSSTidy::DEFAULT_AT) {
-                $this->parsed->addToken(CSSTidy::AT_START, $medium);
-            } else if ($defaultMedia) {
-                $this->parsed->addToken(CSSTidy::AT_START, $defaultMedia);
-            }
-            
-            foreach ($val as $selector => $vali) {
-                if ($sortProperties) {
-                    uksort($vali, function($a, $b) {
-                        static $ieHacks = array(
-                            '*' => 1, // IE7 hacks first
-                            '_' => 2, // IE6 hacks
-                            '/' => 2, // IE6 hacks
-                            '-' => 2  // IE6 hacks
-                        );
+    /**
+     * @param Selector $selector
+     * @param bool $sortSelectors
+     * @param bool $sortProperties
+     */
+    protected function selectorToTokens(Selector $selector, $sortSelectors = false, $sortProperties = false)
+    {
+        if ($sortSelectors) {
+            $this->sortSelectors($selector);
+        }
 
-                        if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
-                            return strcasecmp($a, $b);
-                        } else if (isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
-                            return 1;
-                        } else if (!isset($ieHacks[$a{0}]) && isset($ieHacks[$b{0}])) {
-                            return -1;
-                        } else if ($ieHacks[$a{0}] === $ieHacks[$b{0}]) {
-                            return strcasecmp(substr($a, 1), substr($b, 1));
-                        } else {
-                            return $ieHacks[$a{0}] > $ieHacks[$b{0}] ? 1 : -1;
-                        }
-                    });
-                }
-                $this->parsed->addToken(CSSTidy::SEL_START, $selector);
+        if ($sortProperties) {
+            $this->sortProperties($selector);
+        }
 
-                foreach ($vali as $property => $valj) {
-                    $this->parsed->addToken(CSSTidy::PROPERTY, $property);
-                    $this->parsed->addToken(CSSTidy::VALUE, $valj);
-                }
+        if ($selector->name{0} === '@') {
+            $this->parsed->addToken(CSSTidy::AT_START, $selector->name);
+        } else if (!$selector instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::SEL_START, $selector->name);
+        }
 
-                $this->parsed->addToken(CSSTidy::SEL_END, $selector);
-            }
-
-            if ($medium < CSSTidy::DEFAULT_AT) {
-                $this->parsed->addToken(CSSTidy::AT_END, $medium);
-            } else if ($defaultMedia) {
-                $this->parsed->addToken(CSSTidy::AT_END, $defaultMedia);
+        foreach ($selector->properties as $property => $value) {
+            if ($value instanceof Selector) {
+                $this->selectorToTokens($value, $sortSelectors, $sortProperties);
+            } else if ($value instanceof LineAt) {
+                /** @var LineAt $value */
+                $this->parsed->addToken(CSSTidy::LINE_AT, $value->__toString());
+            } else {
+                $this->parsed->addToken(CSSTidy::PROPERTY, $property);
+                $this->parsed->addToken(CSSTidy::VALUE, $value);
             }
         }
+
+        if ($selector->name{0} === '@') {
+            $this->parsed->addToken(CSSTidy::AT_END);
+        } else if (!$selector instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::SEL_END);
+        }
+    }
+
+    /**
+     * @param Selector $selector
+     */
+    protected function sortSelectors(Selector $selector)
+    {
+        uasort($selector->properties, function($a, $b) {
+            if (!$a instanceof Selector || !$b instanceof Selector) {
+                return 0;
+            }
+
+            return strcasecmp($a->name, $b->name);
+        });
+    }
+
+    /**
+     * Sort properties inside selector with right order IE hacks
+     * @param Selector $selector
+     */
+    protected function sortProperties(Selector $selector)
+    {
+        uksort($selector->properties, function($a, $b) {
+            static $ieHacks = array(
+                '*' => 1, // IE7 hacks first
+                '_' => 2, // IE6 hacks
+                '/' => 2, // IE6 hacks
+                '-' => 2  // IE6 hacks
+            );
+
+            if ($a{0} === '!' || $b{0} === '!') {
+                return 0;
+            }
+
+            if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
+                return strcasecmp($a, $b);
+            } else if (isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
+                return 1;
+            } else if (!isset($ieHacks[$a{0}]) && isset($ieHacks[$b{0}])) {
+                return -1;
+            } else if ($ieHacks[$a{0}] === $ieHacks[$b{0}]) {
+                return strcasecmp(substr($a, 1), substr($b, 1));
+            } else {
+                return $ieHacks[$a{0}] > $ieHacks[$b{0}] ? 1 : -1;
+            }
+        });
     }
 
     /**

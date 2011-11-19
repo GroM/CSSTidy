@@ -2,10 +2,7 @@
 Tests numeric values: Floating point
 --CSS--
 a { font-size:01.5010em }
---EXPECT--
-array (
-  'a' => 
-  array (
-    'font-size' => '1.501em',
-  ),
-)
+--PRINT--
+a {
+font-size:1.501em
+}

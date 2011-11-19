@@ -1,0 +1,10 @@
+--TEST--
+At rules order
+--CSS--
+@namespace url("http://example.com/");
+@import "bluish.css";
+@charset "ISO-8859-1";
+--PRINT--
+@charset "ISO-8859-1";
+@import"bluish.css";
+@namespace"http://example.com/";

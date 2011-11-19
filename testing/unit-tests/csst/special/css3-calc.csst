@@ -1,5 +1,5 @@
 --TEST--
-multiples cursor rules
+CSS3 calc(), min() and max() functions
 --CSS--
 section {
     width: calc(100%/3 - 2*1em - 2*1px);

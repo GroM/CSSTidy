@@ -15,65 +15,62 @@ p:subject { background: red; }
 ..test { background: red; color: yellow; }
 .foo..quux { background: red; color: yellow; }
 .bar. { background: red; color: yellow; }
---EXPECT--
-array (
-'p,' =>
-array (
-  'background' => 'red',
-),
-'.5cm' =>
-array (
-  'background' => 'red',
-),
-'.\\5cm' =>
-array (
-  'background' => 'red',
-),
-'.two\\ words' =>
-array (
-  'background' => 'red',
-),
-'.one.word' =>
-array (
-  'background' => 'red',
-),
-'.one\\.word' =>
-array (
-  'background' => 'lime',
-),
-'foo & address,p' =>
-array (
-  'background' => 'red',
-),
-'[*=test]' =>
-array (
-  'background' => 'red',
-),
-'[*|*=test]' =>
-array (
-  'background' => 'red',
-),
-':selection' =>
-array (
-  'background' => 'red',
-),
-'p:subject' =>
-array (
-  'background' => 'red',
-),
-'..test' =>
-array (
-  'background' => 'red',
-  'color' => '#ff0',
-),
-'.foo..quux' =>
-array (
-  'background' => 'red',
-  'color' => '#ff0',
-),
-'.bar.' =>
-array (
-  'background' => 'red',
-  'color' => '#ff0',
-),
-)
+--PRINT--
+p, {
+background:red
+}
+
+.5cm {
+background:red
+}
+
+.\5cm {
+background:red
+}
+
+.two\ words {
+background:red
+}
+
+.one.word {
+background:red
+}
+
+.one\.word {
+background:lime
+}
+
+foo & address,p {
+background:red
+}
+
+[*=test] {
+background:red
+}
+
+[*|*=test] {
+background:red
+}
+
+:selection {
+background:red
+}
+
+p:subject {
+background:red
+}
+
+..test {
+background:red;
+color:#ff0
+}
+
+.foo..quux {
+background:red;
+color:#ff0
+}
+
+.bar. {
+background:red;
+color:#ff0
+}
