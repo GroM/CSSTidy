@@ -13,19 +13,18 @@
     }
   }
 }
---EXPECTED--
-array (
-  '@media print' =>
-  array (
-    '@page' =>
-    array (
-      'margin' => '10%',
-      '@top-left' => array(
-        'color' => 'red',
-      ),
-      '@top-right' => array(
-        'color' => 'green',
-      ),
-    ),
-  ),
-)
+--PRINT--
+@media print {
+@page {
+margin:10%;
+@top-left {
+color:red
+}
+
+@top-right {
+color:green
+}
+
+}
+
+}

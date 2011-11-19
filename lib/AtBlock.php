@@ -14,7 +14,12 @@ class AtBlock extends Selector
     {
         $name = '!' . $selector->name;
 
-        if (self::$mergeSelectors === Configuration::MERGE_SELECTORS) {
+        // Never merge @font-face at rule
+        if ($selector->name === '@font-face') {
+            while (isset($this->properties[$name])) {
+                $name .= ' ';
+            }
+        } else if (self::$mergeSelectors === Configuration::MERGE_SELECTORS) {
             if (isset($this->properties[$name])) {
                 $this->properties[$name]->mergeProperties($selector->properties);
                 return $this->properties[$name];

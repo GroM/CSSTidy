@@ -354,16 +354,16 @@ class CSSTidy
                 case 'is':
                     if ($this->isToken($string, $i)) {
                         if ($current === '{') {
-                            $from[] = 'is';
                             $status = 'ip';
+                            $from[] = 'is';
                             $stack[] = end($stack)->addSelector(new Selector(trim($selector)));
                             $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $this->selectorSeparate[] = strlen($selector);
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
-                            $status = 'ic';
                             ++$i;
+                            $status = 'ic';
                             $from[] = 'is';
                         } else if ($current === '@' && trim($selector) == '') {
                             $status = 'at';
@@ -374,8 +374,11 @@ class CSSTidy
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
                         } else if ($current === '}') {
-                            //$parsed->addToken(self::AT_END);
-                            array_pop($stack);
+                            if (array_pop($stack) instanceof AtBlock) {
+                                $parsed->addToken(self::AT_END);
+                            } else {
+                                $parsed->addToken(self::SEL_END);
+                            }
                             $selector = '';
                             $this->selectorSeparate = array();
                         } else if ($current === '\\') {
@@ -404,18 +407,24 @@ class CSSTidy
                     if ($this->isToken($string, $i)) {
                         if (($current === ':' || $current === '=') && isset($property{0})) {
                             $status = 'iv';
+                            $from[] = 'ip';
                             if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
                                 $parsed->addToken(self::PROPERTY, $property);
                             }
                         } else if ($current === '}') {
                             $this->explodeSelectors($selector, $stack);
                             $status = array_pop($from);
-                            $parsed->addToken(self::SEL_END);
-                            array_pop($stack);
+                            if (array_pop($stack) instanceof AtBlock) {
+                                $parsed->addToken(self::AT_END);
+                            } else {
+                                $parsed->addToken(self::SEL_END);
+                            }
                             $selector = $property = '';
+                        } else if ($current === '@') {
+                            $status = 'at';
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
-                            $status = 'ic';
                             ++$i;
+                            $status = 'ic';
                             $from[] = 'ip';
                         } else if ($current === ';') {
                             $property = '';
@@ -440,8 +449,8 @@ class CSSTidy
                     $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
-                            $status = 'ic';
                             ++$i;
+                            $status = 'ic';
                             $from[] = 'iv';
                         } else if ($current === '"' || $current === "'") {
                             $currentString = $stringChar = $current;
@@ -461,7 +470,7 @@ class CSSTidy
                         } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } else if ($current === ';' || $pn) {
-                            $status = 'ip';
+                            $status = array_pop($from);
                         } else if ($current !== '}') {
                             $subValue .= $current;
                         }
@@ -500,6 +509,8 @@ class CSSTidy
                             $this->explodeSelectors($selector, $stack);
                             $parsed->addToken(self::SEL_END);
                             array_pop($stack);
+
+                            array_pop($from);
                             $status = array_pop($from);
                             $selector = '';
                         }
@@ -586,7 +597,7 @@ class CSSTidy
                     }
                     break;
 
-                /* Case in at-block */
+                /* Case in at rule */
                 case 'at':
                     if ($this->isToken($string, $i)) {
                         if ($current === '"' || $current === '\'') {
@@ -613,17 +624,16 @@ class CSSTidy
                             $subValues[] = $subValue;
                             $data = '@' . $this->mergeSubValues(null, $subValues);
 
-                            if ($subValues[0] === 'font-face' || $subValues[0] === 'page') {
-                                //--$i;
+                            $status = $this->nextParserInAtRule($string, $i);
+                            if ($status === 'ip') {
                                 $selector = $data;
-                                $status = 'ip';
                             } else {
-                                //$parsed->addToken(self::AT_START, $data);
                                 $status = 'is';
                             }
+                            $from[] = 'is';
 
+                            $parsed->addToken(self::AT_START, $data);
                             $stack[] = end($stack)->addSelector(new AtBlock($data));
-
 
                             $subValues = array();
                             $subValue = '';
@@ -648,9 +658,9 @@ class CSSTidy
             }
         }
 
-        /*echo '<pre>';
+        echo '<pre>';
         var_export($parsed->properties);
-        echo '</pre>';*/
+        echo '</pre>';
 
         $this->optimise->postparse($parsed);
         @setlocale(LC_ALL, $old); // Set locale back to original setting
@@ -841,7 +851,7 @@ class CSSTidy
             $nextCurlyBracket = strpos($string, '{', $i);
         }
 
-        return $nextColon < $nextCurlyBracket ? 'is' : 'ip';
+        return $nextColon > $nextCurlyBracket ? 'is' : 'ip';
     }
 
     /**
