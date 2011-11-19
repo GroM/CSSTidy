@@ -414,7 +414,7 @@ HTML;
                 /** @var LineAt $value */
                 $this->parsed->addToken(CSSTidy::LINE_AT, $value->__toString());
             } else {
-                $this->parsed->addToken(CSSTidy::PROPERTY, $property);
+                $this->parsed->addToken(CSSTidy::PROPERTY, rtrim($property));
                 $this->parsed->addToken(CSSTidy::VALUE, $value);
             }
         }

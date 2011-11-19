@@ -356,7 +356,8 @@ class CSSTidy
                         if ($current === '{') {
                             $status = 'ip';
                             $from[] = 'is';
-                            $stack[] = end($stack)->addSelector(new Selector(trim($selector)));
+                            $selector = trim($selector);
+                            $stack[] = end($stack)->addSelector(new Selector($selector));
                             $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
@@ -409,7 +410,7 @@ class CSSTidy
                             $status = 'iv';
                             $from[] = 'ip';
                             if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
-                                $parsed->addToken(self::PROPERTY, $property);
+                                $parsed->addToken(self::PROPERTY, trim($property));
                             }
                         } else if ($current === '}') {
                             $this->explodeSelectors($selector, $stack);
@@ -622,7 +623,7 @@ class CSSTidy
                             $subValue = '';
                         } else if ($current === '{') {
                             $subValues[] = $subValue;
-                            $data = '@' . $this->mergeSubValues(null, $subValues);
+                            $data = '@' . rtrim($this->mergeSubValues(null, $subValues));
 
                             $status = $this->nextParserInAtRule($string, $i);
                             if ($status === 'ip') {
@@ -657,10 +658,6 @@ class CSSTidy
                     break;
             }
         }
-
-        echo '<pre>';
-        var_export($parsed->properties);
-        echo '</pre>';
 
         $this->optimise->postparse($parsed);
         @setlocale(LC_ALL, $old); // Set locale back to original setting

@@ -65,6 +65,6 @@ class Parsed extends AtBlock
      */
     public function addToken($type, $data = null)
     {
-        $this->tokens[] = array($type, ($type === CSSTidy::COMMENT) ? $data : trim($data));
+        $this->tokens[] = array($type, $data);
     }
 }
