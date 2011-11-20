@@ -138,19 +138,15 @@ class Optimise
             return;
         }
 
-        if ($this->configuration->getDiscardInvalidSelectors()) {
-            $this->discardInvalidSelectors($parsed);
-        }
-
         if ($this->configuration->getOptimiseShorthands() > Configuration::NOTHING) {
-            $this->postparseBlock($parsed);
+            $this->processShorthandsForBlock($parsed);
         }
     }
 
     /**
      * @param Block $block
      */
-    public function postparseBlock(Block $block)
+    public function processShorthandsForBlock(Block $block)
     {
         $this->dissolveShorthands($block);
 
@@ -172,7 +168,7 @@ class Optimise
         if (isset($block) && $block instanceof AtBlock) {
             foreach ($block->properties as $value) {
                 if ($value instanceof Block) {
-                    $this->postparseBlock($value);
+                    $this->processShorthandsForBlock($value);
                 }
             }
         }
@@ -374,45 +370,6 @@ class Optimise
         }
 
         return implode(' ', $values);
-    }
-
-
-    /**
-     * Removes invalid selectors and their corresponding rule-sets as
-     * defined by 4.1.7 in REC-CSS2. This is a very rudimentary check
-     * and should be replaced by a full-blown parsing algorithm or
-     * regular expression
-     * @param Block $block
-     */
-    protected function discardInvalidSelectors(Block $block)
-    {
-        foreach ($block->properties as $key => $selector) {
-            if ($selector instanceof AtBlock) {
-                $this->discardInvalidSelectors($selector);
-                continue;
-            } else if (!$selector instanceof Block) {
-                continue;
-            }
-
-            $ok = true;
-            $selectors = array_map('trim', explode(',', $selector->name));
-
-            foreach ($selectors as $s) {
-                $simpleSelectors = preg_split('/\s*[+>~\s]\s*/', $s);
-                foreach ($simpleSelectors as $ss) {
-                    if ($ss === '') {
-                        $ok = false;
-                        break 2;
-                    }
-                    // could also check $ss for internal structure,
-                    // but that probably would be too slow
-                }
-            }
-
-            if (!$ok) {
-                unset($block->properties[$key]);
-            }
-        }
     }
 
     /**

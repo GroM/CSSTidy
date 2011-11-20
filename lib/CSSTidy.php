@@ -668,6 +668,10 @@ class CSSTidy
             $this->container->selectorManipulate->mergeWithSameProperties($parsed);
         }
 
+        if ($this->configuration->getDiscardInvalidSelectors()) {
+            $this->container->selectorManipulate->discardInvalid($parsed);
+        }
+
         /*echo '<pre>';
         var_export($parsed->properties);
         echo '</pre>';*/

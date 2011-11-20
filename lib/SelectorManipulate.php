@@ -79,6 +79,44 @@ class SelectorManipulate
     }
 
     /**
+     * Removes invalid selectors and their corresponding rule-sets as
+     * defined by 4.1.7 in REC-CSS2. This is a very rudimentary check
+     * and should be replaced by a full-blown parsing algorithm or
+     * regular expression
+     * @param AtBlock $block
+     */
+    public function discardInvalid(AtBlock $block)
+    {
+        foreach ($block->properties as $key => $selector) {
+            if ($selector instanceof AtBlock) {
+                $this->discardInvalid($selector);
+                continue;
+            } else if (!$selector instanceof Block) {
+                continue;
+            }
+
+            $ok = true;
+            $selectors = array_map('trim', explode(',', $selector->name));
+
+            foreach ($selectors as $s) {
+                $simpleSelectors = preg_split('/\s*[+>~\s]\s*/', $s);
+                foreach ($simpleSelectors as $ss) {
+                    if ($ss === '') {
+                        $ok = false;
+                        break 2;
+                    }
+                    // could also check $ss for internal structure,
+                    // but that probably would be too slow
+                }
+            }
+
+            if (!$ok) {
+                unset($block->properties[$key]);
+            }
+        }
+    }
+
+    /**
      * Separate selector for better reability
      * Example: a,b {color:red} -> b {color:red} b {color:red}
      * @param AtBlock $block
