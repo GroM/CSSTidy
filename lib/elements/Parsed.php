@@ -50,12 +50,10 @@ class Parsed extends AtBlock
     /** @var string */
     public $namespace = array();
 
-    /**
-     * @param Configuration $configuration
-     */
-    public function __construct(Configuration $configuration)
+    // Overwrite Block constructor
+    public function __construct()
     {
-        AtBlock::$mergeSelectors = $configuration->getMergeSelectors();
+
     }
 
     /**

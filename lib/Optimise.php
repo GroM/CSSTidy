@@ -329,10 +329,6 @@ class Optimise
             $this->discardInvalidSelectors($parsed);
         }
 
-        if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
-            $this->mergeSelectors($parsed);
-        }
-
         if ($this->configuration->getOptimiseShorthands() > Configuration::NOTHING) {
             $this->postparseBlock($parsed);
         }
@@ -902,39 +898,6 @@ class Optimise
         return $angle;
     }
 
-    /**
-     * Merges selectors with same properties. Example: a{color:red} b{color:red} -> a,b{color:red}
-     * Very basic and has at least one bug. Hopefully there is a replacement soon.
-     * @param array $array
-     */
-    protected function mergeSelectors(Block $block)
-    {
-        reset($block->properties);
-        while (($value = current($block->properties)) instanceof Block) {
-            $sameSelectors = array();
-            foreach ($block->properties as $pos => $val) {
-                if (!$val instanceof Block) {
-                    continue;
-                }
-
-                if ($val->properties == $value->properties && $val !== $value) {
-                    $sameSelectors[] = $pos;
-                }
-            }
-
-            if (!empty($sameSelectors)) {
-                $newSelector = $value->name;
-                foreach ($sameSelectors as $sameSelectorKey) {
-                    $newSelector .= ',' . $block->properties[$sameSelectorKey]->name;
-                    unset($block->properties[$sameSelectorKey]);
-                }
-                $value->name = $newSelector;
-            }
-
-            $this->mergeSelectors($value);
-            next($block->properties);
-        }
-    }
 
     /**
      * Removes invalid selectors and their corresponding rule-sets as

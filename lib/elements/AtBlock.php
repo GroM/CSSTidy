@@ -3,9 +3,6 @@ namespace CSSTidy;
 
 class AtBlock extends Block
 {
-    /** @var int */
-    public static $mergeSelectors;
-
     /**
      * @param Block $block
      * @return Block

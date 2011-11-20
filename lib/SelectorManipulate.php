@@ -3,6 +3,11 @@ namespace CSSTidy;
 
 class SelectorManipulate
 {
+    /**
+     * Merge selector with same name
+     * Example: a {color:red} a {font-weight:bold} -> a {color:red;font-weight:bold}
+     * @param AtBlock $block
+     */
     public function mergeWithSameName(AtBlock $block)
     {
         // Because elements are removed from $block->properties, foreach cannot be used
@@ -34,6 +39,50 @@ class SelectorManipulate
         }
     }
 
+    /**
+     * Merge selector with same properties
+     * Example: a {color:red} b {color:red} -> a,b {color:red}
+     * @param AtBlock $block
+     */
+    public function mergeWithSameProperties(AtBlock $block)
+    {
+        // Because elements are removed from $block->properties, foreach cannot be used
+        reset($block->properties);
+        while (($element = current($block->properties))) {
+            next($block->properties);
+            if (!$element instanceof Block) {
+                continue;
+            } else if (!$element instanceof Selector) {
+                $this->mergeWithSameProperties($element);
+                continue;
+            }
+
+            $sameSelectors = array();
+            foreach ($block->properties as $val) {
+                if (!$val instanceof Selector) {
+                    continue;
+                }
+
+                if ($val->properties == $element->properties && $val !== $element) {
+                    $sameSelectors[] = $val;
+                }
+            }
+
+            if (!empty($sameSelectors)) {
+                foreach ($sameSelectors as $sameSelector) {
+                    /** @var Selector $element */
+                    $element->appendSelectorName($sameSelector->name);
+                    $block->removeBlock($sameSelector);
+                }
+            }
+        }
+    }
+
+    /**
+     * Separate selector for better reability
+     * Example: a,b {color:red} -> b {color:red} b {color:red}
+     * @param AtBlock $block
+     */
     public function separate(AtBlock $block)
     {
         foreach ($block->properties as $element) {

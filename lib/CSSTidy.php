@@ -313,7 +313,7 @@ class CSSTidy
         @setlocale(LC_ALL, 'C');
 
         $this->optimise = new Optimise($this->logger, $this->configuration);
-        $parsed = new Parsed($this->configuration, $string);
+        $parsed = new Parsed();
 
         // Normalize new line characters
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
@@ -335,7 +335,6 @@ class CSSTidy
          */
         $status = 'is';
         $subValues = $from = $selectorSeparate = array();
-
         $stack = array($parsed);
 
         for ($i = 0, $size = strlen($string); $i < $size; $i++) {
@@ -654,6 +653,7 @@ class CSSTidy
             }
         }
 
+        // TODO: Move to another location
         if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
             require_once __DIR__ . '/SelectorManipulate.php';
             $selectorManipulate = new SelectorManipulate;
@@ -662,6 +662,7 @@ class CSSTidy
             require_once __DIR__ . '/SelectorManipulate.php';
             $selectorManipulate = new SelectorManipulate;
             $selectorManipulate->mergeWithSameName($parsed);
+            $selectorManipulate->mergeWithSameProperties($parsed);
         }
 
         /*echo '<pre>';
