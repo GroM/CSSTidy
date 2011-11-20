@@ -31,12 +31,11 @@
  */
 namespace CSSTidy;
 
+require_once __DIR__ . '/Container.php';
 require_once __DIR__ . '/Template.php';
 require_once __DIR__ . '/Configuration.php';
-require_once __DIR__ . '/Logger.php';
 require_once __DIR__ . '/elements/Parsed.php';
 require_once __DIR__ . '/Output.php';
-require_once __DIR__ . '/Optimise.php';
 
 /**
  * CSS Parser class
@@ -275,6 +274,9 @@ class CSSTidy
         'voice-pitch' => 'CSS3.0',
     );
 
+    /** @var \CSSTidy\Container */
+    private $container;
+
     /** @var \CSSTidy\Optimise */
     private $optimise;
 
@@ -293,8 +295,15 @@ class CSSTidy
      */
     public function __construct(Configuration $configuration = null)
     {
-        $this->configuration = $configuration ?: new Configuration();
-        $this->logger = new Logger;
+        $this->container = new Container;
+
+        if ($configuration) {
+            $this->configuration = $this->container->configuration = $configuration;
+        } else {
+            $this->configuration = $this->container->configuration;
+        }
+
+        $this->logger = $this->container->logger;
 
         // Prepare array of all CSS whitespaces
         self::$whitespaceArray = str_split(self::$whitespace);
@@ -312,7 +321,7 @@ class CSSTidy
         $old = @setlocale(LC_ALL, 0);
         @setlocale(LC_ALL, 'C');
 
-        $this->optimise = new Optimise($this->logger, $this->configuration);
+        $this->optimise = $this->container->optimise;
         $parsed = new Parsed();
 
         // Normalize new line characters
@@ -655,14 +664,10 @@ class CSSTidy
 
         // TODO: Move to another location
         if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
-            require_once __DIR__ . '/SelectorManipulate.php';
-            $selectorManipulate = new SelectorManipulate;
-            $selectorManipulate->separate($parsed);
+            $this->container->selectorManipulate->separate($parsed);
         } else if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
-            require_once __DIR__ . '/SelectorManipulate.php';
-            $selectorManipulate = new SelectorManipulate;
-            $selectorManipulate->mergeWithSameName($parsed);
-            $selectorManipulate->mergeWithSameProperties($parsed);
+            $this->container->selectorManipulate->mergeWithSameName($parsed);
+            $this->container->selectorManipulate->mergeWithSameProperties($parsed);
         }
 
         /*echo '<pre>';

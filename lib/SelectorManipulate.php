@@ -4,7 +4,7 @@ namespace CSSTidy;
 class SelectorManipulate
 {
     /**
-     * Merge selector with same name
+     * Merge selectors or at blocks with same name
      * Example: a {color:red} a {font-weight:bold} -> a {color:red;font-weight:bold}
      * @param AtBlock $block
      */

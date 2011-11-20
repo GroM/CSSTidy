@@ -31,6 +31,10 @@
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
 namespace CSSTidy;
+
+require_once __DIR__ . '/optimise/Color.php';
+require_once __DIR__ . '/optimise/Number.php';
+
 /**
  * CSS Optimising Class
  *
@@ -48,69 +52,11 @@ class Optimise
     /** @var \CSSTidy\Configuration */
     protected $configuration;
 
-    /**
-     * Properties that allow <color> as value
-     *
-     * @todo CSS3 properties
-     * @see compressNumbers();
-     * @static
-     * @var array
-     */
-    public static $colorValues = array(
-        'background-color' => true,
-        'border-color' => true,
-        'border-top-color' => true,
-        'border-right-color' => true,
-        'border-bottom-color' => true,
-        'border-left-color' => true,
-        'color' => true,
-        'outline-color' => true
-    );
+    /** @var \CSSTidy\Optimise\Color */
+    protected $optimiseColor;
 
-    /**
-     * All CSS units (CSS 3 units included)
-     *
-     * @see http://www.w3.org/TR/css3-values/
-     * @see compressNumbers()
-     * @static
-     * @var array
-     */
-    public static $units = array(
-        // Absolute lengths
-        'px','in','cm','mm','pt','pc',
-        // Relative lengths
-        '%','em','rem','ex','ch','vw','vh','vm',
-        // Angle
-        'deg','grad','rad','turn',
-        // Time
-        'ms','s',
-        // Frequency
-        'khz','hz',
-        // Layout-specific
-        'fr', 'gr',
-        // Resolution
-        'dpi','dpcm','dppx',
-        // Speech
-        'db', 'st'
-    );
-
-    /**
-     * Properties that need a value with unit
-     *
-     * @todo CSS3 properties
-     * @todo Background property realy need unit?
-     * @see compressNumbers();
-     * @static
-     * @var array
-     */
-    public static $unitValues = array (
-        'background', 'background-position', 'border', 'border-top', 'border-right', 'border-bottom', 'border-left',
-        'border-width', 'border-top-width', 'border-right-width', 'border-left-width', 'border-bottom-width', 'bottom',
-        'border-spacing', 'font-size', 'height', 'left', 'margin', 'margin-top', 'margin-right', 'margin-bottom',
-        'margin-left', 'max-height', 'max-width', 'min-height', 'min-width', 'outline', 'outline-width', 'padding',
-        'padding-top', 'padding-right', 'padding-bottom', 'padding-left', 'right', 'top', 'text-indent',
-        'letter-spacing', 'word-spacing', 'width'
-    );
+    /** @var \CSSTidy\Optimise\Number */
+    protected $optimiseNumber;
 
     /**
      * A list of all shorthand properties that are devided into four properties and/or have four subvalues
@@ -134,141 +80,6 @@ class Optimise
         'pause' => array('pause-before', 'pause-after'),
         'rest' => array('rest-before', 'rest-after'),
         'cue' => array('cue-before', 'cue-after'),
-    );
-
-    /**
-     * A list of non-W3C color names which get replaced by their hex-codes
-     *
-     * @see cutColor()
-     * @var array
-     */
-    public static $replaceColors = array(
-        'aliceblue' => '#f0f8ff',
-        'antiquewhite' => '#faebd7',
-        'aquamarine' => '#7fffd4',
-        'azure' => '#f0ffff',
-        'beige' => '#f5f5dc',
-        'bisque' => '#ffe4c4',
-        'blanchedalmond' => '#ffebcd',
-        'blueviolet' => '#8a2be2',
-        'brown' => '#a52a2a',
-        'burlywood' => '#deb887',
-        'cadetblue' => '#5f9ea0',
-        'chartreuse' => '#7fff00',
-        'chocolate' => '#d2691e',
-        'coral' => '#ff7f50',
-        'cornflowerblue' => '#6495ed',
-        'cornsilk' => '#fff8dc',
-        'crimson' => '#dc143c',
-        'cyan' => '#00ffff',
-        'darkblue' => '#00008b',
-        'darkcyan' => '#008b8b',
-        'darkgoldenrod' => '#b8860b',
-        'darkgray' => '#a9a9a9',
-        'darkgreen' => '#006400',
-        'darkkhaki' => '#bdb76b',
-        'darkmagenta' => '#8b008b',
-        'darkolivegreen' => '#556b2f',
-        'darkorange' => '#ff8c00',
-        'darkorchid' => '#9932cc',
-        'darkred' => '#8b0000',
-        'darksalmon' => '#e9967a',
-        'darkseagreen' => '#8fbc8f',
-        'darkslateblue' => '#483d8b',
-        'darkslategray' => '#2f4f4f',
-        'darkturquoise' => '#00ced1',
-        'darkviolet' => '#9400d3',
-        'deeppink' => '#ff1493',
-        'deepskyblue' => '#00bfff',
-        'dimgray' => '#696969',
-        'dodgerblue' => '#1e90ff',
-        'feldspar' => '#d19275',
-        'firebrick' => '#b22222',
-        'floralwhite' => '#fffaf0',
-        'forestgreen' => '#228b22',
-        'gainsboro' => '#dcdcdc',
-        'ghostwhite' => '#f8f8ff',
-        'gold' => '#ffd700',
-        'goldenrod' => '#daa520',
-        'greenyellow' => '#adff2f',
-        'honeydew' => '#f0fff0',
-        'hotpink' => '#ff69b4',
-        'indianred' => '#cd5c5c',
-        'indigo' => '#4b0082',
-        'ivory' => '#fffff0',
-        'khaki' => '#f0e68c',
-        'lavender' => '#e6e6fa',
-        'lavenderblush' => '#fff0f5',
-        'lawngreen' => '#7cfc00',
-        'lemonchiffon' => '#fffacd',
-        'lightblue' => '#add8e6',
-        'lightcoral' => '#f08080',
-        'lightcyan' => '#e0ffff',
-        'lightgoldenrodyellow' => '#fafad2',
-        'lightgrey' => '#d3d3d3',
-        'lightgreen' => '#90ee90',
-        'lightpink' => '#ffb6c1',
-        'lightsalmon' => '#ffa07a',
-        'lightseagreen' => '#20b2aa',
-        'lightskyblue' => '#87cefa',
-        'lightslateblue' => '#8470ff',
-        'lightslategray' => '#778899',
-        'lightsteelblue' => '#b0c4de',
-        'lightyellow' => '#ffffe0',
-        'limegreen' => '#32cd32',
-        'linen' => '#faf0e6',
-        'magenta' => '#ff00ff',
-        'mediumaquamarine' => '#66cdaa',
-        'mediumblue' => '#0000cd',
-        'mediumorchid' => '#ba55d3',
-        'mediumpurple' => '#9370d8',
-        'mediumseagreen' => '#3cb371',
-        'mediumslateblue' => '#7b68ee',
-        'mediumspringgreen' => '#00fa9a',
-        'mediumturquoise' => '#48d1cc',
-        'mediumvioletred' => '#c71585',
-        'midnightblue' => '#191970',
-        'mintcream' => '#f5fffa',
-        'mistyrose' => '#ffe4e1',
-        'moccasin' => '#ffe4b5',
-        'navajowhite' => '#ffdead',
-        'oldlace' => '#fdf5e6',
-        'olivedrab' => '#6b8e23',
-        'orangered' => '#ff4500',
-        'orchid' => '#da70d6',
-        'palegoldenrod' => '#eee8aa',
-        'palegreen' => '#98fb98',
-        'paleturquoise' => '#afeeee',
-        'palevioletred' => '#d87093',
-        'papayawhip' => '#ffefd5',
-        'peachpuff' => '#ffdab9',
-        'peru' => '#cd853f',
-        'pink' => '#ffc0cb',
-        'plum' => '#dda0dd',
-        'powderblue' => '#b0e0e6',
-        'rosybrown' => '#bc8f8f',
-        'royalblue' => '#4169e1',
-        'saddlebrown' => '#8b4513',
-        'salmon' => '#fa8072',
-        'sandybrown' => '#f4a460',
-        'seagreen' => '#2e8b57',
-        'seashell' => '#fff5ee',
-        'sienna' => '#a0522d',
-        'skyblue' => '#87ceeb',
-        'slateblue' => '#6a5acd',
-        'slategray' => '#708090',
-        'snow' => '#fffafa',
-        'springgreen' => '#00ff7f',
-        'steelblue' => '#4682b4',
-        'tan' => '#d2b48c',
-        'thistle' => '#d8bfd8',
-        'tomato' => '#ff6347',
-        'turquoise' => '#40e0d0',
-        'violet' => '#ee82ee',
-        'violetred' => '#d02090',
-        'wheat' => '#f5deb3',
-        'whitesmoke' => '#f5f5f5',
-        'yellowgreen' => '#9acd32'
     );
 
     /**
@@ -305,14 +116,16 @@ class Optimise
         'font-family' => '',
     );
 
-    /**
-     * @param Logger $logger
-     * @param Configuration $configuration
-     */
-    public function __construct(Logger $logger, Configuration $configuration)
-    {
+    public function __construct(
+        Logger $logger,
+        Configuration $configuration,
+        \CSSTidy\Optimise\Color $optimiseColor,
+        \CSSTidy\Optimise\Number $optimiseNumber
+    ) {
         $this->logger = $logger;
         $this->configuration = $configuration;
+        $this->optimiseColor = $optimiseColor;
+        $this->optimiseNumber = $optimiseNumber;
     }
 
     /**
@@ -426,18 +239,10 @@ class Optimise
             return $subValue . $important;
         }
 
-        $subValue = $this->compressNumbers($property, $subValue);
+        $subValue = $this->optimiseNumber->optimise($property, $subValue);
 
         if ($this->configuration->getCompressColors()) {
-            $temp = $this->cutColor($subValue);
-            if ($temp !== $subValue) {
-                if (isset(self::$replaceColors[$subValue])) {
-                    $this->logger->log("Fixed invalid color name: Changed '{$subValue}' to '{$temp}'", Logger::WARNING);
-                } else {
-                    $this->logger->log("Optimised color: Changed '{$subValue}' to '{$temp}'", Logger::INFORMATION);
-                }
-                $subValue = $temp;
-            }
+            $subValue = $this->optimiseColor->optimise($subValue);
         }
 
         $subValue = $this->optimizeCalc($subValue);
@@ -566,336 +371,6 @@ class Optimise
         }
 
         return implode(' ', $values);
-    }
-
-    /**
-     * Color compression function. Converts all rgb() values to #-values and uses the short-form if possible.
-     * Also replaces 4 color names by #-values.
-     * @param string $color
-     * @return string
-     * @version 1.1
-     */
-    protected function cutColor($color) 
-    {
-        static $shorterNames = array(
-            /* color name -> hex code */
-            'black' => '#000',
-            'fuchsia' => '#f0f',
-            'white' => '#fff',
-            'yellow' => '#ff0',
-
-            /* hex code -> color name */
-            '#800000' => 'maroon',
-            '#ffa500' => 'orange',
-            '#808000' => 'olive',
-            '#800080' => 'purple',
-            '#008000' => 'green',
-            '#000080' => 'navy',
-            '#008080' => 'teal',
-            '#c0c0c0' => 'silver',
-            '#808080' => 'gray',
-            '#f00' => 'red',
-        );
-
-        // rgb(0,0,0) -> #000000 (or #000 in this case later)
-        $type = strtolower(strstr($color, '(', true));
-
-        if ($type === 'rgb' || $type === 'hsl' ) {
-            $colorTmp = substr($color, 4, -1);
-            $colorTmp = explode(',', $colorTmp);
-
-            if (count($colorTmp) > 3) {
-                $this->logger->log("RGB or HSL color value supports only three items", Logger::WARNING);
-                $colorTmp = array_slice($colorTmp, 0, 3);
-            } else if (count($colorTmp) !== 3) {
-                $this->logger->log("RGB or HSL color value supports only three items", Logger::ERROR);
-                return $color;
-            }
-
-            if ($type === 'rgb') {
-                $color = $this->convertRgbToHex($colorTmp);
-            } else {
-                $color = $this->convertHslToHex($colorTmp);
-            }
-        } else if ($type === 'rgba' || $type === 'hsla') {
-            $colorTmp = substr($color, 5, -1);
-            $colorTmp = explode(',', $colorTmp);
-
-            if (count($colorTmp) > 4) {
-                $this->logger->log(strtoupper($type) . " color value supports only four items", Logger::WARNING);
-                $colorTmp = array_slice($colorTmp, 0, 4);
-            } else if (count($colorTmp) !== 4) {
-                $this->logger->log(strtoupper($type) ." color value supports only four items", Logger::ERROR);
-                return $color;
-            }
-
-            if ($colorTmp[3] == 1) { // no alpha is set -> convert to HEX
-                $colorTmp = array_slice($colorTmp, 0, 3);
-                $color = ($type === 'rgba' ? $this->convertRgbToHex($colorTmp) : $this->convertHslToHex($colorTmp));
-            } else if ($colorTmp[3] == 0) { // full transparency
-                $color = 'rgba(0,0,0,0)';
-            } else {
-                if ($type === 'hsla') {
-                    $colorTmp[0] = $this->compressAngle($colorTmp[0]);
-                } else if ($colorTmp[0] == 255 && $colorTmp[1] == 255 && $colorTmp[2] == 255) {
-                    $colorTmp[0] = $colorTmp[1] = 0;
-                    $colorTmp[2] = '100%';
-                    $type = 'hsla';
-                }
-                $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],{$this->compressNumber($colorTmp[3])})";
-            }
-        } else {
-            // Fix bad color names
-            if (isset(self::$replaceColors[strtolower($color)])) {
-                $color = self::$replaceColors[strtolower($color)];
-            }
-        }
-            // strlen($color) === 7
-        if (isset($color{6}) && !isset($color{7}) && $color{0} === '#') {
-            $color = strtolower($color); // Lower hex color for better gziping
-
-            // #aabbcc -> #abc
-            if ($color{1} === $color{2} && $color{3} === $color{4} && $color{5} === $color{6}) {
-                $color = '#' . $color{1} . $color{3} . $color{5};
-            }
-        }
-
-        if (isset($shorterNames[strtolower($color)])) {
-            $color = $shorterNames[strtolower($color)];
-        }
-
-        return $color;
-    }
-
-    /**
-     * Convert from [R, G, B] array to hex string. Array item must be number from 0-255 or
-     * percentage value.
-     *
-     * @param array $parts [R, G, B]
-     * @return string
-     */
-    protected function convertRgbToHex(array $parts)
-    {
-        foreach ($parts as &$part) {
-            $part = trim($part);
-
-            if (substr($part, -1) === '%') {
-                $part = round((255 * $part) / 100);
-            }
-        }
-
-        return $this->threeByteArrayToHex($parts);
-    }
-
-    /**
-     * Convert color from HSL to HEX RGB
-     * @param array $parts [H, S, L]
-     * @return string HEX color
-     */
-    protected function convertHslToHex(array $parts)
-    {
-        list ($h, $s, $l) = $parts;
-
-        $h = ((($h % 360) + 360) % 360) / 360;
-
-        $normalizeSOrL = function($value, $name) {
-            if (!substr($value, -1) === '%') {
-                $this->logger->log("HSL $name must be a percent value", Logger::WARNING);
-            }
-
-            if ((int) $value > 100) {
-                $this->logger->log("HSL $name must be lower than 100%", Logger::WARNING);
-            }
-
-            return (int) $value / 100;
-        };
-
-        $s = $normalizeSOrL($s, 'saturation');
-        $l = $normalizeSOrL($l, 'light');
-
-        $m2 = ($l <= 0.5) ? $l * ($s + 1) : ($l + $s - $l * $s);
-        $m1 = $l * 2 - $m2;
-
-        $output = array();
-
-        foreach (array($h + 1/3, $h, $h - 1/3) as $mH) {
-            if ($mH < 0) {
-                ++$mH;
-            } else if ($mH > 1) {
-                --$mH;
-            }
-
-            if ($mH * 6 < 1) {
-                $output[] = $m1 + ($m2 - $m1) * $mH * 6;
-            } else if ($mH * 2 < 1) {
-                $output[] = $m2;
-            } else if ($mH * 3 < 2) {
-                $output[] = $m1 + ($m2 - $m1) * (2/3 - $mH) * 6;
-            } else {
-                $output[] = $m1;
-            }
-        }
-
-        // Convert back to 1 -> 255
-        foreach ($output as &$rgb) {
-            $rgb = round($rgb * 255);
-        }
-
-        return $this->threeByteArrayToHex($output);
-    }
-
-    /**
-     * Convert array with three item from 0-255 to corresponding HEX value.
-     * @param array $array [R, G, B]
-     * @return string Color (in format #ffffff)
-     */
-    protected function threeByteArrayToHex(array $array)
-    {
-        $hex = '#';
-
-        foreach ($array as $byte) {
-            if ($byte < 16) {
-                if ($byte < 0) {
-                    $byte = 0;
-                }
-                $hex .= '0' . dechex($byte);
-            } else {
-                if ($byte > 255) {
-                    $byte = 255;
-                }
-                $hex .= dechex($byte);
-            }
-        }
-
-        return $hex;
-    }
-
-    /**
-     * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1 )
-     * @param string $property
-     * @param string $subValue
-     * @return string
-     */
-    protected function compressNumbers($property, $subValue)
-    {
-        // for font:1em/1em sans-serif...;
-        if ($property === 'font') {
-            $parts = explode('/', $subValue);
-        } else {
-            $parts = array($subValue);
-        }
-
-        foreach ($parts as &$part) {
-            // if we are not dealing with a number at this point, do not optimise anything
-            $number = $this->analyseCssNumber($part);
-            if ($number === false) {
-                return $subValue;
-            }
-
-            // Fix bad colors
-            if (isset(self::$colorValues[$property])) {
-                if ($this->checkHexValue($part)) {
-                    $part = '#' . $part;
-                    continue;
-                } else {
-                    $this->logger->log("Invalid color value '$part' for property '$property'", Logger::ERROR);
-                }
-            }
-
-            if (abs($number[0]) > 0) {
-                if ($number[1] === '' && in_array($property, self::$unitValues, true)) {
-                    $number[1] = 'px';
-                    $this->logger->log("Fixed invalid number: Added 'px' unit to '$part'", Logger::WARNING);
-                }
-            } else if ($number[1] !== '') {
-                $this->logger->log("Optimised number: Removed unit '{$number[1]}' from '{$part}'", Logger::INFORMATION);
-                $number[1] = '';
-            }
-
-            $part = $number[0] . $number[1];
-        }
-
-        return (isset($parts[1]) ? $parts[0] . '/' . $parts[1] : $parts[0]);
-    }
-
-    /**
-     * Checks if a given string is a CSS valid number. If it is,
-     * an array containing the value and unit is returned
-     * @param string $string
-     * @return array ('unit' if unit is found or '' if no unit exists, number value) or false if no number
-     */
-    protected function analyseCssNumber($string)
-    {
-        // most simple checks first
-        if (!isset($string{0}) || $string{0} === '#' || ctype_alpha($string{0})) {
-            return false;
-        } else if ($string === '0') {
-            return array(0, '');
-        } else if (!preg_match('~([-]?([0-9]*\.[0-9]+|[0-9]+))(.*)~si', $string, $matches)) {
-            return false; // Value is not a number
-        }
-
-        list(, $value, , $unit) = $matches;
-
-        if ($value === '') {
-            return false;
-        }
-
-        $value = $optimisedValue = trim($value);
-        $unit = $optimisedUnit = strtolower(trim($unit));
-
-        if ($unit !== '' && !in_array($unit, self::$units)) {
-            return false; // Unit is not supported
-        }
-
-        if ($this->configuration->getConvertUnit()) {
-            list($optimisedValue, $optimisedUnit) = $this->unitConvert($value, $unit);
-        }
-
-        $optimisedValue = $this->compressNumber($optimisedValue);
-
-        if ($optimisedUnit !== $unit) {
-            $this->logger->log("Optimised number: Converted from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
-        } else if ($optimisedValue != $value) {
-            $this->logger->log("Optimised number: Optimised from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
-        }
-
-        return array($optimisedValue, $optimisedUnit);
-    }
-
-    /**
-     * Removes 0 from decimal number between -1 - 1
-     * Example: 0.3 -> .3; -0.3 -> -.3
-     * @param string $string
-     * @return string without any non numeric character
-     */
-    protected function compressNumber($string)
-    {
-        $float = floatval($string);
-        if (abs($float) > 0 && abs($float) < 1) {
-            if ($float < 0) {
-                return '-' . ltrim(substr($float, 1), '0');
-            } else {
-                return ltrim($float, '0');
-            }
-        }
-
-        return $float;
-    }
-
-    /**
-     * @param int $angle
-     * @return int
-     */
-    protected function compressAngle($angle)
-    {
-        $angle = (($angle % 360) + 360) % 360; // normalize from 0 to 359
-
-        if ($angle > 350) {
-            $angle -= 360;
-        }
-
-        return $angle;
     }
 
 
@@ -1427,7 +902,7 @@ class Optimise
             }
 
             $colorAndLength = $this->explodeWs(' ', $part);
-            $colorAndLength[0] = $this->cutColor($colorAndLength[0]);
+            $colorAndLength[0] = $this->optimiseColor->optimise($colorAndLength[0]);
             $part = implode(' ', $colorAndLength);
         }
 
@@ -1505,7 +980,7 @@ class Optimise
             $parts = $this->explodeWs(',', $function);
 
             foreach ($parts as &$part) {
-                $part = $this->compressNumbers(null, $part);
+                $part = $this->optimiseNumber->optimise(null, $part);
             }
 
             $output[$type] = implode(',', $parts);
@@ -1537,73 +1012,6 @@ class Optimise
         }
 
         return rtrim($outputString);
-    }
-
-    /**
-     * Convert unit to greather with shorter value
-     *
-     * For example 100px is converted to 75pt and 10mm to 1cm
-     *
-     * @see http://www.w3.org/TR/css3-values/#absolute-lengths
-     * @param string $value
-     * @param string $unit
-     * @return array [value, unit]
-     */
-    protected function unitConvert($value, $unit)
-    {
-        $convert = array(
-            // Absolute lengths
-            'px' => array(0.75, 'pt'),
-            'pt' => array(1/12, 'pc'),
-            'mm' => array(6/25.4,'pc'),
-            'pc' => array(2.54/6, 'cm'),
-            'cm' => array(1/2.54, 'in'),
-
-            // Frequency
-            'hz' => array(0.001, 'khz'),
-
-            // Angle, radians are ugly
-            'grad' => array(0.9, 'deg'),
-            //'deg' => array(1/360, 'turn'), // turn unit is not supported by major browser
-
-            // Time
-            'ms' => array(0.001, 's'),
-        );
-
-        $options = array($unit => $value);
-        while (isset($convert[$unit])) {
-            list($coefficient , $unit) = $convert[$unit];
-            $options[$unit] = $value *= $coefficient;
-        }
-
-        // Find smaller string with unit
-        $smaller = 0;
-        $smallerUnit = '';
-        foreach ($options as $unit => $value) {
-            $current = strlen($value . $unit);
-            if ($current < $smaller || $smaller === 0) {
-                $smaller = $current;
-                $smallerUnit = $unit;
-            }
-        }
-
-        return array($options[$smallerUnit], $smallerUnit);
-    }
-
-    /**
-     * Check is string is valid 3 or 6 character color value without # character
-     * @param string $string HEX color value
-     * @return bool
-     */
-    protected function checkHexValue($string)
-    {
-        $size = strlen($string);
-
-        if ($size !== 3 && $size !== 6) {
-            return false;
-        }
-
-        return ctype_xdigit($string);
     }
 
      /**
