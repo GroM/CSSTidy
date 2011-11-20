@@ -264,7 +264,7 @@ HTML;
         $output = '';
 
         if (!empty($this->parsed->charset)) {
-            // After @charset must be space!
+            // After '@charset' must be single space!
             $output .= "{$template->beforeAtRule}@charset {$template->beforeValue}{$this->parsed->charset}{$template->afterValueWithSemicolon}";
         }
 

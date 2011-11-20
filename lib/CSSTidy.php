@@ -40,15 +40,14 @@ require_once __DIR__ . '/Output.php';
 /**
  * CSS Parser class
  *
-
  * This class represents a CSS parser which reads CSS code and saves it in an array.
  * In opposite to most other CSS parsers, it does not use regular expressions and
- * thus has full CSS2 support and a higher reliability.
+ * thus has full CSS3 support and a higher reliability.
  * Additional to that it applies some optimisations and fixes to the CSS code.
  * An online version should be available here: http://cdburnerxp.se/cssparse/css_optimiser.php
- * @package csstidy
+ * @package CSSTidy
  * @author Florian Schmitz (floele at gmail dot com) 2005-2006
- * @version 1.3.1
+ * @version 1.4
  */
 class CSSTidy
 {
@@ -60,6 +59,7 @@ class CSSTidy
         VALUE = 6,
         COMMENT = 7,
         LINE_AT = 8;
+
     /**
      * All whitespace allowed in CSS without '\r', because is changed to '\n' before parsing
      * @static
@@ -68,7 +68,7 @@ class CSSTidy
     public static $whitespace = " \n\t\x0B\x0C";
 
     /**
-     * Array is generated from self::$whitespace
+     * Array is generated from self::$whitespace in __constructor
      * @static
      * @var array
      */
@@ -289,7 +289,6 @@ class CSSTidy
     /** @var string */
     private static $version = '1.4';
 
-
     /**
      * @param Configuration|null $configuration
      */
@@ -491,7 +490,8 @@ class CSSTidy
                             $value = $this->mergeSubValues($property, $subValues);
                             $value = $this->optimise->value($property, $value);
 
-                            $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
+                            // Remove right spaces added by Block::addProperty
+                            $valid = $this->propertyIsValid(rtrim($property));
                             if ($valid || !$this->configuration->getDiscardInvalidProperties()) {
                                 end($stack)->addProperty($property, $value);
                                 $parsed->addToken(self::VALUE, $value);
@@ -721,6 +721,7 @@ class CSSTidy
     }
 
     /**
+     * @todo Refactor
      * @param Selector $selector
      * @param array $selectorSeparate
      */
@@ -774,6 +775,7 @@ class CSSTidy
     /**
      * Process charset, namespace or import at rule
      * @param array $subValues
+     * @param array $stack
      */
     protected function processAtRule(array $subValues, array $stack)
     {
@@ -783,7 +785,12 @@ class CSSTidy
 
         switch ($rule) {
             case 'charset':
+                if (!empty($parsed->charset)) {
+                   $this->logger->log("Only one @charset may be in document, previous is ignored", Logger::WARNING);
+                }
+
                 $parsed->charset = $subValues[0];
+
                 if (!empty($parsed->properties) || !empty($parsed->import) || !empty($parsed->namespace)) {
                     $this->logger->log("@charset must be before anything", Logger::WARNING);
                 }
@@ -870,10 +877,10 @@ class CSSTidy
             $i++;
         }
 
-        $hexDecAdd = hexdec($add);
-        if ($hexDecAdd > 47 && $hexDecAdd < 58 || $hexDecAdd > 64 && $hexDecAdd < 91 || $hexDecAdd > 96 && $hexDecAdd < 123) {
-            $this->logger->log('Replaced unicode notation: Changed \\' . $add . ' to ' . chr($hexDecAdd), Logger::INFORMATION);
-            $add = chr($hexDecAdd);
+        $decAdd = hexdec($add);
+        if ($decAdd > 47 && $decAdd < 58 || $decAdd > 64 && $decAdd < 91 || $decAdd > 96 && $decAdd < 123) {
+            $this->logger->log("Replaced unicode notation: Changed \\$add to " . chr($decAdd), Logger::INFORMATION);
+            $add = chr($decAdd);
             $replaced = true;
         } else {
             $add = $add === ' ' ? '\\' . $add : trim('\\' . $add);
@@ -957,13 +964,14 @@ class CSSTidy
     }
 
     /**
-     * Checks if $value is !important.
+     * Checks if $value has !important.
      * @param string $value
      * @return bool
      */
     public static function isImportant($value)
     {
-        return isset($value{9}) && substr_compare(str_replace(self::$whitespaceArray, '', $value), '!important', -10, 10, true) === 0;
+        return isset($value{9}) &&
+            substr_compare(str_replace(self::$whitespaceArray, '', $value), '!important', -10, 10, true) === 0;
     }
 
     /**

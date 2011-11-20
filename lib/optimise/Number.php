@@ -216,9 +216,15 @@ class Number
         $optimisedValue = $this->compressNumber($optimisedValue);
 
         if ($optimisedUnit !== $unit) {
-            $this->logger->log("Optimised number: Converted from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
+            $this->logger->log(
+                "Optimised number: Converted from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'",
+                Logger::INFORMATION
+            );
         } else if ($optimisedValue != $value) {
-            $this->logger->log("Optimised number: Optimised from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'", Logger::INFORMATION);
+            $this->logger->log(
+                "Optimised number: Optimised from '{$value}{$unit}' to '{$optimisedValue}{$optimisedUnit}'",
+                Logger::INFORMATION
+            );
         }
 
         return array($optimisedValue, $optimisedUnit);

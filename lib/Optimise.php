@@ -433,7 +433,6 @@ class Optimise
                 isset($block->properties[$properties[2]]) &&
                 isset($block->properties[$properties[3]])
             ) {
-
                 $important = false;
                 $values = array();
                 foreach ($properties as $property) {
@@ -582,43 +581,45 @@ class Optimise
 
     /**
      * Merges all background properties
-     * @param array $inputCss
-     * @return array
-     * @version 1.0
-     * @see dissolve_short_bg()
+     * @param Block $block
      * @todo full CSS 3 compliance
      */
     protected function mergeBackground(Block $block)
     {
-        // Max number of background images. CSS3 not yet fully implemented
-        $numberOfValues = @max(count($this->explodeWs(',', $block->properties['background-image'])), count($this->explodeWs(',', $block->properties['background-color'])), 1);
-        // Array with background images to check if BG image exists
-        $bg_img_array = @$this->explodeWs(',', CSSTidy::removeImportant($block->properties['background-image']));
-        $newBackgroundValue = '';
-        $important = '';
-
         // if background properties is here and not empty, don't try anything
         if (isset($block->properties['background']) && $block->properties['background']) {
-            return $block->properties;
+            return;
         }
+
+        // Max number of background images. CSS3 not yet fully implemented
+        $numberOfValues = max(
+            count($this->explodeWs(',', $block->properties['background-image'])),
+            count($this->explodeWs(',', $block->properties['background-color'])),
+            1
+        );
+
+        // Array with background images to check if BG image exists
+        $bg_img_array = $this->explodeWs(',', CSSTidy::removeImportant($block->properties['background-image']));
+        $newBackgroundValue = '';
+        $important = '';
         
         for ($i = 0; $i < $numberOfValues; $i++) {
-            foreach (self::$backgroundPropDefault as $bg_property => $defaultValue) {
+            foreach (self::$backgroundPropDefault as $property => $defaultValue) {
                 // Skip if property does not exist
-                if (!isset($block->properties[$bg_property])) {
+                if (!isset($block->properties[$property])) {
                     continue;
                 }
 
-                $currentValue = $block->properties[$bg_property];
+                $currentValue = $block->properties[$property];
                 // skip all optimisation if gradient() somewhere
                 if (stripos($currentValue, "gradient(") !== false) {
-                    return $block->properties;
+                    return;
                 }
 
                 // Skip some properties if there is no background image
                 if ((!isset($bg_img_array[$i]) || $bg_img_array[$i] === 'none')
-                                && ($bg_property === 'background-size' || $bg_property === 'background-position'
-                                || $bg_property === 'background-attachment' || $bg_property === 'background-repeat')) {
+                                && ($property === 'background-size' || $property === 'background-position'
+                                || $property === 'background-attachment' || $property === 'background-repeat')) {
                     continue;
                 }
 
@@ -636,7 +637,7 @@ class Optimise
                 $temp = $this->explodeWs(',', $currentValue);
 
                 if (isset($temp[$i])) {
-                    if ($bg_property === 'background-size') {
+                    if ($property === 'background-size') {
                         $newBackgroundValue .= '(' . $temp[$i] . ') ';
                     } else {
                         $newBackgroundValue .= $temp[$i] . ' ';
@@ -651,8 +652,8 @@ class Optimise
         }
 
         // Delete all background-properties
-        foreach (self::$backgroundPropDefault as $bg_property => $foo) {
-            unset($block->properties[$bg_property]);
+        foreach (self::$backgroundPropDefault as $property => $foo) {
+            unset($block->properties[$property]);
         }
 
         // Add new background property
@@ -667,8 +668,6 @@ class Optimise
      * Dissolve font property
      * @param string $value
      * @return array
-     * @version 1.3
-     * @see merge_font()
      */
     protected function dissolveShortFont($value)
     {
