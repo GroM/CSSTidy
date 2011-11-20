@@ -301,7 +301,7 @@ class Color
     /**
      * @see self::$replaceColors
      * @param string $color
-     * @return mixed
+     * @return string
      */
     protected function fixBadColorName($color)
     {
@@ -309,7 +309,7 @@ class Color
         if (isset(self::$replaceColors[$colorName])) {
             $temp = self::$replaceColors[$colorName];
             $this->logger->log("Fixed invalid color name: Changed '{$color}' to '{$temp}'", Logger::WARNING);
-            $color = $temp;
+            return $temp;
         }
 
         return $color;
@@ -344,7 +344,7 @@ class Color
     {
         list ($h, $s, $l) = $parts;
 
-        $h = $this->normalizeAngle($h);
+        $h = $this->normalizeAngle($h) / 360;
 
         $normalizeSOrL = function($value, $name) {
             if (!substr($value, -1) === '%') {
