@@ -33,6 +33,16 @@ abstract class Block
     /**
      * @param array $properties
      */
+    public function setProperties(array $properties)
+    {
+        foreach ($properties as $name => $value) {
+            $this->addProperty($name, $value);
+        }
+    }
+
+    /**
+     * @param array $properties
+     */
     public function mergeProperties(array $properties)
     {
         foreach ($properties as $property => $value) {

@@ -2,6 +2,7 @@
 Explode selectors
 --CSS--
 a,b{color:red}
+b[title="a,b,c"],div strong {color:green}
 --PRINT--
 a {
 color:red
@@ -9,6 +10,14 @@ color:red
 
 b {
 color:red
+}
+
+b[title="a,b,c"] {
+color:green
+}
+
+div strong {
+color:green
 }
 --SETTINGS--
 merge_selectors=1

@@ -287,12 +287,6 @@ class CSSTidy
     /** @var string */
     private static $version = '1.4';
 
-    /**
-     * Saves the position of , in selectors
-     * @var array
-     */
-    private $selectorSeparate = array();
-
 
     /**
      * @param Configuration|null $configuration
@@ -340,7 +334,7 @@ class CSSTidy
          * - at = in @-block
          */
         $status = 'is';
-        $subValues = $from = array();
+        $subValues = $from = $selectorSeparate = array();
 
         $stack = array($parsed);
 
@@ -360,10 +354,12 @@ class CSSTidy
                             $from[] = 'is';
                             $selector = trim($selector);
                             $stack[] = end($stack)->addBlock(new Selector($selector));
+                            $this->setSubSelectors(end($stack), $selectorSeparate);
+                            $selectorSeparate = array();
                             $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
-                            $this->selectorSeparate[] = strlen($selector);
+                            $selectorSeparate[] = strlen($selector);
                         } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
                             ++$i;
                             $status = 'ic';
@@ -383,7 +379,6 @@ class CSSTidy
                                 $parsed->addToken(self::SEL_END);
                             }
                             $selector = '';
-                            $this->selectorSeparate = array();
                         } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
                         } else if ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
@@ -415,7 +410,6 @@ class CSSTidy
                                 $parsed->addToken(self::PROPERTY, trim($property));
                             }
                         } else if ($current === '}') {
-                            $this->explodeSelectors($selector, $stack);
                             $status = array_pop($from);
                             if (array_pop($stack) instanceof AtBlock) {
                                 $parsed->addToken(self::AT_END);
@@ -509,7 +503,6 @@ class CSSTidy
                             $subValues = array();
                         }
                         if ($current === '}') {
-                            $this->explodeSelectors($selector, $stack);
                             $parsed->addToken(self::SEL_END);
                             array_pop($stack);
 
@@ -661,6 +654,16 @@ class CSSTidy
             }
         }
 
+        if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
+            require_once __DIR__ . '/SelectorManipulate.php';
+            $selectorManipulate = new SelectorManipulate;
+            $selectorManipulate->separate($parsed);
+        }
+
+        /*echo '<pre>';
+        var_export($parsed->properties);
+        echo '</pre>';*/
+
         $this->optimise->postparse($parsed);
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 
@@ -706,42 +709,23 @@ class CSSTidy
     }
 
     /**
-     * Explodes selectors
-     * @param string $selector
-     * @param array $top
+     * @param Selector $selector
+     * @param array $selectorSeparate
      */
-    protected function explodeSelectors($selector, array $top)
+    protected function setSubSelectors(Selector $selector, array $selectorSeparate)
     {
-        // Explode multiple selectors
-        if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
-            $newSelectors = array();
-            $lastPosition = 0;
-            $this->selectorSeparate[] = strlen($selector);
+        $lastPosition = 0;
+        $selectorSeparate[] = strlen($selector->name);
 
-            $lastSelectorSeparateKey = count($this->selectorSeparate) - 1;
-            foreach ($this->selectorSeparate as $num => $pos) {
-                if ($num === $lastSelectorSeparateKey) {
-                    ++$pos;
-                }
-
-                $newSelectors[] = substr($selector, $lastPosition, $pos - $lastPosition - 1);
-                $lastPosition = $pos;
+        $lastSelectorSeparateKey = count($selectorSeparate) - 1;
+        foreach ($selectorSeparate as $num => $pos) {
+            if ($num === $lastSelectorSeparateKey) {
+                ++$pos;
             }
 
-            if (count($newSelectors) > 1) {
-                $selectorObj = end($top);
-                $parentSelectorObj = prev($top);
-                foreach ($newSelectors as $newSelector) {
-                    $newSelectorObj = clone $selectorObj;
-                    $newSelectorObj->name = $newSelector;
-                    $parentSelectorObj->addBlock($newSelectorObj);
-                }
-                $parentSelectorObj->removeBlock($selectorObj);
-                end($top);
-            }
+            $selector->subSelectors[] = substr($selector->name, $lastPosition, $pos - $lastPosition - 1);
+            $lastPosition = $pos;
         }
-
-        $this->selectorSeparate = array();
     }
 
     /**
