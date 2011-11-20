@@ -1,0 +1,33 @@
+--TEST--
+Test speech properties shorthands
+http://www.w3.org/TR/css3-speech/
+--CSS--
+a { 
+    pause-before: weak;
+    pause-after: medium;
+}
+
+b {
+    pause-before: weak;
+    pause-after: weak;
+}
+/* Example from http://www.w3.org/TR/css3-speech/#cue */
+h1
+{
+  cue-before: url(pop.au);
+  cue-after: url(pop.au);
+}
+--PRINT--
+a {
+pause:weak medium
+}
+
+b {
+pause:weak
+}
+
+h1 {
+cue:url(pop.au)
+}
+--SETTINGS--
+optimise_shorthands=1
