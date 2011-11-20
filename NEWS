@@ -12,10 +12,11 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 # Logger has own class
 # Templates are now classes, for loading template from file or string
   use CSSTidy\Template::loadFromString($string)
+# Parsed class now contains parsed objects instead of huge array
 ! CSSTidy\Output->formattedPage added, returns a full HTML page based
   off of CSSTidy\Output->formatted
 ! cssparsed.css created, contains just the CSS for formatted CSS output
-! New CSS 3 units "ch" and "turn" added
+! New CSS 3 units "ch", "turn", "db" and other added
 ! Unit tests added, requires Text_Diff (PEAR) and SimpleTest
 ! Some invalid selectors are now removed during optimization, this can
   be turned off by setting 'discard_invalid_selectors' to false
@@ -23,7 +24,7 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 ! Gzipped original and minified size are showed
 ! Support minimizing HSL, RGBA and HSLA color
 ! HEX colors are converted to lowercase to smaller compressed size
-! New CSS3 properties
+! Added new CSS3 properties
 ! Method for merging @import files
 ! Properly sorting IE 6 and 7 hack properties (thanks weikinhuang)
 ! Support for CSS3 animations
@@ -32,6 +33,7 @@ Key: # = backwards incompatible change, ! = new feature, - = bugfix.
 ! Convert unit to most smaller (for example 100px -> 75pt)
 ! Merge transform functions and optimise their parameters
 ! Merge overflow-y and overflow-x to overflow property
+! Full support for unknown at block
 - Added localizations for css_optimiser.php
 - Fixed bug with cookie setting for custom templates
 - Minor security problem in css_optimiser.php fixed
