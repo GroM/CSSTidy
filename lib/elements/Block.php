@@ -1,7 +1,7 @@
 <?php
 namespace CSSTidy;
 
-class Selector
+abstract class Block
 {
     /** @var string */
     public $name;

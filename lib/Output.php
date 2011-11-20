@@ -383,33 +383,34 @@ HTML;
         $sortSelectors = $this->configuration->getSortSelectors();
         $sortProperties = $this->configuration->getSortProperties();
 
-        $this->selectorToTokens($this->parsed, $sortSelectors, $sortProperties);
+        $this->blockToTokens($this->parsed, $sortSelectors, $sortProperties);
     }
 
     /**
-     * @param Selector $selector
+     * @param Element $block
      * @param bool $sortSelectors
      * @param bool $sortProperties
      */
-    protected function selectorToTokens(Selector $selector, $sortSelectors = false, $sortProperties = false)
+    protected function blockToTokens(Block $block, $sortSelectors = false, $sortProperties = false)
     {
         if ($sortSelectors) {
-            $this->sortSelectors($selector);
+            $this->sortSelectors($block);
         }
 
         if ($sortProperties) {
-            $this->sortProperties($selector);
+            $this->sortProperties($block);
         }
 
-        if ($selector->name{0} === '@') {
-            $this->parsed->addToken(CSSTidy::AT_START, $selector->name);
-        } else if (!$selector instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::SEL_START, $selector->name);
+        if ($block instanceof AtBlock && !$block instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::AT_START, $block->name);
+        } else if (!$block instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::SEL_START, $block->name);
         }
 
-        foreach ($selector->properties as $property => $value) {
-            if ($value instanceof Selector) {
-                $this->selectorToTokens($value, $sortSelectors, $sortProperties);
+        foreach ($block->properties as $property => $value) {
+            if ($value instanceof Block) {
+                /** @var Element $value */
+                $this->blockToTokens($value, $sortSelectors, $sortProperties);
             } else if ($value instanceof LineAt) {
                 /** @var LineAt $value */
                 $this->parsed->addToken(CSSTidy::LINE_AT, $value->__toString());
@@ -419,19 +420,19 @@ HTML;
             }
         }
 
-        if ($selector->name{0} === '@') {
+        if ($block instanceof AtBlock && !$block instanceof Parsed) {
             $this->parsed->addToken(CSSTidy::AT_END);
-        } else if (!$selector instanceof Parsed) {
+        } else if (!$block instanceof Parsed) {
             $this->parsed->addToken(CSSTidy::SEL_END);
         }
     }
 
     /**
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function sortSelectors(Selector $selector)
+    protected function sortSelectors(Block $block)
     {
-        uasort($selector->properties, function($a, $b) {
+        uasort($block->properties, function($a, $b) {
             if (!$a instanceof Selector || !$b instanceof Selector) {
                 return 0;
             }
@@ -442,11 +443,11 @@ HTML;
 
     /**
      * Sort properties inside selector with right order IE hacks
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function sortProperties(Selector $selector)
+    protected function sortProperties(Block $block)
     {
-        uksort($selector->properties, function($a, $b) {
+        uksort($block->properties, function($a, $b) {
             static $ieHacks = array(
                 '*' => 1, // IE7 hacks first
                 '_' => 2, // IE6 hacks

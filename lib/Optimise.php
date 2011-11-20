@@ -89,7 +89,9 @@ class Optimise
         // Layout-specific
         'fr', 'gr',
         // Resolution
-        'dpi','dpcm','dppx'
+        'dpi','dpcm','dppx',
+        // Speech
+        'db', 'st'
     );
 
     /**
@@ -125,6 +127,13 @@ class Optimise
         'margin' => array('margin-top','margin-right','margin-bottom','margin-left'),
         'padding' => array('padding-top','padding-right','padding-bottom','padding-left'),
         'border-radius' => array('border-radius-top-left', 'border-radius-top-right', 'border-radius-bottom-right', 'border-radius-bottom-left')
+    );
+
+    public static $twoValuesShorthand = array(
+        'overflow' => array('overflow-x', 'overflow-y'),
+        'pause' => array('pause-before', 'pause-after'),
+        'rest' => array('rest-before', 'rest-after'),
+        'cue' => array('cue-before', 'cue-after'),
     );
 
     /**
@@ -325,33 +334,33 @@ class Optimise
         }
 
         if ($this->configuration->getOptimiseShorthands() > Configuration::NOTHING) {
-            $this->postparseSelector($parsed);
+            $this->postparseBlock($parsed);
         }
     }
 
-    public function postparseSelector(Selector &$selector)
+    public function postparseBlock(Block $block)
     {
-        $this->dissolveShorthands($selector);
+        $this->dissolveShorthands($block);
 
-        $this->mergeFourValueShorthands($selector);
-        $this->mergeOverflowShorthands($selector);
+        $this->mergeFourValueShorthands($block);
+        $this->mergeTwoValuesShorthand($block);
 
         if ($this->configuration->getOptimiseShorthands() >= Configuration::FONT) {
-            $this->mergeFont($selector);
+            $this->mergeFont($block);
 
             if ($this->configuration->getOptimiseShorthands() >= Configuration::BACKGROUND) {
-                $this->mergeBackground($selector);
+                $this->mergeBackground($block);
 
-                if (empty($selector->properties)) {
-                    unset($selector);
+                if (empty($block->properties)) {
+                    unset($block);
                 }
             }
         }
 
-        if (isset($selector) && $selector instanceof AtBlock) {
-            foreach ($selector->properties as $value) {
-                if ($value instanceof Selector) {
-                    $this->postparseSelector($value);
+        if (isset($block) && $block instanceof AtBlock) {
+            foreach ($block->properties as $value) {
+                if ($value instanceof Block) {
+                    $this->postparseBlock($value);
                 }
             }
         }
@@ -457,26 +466,26 @@ class Optimise
     }
 
     /**
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function dissolveShorthands(Selector $selector)
+    protected function dissolveShorthands(Block $block)
     {
-        if (isset($selector->properties['font']) && $this->configuration->getOptimiseShorthands() > Configuration::COMMON) {
-            $value = $selector->properties['font'];
-            $selector->properties['font'] = '';
-            $selector->mergeProperties($this->dissolveShortFont($value));
+        if (isset($block->properties['font']) && $this->configuration->getOptimiseShorthands() > Configuration::COMMON) {
+            $value = $block->properties['font'];
+            $block->properties['font'] = '';
+            $block->mergeProperties($this->dissolveShortFont($value));
         }
 
-        if (isset($selector->properties['background']) && $this->configuration->getOptimiseShorthands() > Configuration::FONT) {
-            $value = $selector->properties['background'];
-            $selector->properties['background'] = '';
-            $selector->mergeProperties($this->dissolveShortBackground($value));
+        if (isset($block->properties['background']) && $this->configuration->getOptimiseShorthands() > Configuration::FONT) {
+            $value = $block->properties['background'];
+            $block->properties['background'] = '';
+            $block->mergeProperties($this->dissolveShortBackground($value));
         }
 
         foreach (self::$shorthands as $shorthand => $foo) {
-            if (isset($selector->properties[$shorthand])) {
-                $selector->mergeProperties($this->dissolveFourValueShorthands($shorthand, $selector->properties[$shorthand]));
-                $selector->properties[$shorthand] = '';
+            if (isset($block->properties[$shorthand])) {
+                $block->mergeProperties($this->dissolveFourValueShorthands($shorthand, $block->properties[$shorthand]));
+                $block->properties[$shorthand] = '';
             }
         }
     }
@@ -898,13 +907,13 @@ class Optimise
      * Very basic and has at least one bug. Hopefully there is a replacement soon.
      * @param array $array
      */
-    protected function mergeSelectors(Selector $selector)
+    protected function mergeSelectors(Block $block)
     {
-        reset($selector->properties);
-        while (($value = current($selector->properties)) instanceof Selector) {
+        reset($block->properties);
+        while (($value = current($block->properties)) instanceof Block) {
             $sameSelectors = array();
-            foreach ($selector->properties as $pos => $val) {
-                if (!$val instanceof Selector) {
+            foreach ($block->properties as $pos => $val) {
+                if (!$val instanceof Block) {
                     continue;
                 }
 
@@ -916,14 +925,14 @@ class Optimise
             if (!empty($sameSelectors)) {
                 $newSelector = $value->name;
                 foreach ($sameSelectors as $sameSelectorKey) {
-                    $newSelector .= ',' . $selector->properties[$sameSelectorKey]->name;
-                    unset($selector->properties[$sameSelectorKey]);
+                    $newSelector .= ',' . $block->properties[$sameSelectorKey]->name;
+                    unset($block->properties[$sameSelectorKey]);
                 }
                 $value->name = $newSelector;
             }
 
             $this->mergeSelectors($value);
-            next($selector->properties);
+            next($block->properties);
         }
     }
 
@@ -933,15 +942,15 @@ class Optimise
      * and should be replaced by a full-blown parsing algorithm or
      * regular expression
      * @version 1.4
-     * @param Selector $parentSelector
+     * @param Element $block
      */
-    protected function discardInvalidSelectors(Selector $parentSelector)
+    protected function discardInvalidSelectors(Block $block)
     {
-        foreach ($parentSelector->properties as $key => $selector) {
+        foreach ($block->properties as $key => $selector) {
             if ($selector instanceof AtBlock) {
                 $this->discardInvalidSelectors($selector);
                 continue;
-            } else if (!$selector instanceof Selector) {
+            } else if (!$selector instanceof Block) {
                 continue;
             }
 
@@ -961,7 +970,7 @@ class Optimise
             }
 
             if (!$ok) {
-                unset($parentSelector->properties[$key]);
+                unset($block->properties[$key]);
             }
         }
     }
@@ -1017,59 +1026,72 @@ class Optimise
 
     /**
      * Merges Shorthand properties again, the opposite of self::dissolveFourValueShorthands
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function mergeFourValueShorthands(Selector $selector)
+    protected function mergeFourValueShorthands(Block $block)
     {
         foreach (self::$shorthands as $shorthand => $properties) {
             if (
-                isset($selector->properties[$properties[0]]) && 
-                isset($selector->properties[$properties[1]]) &&
-                isset($selector->properties[$properties[2]]) && 
-                isset($selector->properties[$properties[3]])
+                isset($block->properties[$properties[0]]) &&
+                isset($block->properties[$properties[1]]) &&
+                isset($block->properties[$properties[2]]) &&
+                isset($block->properties[$properties[3]])
             ) {
 
                 $important = false;
                 $values = array();
                 foreach ($properties as $property) {
-                    $val = $selector->properties[$property];
+                    $val = $block->properties[$property];
                     if (CSSTidy::isImportant($val)) {
                         $important = true;
                         $values[] = CSSTidy::removeImportant($val, false);
                     } else {
                         $values[] = $val;
                     }
-                    unset($selector->properties[$property]);
+                    unset($block->properties[$property]);
                 }
 
-                $selector->properties[$shorthand] = $this->compressShorthandValues($values, $important);
+                $block->properties[$shorthand] = $this->compressShorthandValues($values, $important);
             }
         }
     }
 
     /**
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function mergeOverflowShorthands(Selector $selector)
+    protected function mergeTwoValuesShorthand(Block $block)
     {
-        if (isset($selector->properties['overflow-x']) && isset($selector->properties['overflow-y'])) {
-            $x = $selector->properties['overflow-x'];
-            $y = $selector->properties['overflow-y'];
+        foreach (self::$twoValuesShorthand as $shorthandProperty => $properties) {
+            if (
+                isset($block->properties[$properties[0]]) &&
+                isset($block->properties[$properties[1]])
+            ) {
+                $first = $block->properties[$properties[0]];
+                $second = $block->properties[$properties[1]];
 
-            if (CSSTidy::isImportant($x) || CSSTidy::isImportant($y)) {
-                return;
+                if (CSSTidy::isImportant($first) !== CSSTidy::isImportant($second)) {
+                    continue;
+                }
+
+                $important = CSSTidy::isImportant($first) ? '!important' : '';
+
+                if ($important) {
+                    $first = CSSTidy::removeImportant($first, false);
+                    $second = CSSTidy::removeImportant($second, false);
+                }
+
+                if ($first == $second) {
+                    $output = $first . $important;
+                } else {
+                    $output = "$first $second$important";
+                }
+
+                $block->properties[$shorthandProperty] = $output;
+                unset($block->properties[$properties[0]], $block->properties[$properties[1]]);
             }
-
-            if ($x == $y) {
-                $output = $x;
-            } else {
-                $output = "$x $y";
-            }
-
-            $selector->properties['overflow'] = $output;
-            unset($selector->properties['overflow-x'], $selector->properties['overflow-y']);
         }
     }
+
 
     /**
      * Dissolve background property
@@ -1166,31 +1188,31 @@ class Optimise
      * @see dissolve_short_bg()
      * @todo full CSS 3 compliance
      */
-    protected function mergeBackground(Selector $selector)
+    protected function mergeBackground(Block $block)
     {
         // Max number of background images. CSS3 not yet fully implemented
-        $numberOfValues = @max(count($this->explodeWs(',', $selector->properties['background-image'])), count($this->explodeWs(',', $selector->properties['background-color'])), 1);
+        $numberOfValues = @max(count($this->explodeWs(',', $block->properties['background-image'])), count($this->explodeWs(',', $block->properties['background-color'])), 1);
         // Array with background images to check if BG image exists
-        $bg_img_array = @$this->explodeWs(',', CSSTidy::removeImportant($selector->properties['background-image']));
+        $bg_img_array = @$this->explodeWs(',', CSSTidy::removeImportant($block->properties['background-image']));
         $newBackgroundValue = '';
         $important = '';
 
         // if background properties is here and not empty, don't try anything
-        if (isset($selector->properties['background']) && $selector->properties['background']) {
-            return $selector->properties;
+        if (isset($block->properties['background']) && $block->properties['background']) {
+            return $block->properties;
         }
         
         for ($i = 0; $i < $numberOfValues; $i++) {
             foreach (self::$backgroundPropDefault as $bg_property => $defaultValue) {
                 // Skip if property does not exist
-                if (!isset($selector->properties[$bg_property])) {
+                if (!isset($block->properties[$bg_property])) {
                     continue;
                 }
 
-                $currentValue = $selector->properties[$bg_property];
+                $currentValue = $block->properties[$bg_property];
                 // skip all optimisation if gradient() somewhere
                 if (stripos($currentValue, "gradient(") !== false) {
-                    return $selector->properties;
+                    return $block->properties;
                 }
 
                 // Skip some properties if there is no background image
@@ -1230,14 +1252,14 @@ class Optimise
 
         // Delete all background-properties
         foreach (self::$backgroundPropDefault as $bg_property => $foo) {
-            unset($selector->properties[$bg_property]);
+            unset($block->properties[$bg_property]);
         }
 
         // Add new background property
         if ($newBackgroundValue !== '') {
-            $selector->properties['background'] = $newBackgroundValue . $important;
-        } else if (isset($selector->properties['background'])) {
-            $selector->properties['background'] = 'none';
+            $block->properties['background'] = $newBackgroundValue . $important;
+        } else if (isset($block->properties['background'])) {
+            $block->properties['background'] = 'none';
         }
     }
 
@@ -1343,24 +1365,24 @@ class Optimise
     /**
      * Merge font properties into font shorthand
      * @todo: refactor
-     * @param Selector $selector
+     * @param Element $block
      */
-    protected function mergeFont(Selector $selector)
+    protected function mergeFont(Block $block)
     {
         $newFontValue = '';
         $important = '';
         $preserveFontVariant = false;
 
         // Skip if is font-size not set
-        if (isset($selector->properties['font-size'])) {
+        if (isset($block->properties['font-size'])) {
             foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
 
                 // Skip if property does not exist
-                if (!isset($selector->properties[$fontProperty])) {
+                if (!isset($block->properties[$fontProperty])) {
                     continue;
                 }
 
-                $currentValue = $selector->properties[$fontProperty];
+                $currentValue = $block->properties[$fontProperty];
 
                 /**
                  * Skip if default value is used or if font-variant property is not small-caps
@@ -1382,8 +1404,8 @@ class Optimise
                 $newFontValue .= $currentValue;
 
                 if ($fontProperty === 'font-size' &&
-                    isset($selector->properties['line-height']) &&
-                    $selector->properties['line-height'] !== ''
+                    isset($block->properties['line-height']) &&
+                    $block->properties['line-height'] !== ''
                 ) {
                     $newFontValue .= '/';
                 } else {
@@ -1397,12 +1419,12 @@ class Optimise
                 // Delete all font-properties
                 foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
                     if (!($fontProperty === 'font-variant' && $preserveFontVariant) && $fontProperty !== 'font') {
-                        unset($selector->properties[$fontProperty]);
+                        unset($block->properties[$fontProperty]);
                     }
                 }
 
                 // Add new font property
-                $selector->properties['font'] = $newFontValue . $important;
+                $block->properties['font'] = $newFontValue . $important;
             }
         }
     }

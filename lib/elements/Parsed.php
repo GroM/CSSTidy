@@ -31,6 +31,7 @@
  */
 namespace CSSTidy;
 
+require_once __DIR__ . '/Block.php';
 require_once __DIR__ . '/Selector.php';
 require_once __DIR__ . '/AtBlock.php';
 require_once __DIR__ . '/LineAt.php';

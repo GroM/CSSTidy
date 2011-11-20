@@ -34,7 +34,7 @@ namespace CSSTidy;
 require_once __DIR__ . '/Template.php';
 require_once __DIR__ . '/Configuration.php';
 require_once __DIR__ . '/Logger.php';
-require_once __DIR__ . '/Parsed.php';
+require_once __DIR__ . '/elements/Parsed.php';
 require_once __DIR__ . '/Output.php';
 require_once __DIR__ . '/Optimise.php';
 
@@ -271,6 +271,8 @@ class CSSTidy
         'transition-duration' => 'CSS3.0',
         'transition-property' => 'CSS3.0',
         'transition-timing-function' => 'CSS3.0',
+        // Speech
+        'voice-pitch' => 'CSS3.0',
     );
 
     /** @var \CSSTidy\Optimise */
@@ -357,7 +359,7 @@ class CSSTidy
                             $status = 'ip';
                             $from[] = 'is';
                             $selector = trim($selector);
-                            $stack[] = end($stack)->addSelector(new Selector($selector));
+                            $stack[] = end($stack)->addBlock(new Selector($selector));
                             $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
@@ -634,7 +636,7 @@ class CSSTidy
                             $from[] = 'is';
 
                             $parsed->addToken(self::AT_START, $data);
-                            $stack[] = end($stack)->addSelector(new AtBlock($data));
+                            $stack[] = end($stack)->addBlock(new AtBlock($data));
 
                             $subValues = array();
                             $subValue = '';
@@ -732,9 +734,9 @@ class CSSTidy
                 foreach ($newSelectors as $newSelector) {
                     $newSelectorObj = clone $selectorObj;
                     $newSelectorObj->name = $newSelector;
-                    $parentSelectorObj->addSelector($newSelectorObj);
+                    $parentSelectorObj->addBlock($newSelectorObj);
                 }
-                $parentSelectorObj->removeSelector($selectorObj);
+                $parentSelectorObj->removeBlock($selectorObj);
                 end($top);
             }
         }
