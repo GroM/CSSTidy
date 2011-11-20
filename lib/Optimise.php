@@ -1,5 +1,4 @@
 <?php
-
 /**
  * CSSTidy - CSS Parser and Optimiser
  *
@@ -24,7 +23,7 @@
  *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
  * @license http://opensource.org/licenses/lgpl-license.php GNU Lesser General Public License
- * @package csstidy
+ * @package CSSTidy
  * @author Florian Schmitz (floele at gmail dot com) 2005-2007
  * @author Brett Zamir (brettz9 at yahoo dot com) 2007
  * @author Nikolay Matsievsky (speed at webo dot name) 2009-2010
