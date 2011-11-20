@@ -586,20 +586,23 @@ class Optimise
      */
     protected function mergeBackground(Block $block)
     {
+        $properties = $block->properties;
+
         // if background properties is here and not empty, don't try anything
-        if (isset($block->properties['background']) && $block->properties['background']) {
+        if (isset($properties['background']) && $properties['background']) {
             return;
         }
 
-        // Max number of background images. CSS3 not yet fully implemented
-        $numberOfValues = max(
-            count($this->explodeWs(',', $block->properties['background-image'])),
-            count($this->explodeWs(',', $block->properties['background-color'])),
-            1
-        );
-
         // Array with background images to check if BG image exists
-        $bg_img_array = $this->explodeWs(',', CSSTidy::removeImportant($block->properties['background-image']));
+        $explodedImage = isset($properties['background-image']) ?
+            $this->explodeWs(',', CSSTidy::removeImportant($block->properties['background-image'])) : array();
+
+        $colorCount = isset($properties['background-color']) ?
+            count($this->explodeWs(',', $block->properties['background-color'])) : 0;
+
+        // Max number of background images. CSS3 not yet fully implemented
+        $numberOfValues = max(count($explodedImage), $colorCount, 1);
+
         $newBackgroundValue = '';
         $important = '';
         
@@ -617,7 +620,7 @@ class Optimise
                 }
 
                 // Skip some properties if there is no background image
-                if ((!isset($bg_img_array[$i]) || $bg_img_array[$i] === 'none')
+                if ((!isset($explodedImage[$i]) || $explodedImage[$i] === 'none')
                                 && ($property === 'background-size' || $property === 'background-position'
                                 || $property === 'background-attachment' || $property === 'background-repeat')) {
                     continue;
