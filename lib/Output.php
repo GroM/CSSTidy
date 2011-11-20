@@ -316,7 +316,7 @@ HTML;
                     if ($this->configuration->getLowerCaseSelectors()) {
                         $token[1] = strtolower($token[1]);
                     }
-                    $out .= ($token[1]{0} !== '@' ? $template->beforeSelector : $template->beforeAtRule) . $this->htmlsp($token[1], $plain) . $template->selectorOpeningBracket;
+                    $out .= $template->beforeSelector . $this->htmlsp($token[1], $plain) . $template->selectorOpeningBracket;
                     break;
 
                 case CSSTidy::SEL_END:
@@ -360,7 +360,6 @@ HTML;
     {
         while (isset($this->parsed->tokens[++$key])) {
             if ($this->parsed->tokens[$key][0] === CSSTidy::COMMENT) {
-                ++$key;
                 continue;
             }
 
@@ -373,8 +372,6 @@ HTML;
     /**
      * Converts $this->css array to a raw array ($this->tokens)
      * @param string $defaultMedia default @media to add to selectors without any @media
-     * @access private
-     * @version 1.0
      */
     protected function convertRawCss($defaultMediaIsCurrentlyNotSupported = '')
     {
@@ -387,13 +384,13 @@ HTML;
     }
 
     /**
-     * @param Element $block
+     * @param Block $block
      * @param bool $sortSelectors
      * @param bool $sortProperties
      */
     protected function blockToTokens(Block $block, $sortSelectors = false, $sortProperties = false)
     {
-        if ($sortSelectors) {
+        if ($sortSelectors && $block instanceof AtBlock) {
             $this->sortSelectors($block);
         }
 
@@ -401,10 +398,10 @@ HTML;
             $this->sortProperties($block);
         }
 
-        if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::AT_START, $block->name);
-        } else if (!$block instanceof Parsed) {
+        if ($block instanceof Selector) {
             $this->parsed->addToken(CSSTidy::SEL_START, $block->name);
+        } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::AT_START, $block->name);
         }
 
         foreach ($block->properties as $property => $value) {
@@ -420,17 +417,18 @@ HTML;
             }
         }
 
-        if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::AT_END);
-        } else if (!$block instanceof Parsed) {
+        if ($block instanceof Selector) {
             $this->parsed->addToken(CSSTidy::SEL_END);
+        } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
+            $this->parsed->addToken(CSSTidy::AT_END);
         }
     }
 
     /**
-     * @param Element $block
+     * Sort selectors inside at block
+     * @param AtBlock $block
      */
-    protected function sortSelectors(Block $block)
+    protected function sortSelectors(AtBlock $block)
     {
         uasort($block->properties, function($a, $b) {
             if (!$a instanceof Selector || !$b instanceof Selector) {
@@ -442,8 +440,8 @@ HTML;
     }
 
     /**
-     * Sort properties inside selector with right order IE hacks
-     * @param Element $block
+     * Sort properties inside block with right order IE hacks
+     * @param Block $block
      */
     protected function sortProperties(Block $block)
     {
@@ -455,11 +453,9 @@ HTML;
                 '-' => 2  // IE6 hacks
             );
 
-            if ($a{0} === '!' || $b{0} === '!') {
+            if ($a{0} === '!' || $b{0} === '!') { // Compared keys are for selector, not for properties
                 return 0;
-            }
-
-            if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
+            } else if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
                 return strcasecmp($a, $b);
             } else if (isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
                 return 1;
@@ -474,13 +470,10 @@ HTML;
     }
 
     /**
-     * Same as htmlspecialchars, only that chars are not replaced if $plain !== true. This makes  print_code() cleaner.
+     * Same as htmlspecialchars, only that chars are not replaced if $plain !== true.
      * @param string $string
      * @param bool $plain
      * @return string
-     * @see csstidy_print::_print()
-     * @access private
-     * @version 1.0
      */
     protected function htmlsp($string, $plain)
     {

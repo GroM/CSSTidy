@@ -328,7 +328,7 @@ class CSSTidy
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
-        $currentComment = $currentString = $stringChar = $subValue = $value = $property = $selector = '';
+        $currentComment = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
         $quotedString = false;
         $bracketCount = 0;
 
@@ -375,7 +375,7 @@ class CSSTidy
                         } else if ($current === '@' && trim($selector) == '') {
                             $status = 'at';
                         } else if ($current === '"' || $current === "'") {
-                            $currentString = $stringChar = $current;
+                            $currentString = $stringEndsWith = $current;
                             $status = 'instr';
                             $from[] = 'is';
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
@@ -458,7 +458,7 @@ class CSSTidy
                             $status = 'ic';
                             $from[] = 'iv';
                         } else if ($current === '"' || $current === "'") {
-                            $currentString = $stringChar = $current;
+                            $currentString = $stringEndsWith = $current;
                             $status = 'instr';
                             $from[] = 'iv';
                         } else if ($current === '(') {
@@ -492,19 +492,17 @@ class CSSTidy
                             $value = $this->optimise->value($property, $value);
 
                             $valid = $this->propertyIsValid(rtrim($property)); // Remove right spaces added by Parsed::newProperty
-                            if (!$this->configuration->getDiscardInvalidProperties() || $valid) {
+                            if ($valid || !$this->configuration->getDiscardInvalidProperties()) {
                                 end($stack)->addProperty($property, $value);
                                 $parsed->addToken(self::VALUE, $value);
+                            } else {
+                                $this->logger->log("Removed invalid property: $property", Logger::WARNING);
                             }
-                            if (!$valid) {
-                                if ($this->configuration->getDiscardInvalidProperties()) {
-                                    $this->logger->log("Removed invalid property: $property", Logger::WARNING);
-                                } else {
-                                    $this->logger->log(
-                                        "Invalid property in {$this->configuration->getCssLevel()}: $property",
-                                        Logger::WARNING
-                                    );
-                                }
+                            if (!$valid && !$this->configuration->getDiscardInvalidProperties()) {
+                                $this->logger->log(
+                                    "Invalid property in {$this->configuration->getCssLevel()}: $property",
+                                    Logger::WARNING
+                                );
                             }
 
                             $property = $value = '';
@@ -540,7 +538,7 @@ class CSSTidy
                         if (($current === '"' || $current === '\'') && !self::escaped($string, $i)) {
                             $status = 'instr';
                             $from[] = 'inbrck';
-                            $currentString = $stringChar = $current;
+                            $currentString = $stringEndsWith = $current;
                             continue;
                         } else if ($current === '(') {
                             ++$bracketCount;
@@ -573,7 +571,7 @@ class CSSTidy
 
                     $currentString .= $current;
 
-                    if ($current === $stringChar && !self::escaped($string, $i)) {
+                    if ($current === $stringEndsWith && !self::escaped($string, $i)) {
                         $status = array_pop($from);
                         if ($property !== 'content' && $property !== 'quotes' && !$quotedString) {
                             $currentString = self::removeQuotes($currentString, $status === 'ibrck');
@@ -608,7 +606,7 @@ class CSSTidy
                             $status = 'instr';
                             $from[] = 'at';
                             $quotedString = true;
-                            $currentString = $stringChar = $current;
+                            $currentString = $stringEndsWith = $current;
                         } else if ($current === '(') {
                             $subValue .= $current;
                             $status = 'inbrck';

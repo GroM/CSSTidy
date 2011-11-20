@@ -147,6 +147,9 @@ class Optimise
         }
     }
 
+    /**
+     * @param Block $block
+     */
     public function postparseBlock(Block $block)
     {
         $this->dissolveShorthands($block);
@@ -267,7 +270,7 @@ class Optimise
     }
 
     /**
-     * @param Element $block
+     * @param Block $block
      */
     protected function dissolveShorthands(Block $block)
     {
@@ -379,8 +382,7 @@ class Optimise
      * defined by 4.1.7 in REC-CSS2. This is a very rudimentary check
      * and should be replaced by a full-blown parsing algorithm or
      * regular expression
-     * @version 1.4
-     * @param Element $block
+     * @param Block $block
      */
     protected function discardInvalidSelectors(Block $block)
     {
@@ -464,7 +466,7 @@ class Optimise
 
     /**
      * Merges Shorthand properties again, the opposite of self::dissolveFourValueShorthands
-     * @param Element $block
+     * @param Block $block
      */
     protected function mergeFourValueShorthands(Block $block)
     {
@@ -495,7 +497,11 @@ class Optimise
     }
 
     /**
-     * @param Element $block
+     * Merge two values shorthand
+     * Shorthand for merging are defined in self::$twoValuesShorthand
+     * Example: overflow-x and overflow-y are merged to overflow shorthand
+     * @param Block $block
+     * @see self::$twoValuesShorthand
      */
     protected function mergeTwoValuesShorthand(Block $block)
     {

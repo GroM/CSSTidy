@@ -4,11 +4,12 @@ namespace CSSTidy;
 /**
  * @property \CSSTidy\Configuration $configuration
  * @property \CSSTidy\Logger $logger
-  * @property \CSSTidy\SelectorManipulate $selectorManipulate
+ * @property \CSSTidy\SelectorManipulate $selectorManipulate
  * @property \CSSTidy\Optimise $optimise
  */
 class Container
 {
+    /** @var object[] */
     protected $services = array();
 
     public function __construct()
@@ -42,6 +43,11 @@ class Container
         );
     }
 
+    /**
+     * @param string $name
+     * @return object
+     * @throws \Exception
+     */
     public function __get($name)
     {
         if (isset($this->services[$name])) {
@@ -51,6 +57,11 @@ class Container
         throw new \Exception("Service with name '$name' not exists");
     }
 
+    /**
+     * @param string $name
+     * @param object $value
+     * @throws \Exception
+     */
     public function __set($name, $value)
     {
         if (!is_object($value)) {
