@@ -3,9 +3,35 @@ namespace CSSTidy;
 
 class SelectorManipulate
 {
-    public function merge()
+    public function mergeWithSameName(AtBlock $block)
     {
+        // Because elements are removed from $block->properties, foreach cannot be used
+        reset($block->properties);
+        while ($element = current($block->properties)) {
+            next($block->properties);
+            if (
+                !$element instanceof Block ||
+                ($element instanceof AtBlock && $element->name === '@font-face') // never merge @font-face
+            ) {
+                continue;
+            }
 
+            /** @var Block $element */
+            $sameBlock = $block->getBlockWithSameName($element);
+            if ($sameBlock) {
+                if ($element instanceof AtBlock) {
+                    /** @var AtBlock $element */
+                    $element->merge($sameBlock);
+                } else {
+                    $element->mergeProperties($sameBlock->properties);
+                }
+                $block->removeBlock($sameBlock);
+            }
+
+            if ($element instanceof AtBlock) {
+                $this->mergeWithSameName($element);
+            }
+        }
     }
 
     public function separate(AtBlock $block)

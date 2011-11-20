@@ -1,7 +1,7 @@
 --TEST--
 Don't merge multiples occurences of same @media
 --SETTINGS--
-merge_selectors = 0
+merge_selectors = 2
 --CSS--
 BODY {
 color: black;
@@ -25,7 +25,8 @@ background-color: white;
 
 --PRINT--
 BODY {
-color:#000
+color:#000;
+background-color:#fff
 }
 
 @media screen,tv,projection {
@@ -33,7 +34,3 @@ BODY {
 background-color:red;
 color:green
 }}
-
-BODY {
-background-color:#fff
-}

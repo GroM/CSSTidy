@@ -7,52 +7,74 @@ class AtBlock extends Block
     public static $mergeSelectors;
 
     /**
-     * @param Element $block
-     * @return Element
+     * @param Block $block
+     * @return Block
      */
     public function addBlock(Block $block)
     {
         $name = '!' . $block->name;
 
-        // Never merge @font-face at rule
-        if ($block->name === '@font-face') {
-            while (isset($this->properties[$name])) {
-                $name .= ' ';
-            }
-        } else if (self::$mergeSelectors === Configuration::MERGE_SELECTORS) {
-            if (isset($this->properties[$name])) {
-                $this->properties[$name]->mergeProperties($block->properties);
-                return $this->properties[$name];
-            }
-        } else {
-            if (isset($this->properties[$name])) {
-                end($this->properties);
-                if (key($this->properties)  === $name) {
-                    $this->properties[$name]->mergeProperties($block->properties);
-                    return $this->properties[$name];
-                }
-
-                $name .= ' ';
-
-                while (isset($this->properties[$name])) {
-                    $name .= ' ';
-                }
-            }
+        while (isset($this->properties[$name])) {
+            $name .= ' ';
         }
 
         return $this->properties[$name] = $block;
     }
 
     /**
-     * @param Element $block
+     * @param Block $block
+     * @return bool true if block was removed
      */
     public function removeBlock(Block $block)
     {
-        foreach ($this->properties as $key => $value)
-        {
-            if ($block === $value) {
-                unset($this->properties[$key]);
-                break;
+        $name = '!' . $block->name;
+
+        while (isset($this->properties[$name])) {
+            if ($this->properties[$name] === $block) {
+                unset($this->properties[$name]);
+                return true;
+            }
+            $name .= ' ';
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Block $block
+     * @return Block|bool
+     */
+    public function getBlockWithSameName(Block $block)
+    {
+        $name = '!' . $block->name;
+
+        while (isset($this->properties[$name])) {
+            $sameBlock = $this->properties[$name];
+            if (
+                $sameBlock !== $block &&
+                $sameBlock instanceof $block &&
+                $sameBlock->name === $block->name
+            ) {
+                return $sameBlock;
+            }
+            $name .= ' ';
+        }
+
+        return false;
+    }
+
+    /**
+     * @param Block $block
+     */
+    public function merge(Block $block)
+    {
+        foreach ($block->properties as $key => $value) {
+            if ($value instanceof Block) {
+                $this->addBlock($value);
+            } else if ($value instanceof LineAt) {
+                $this->addLineAt($value);
+            } else {
+                $this->addProperty($key, $value);
             }
         }
     }

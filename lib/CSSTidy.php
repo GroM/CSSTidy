@@ -658,6 +658,10 @@ class CSSTidy
             require_once __DIR__ . '/SelectorManipulate.php';
             $selectorManipulate = new SelectorManipulate;
             $selectorManipulate->separate($parsed);
+        } else if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
+            require_once __DIR__ . '/SelectorManipulate.php';
+            $selectorManipulate = new SelectorManipulate;
+            $selectorManipulate->mergeWithSameName($parsed);
         }
 
         /*echo '<pre>';
