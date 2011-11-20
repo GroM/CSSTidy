@@ -37,7 +37,8 @@ class Color
     /**
      * A list of non-W3C color names which get replaced by their hex-codes
      *
-     * @see cutColor()
+     * @see http://www.w3.org/TR/css3-color/#svg-color
+     * @see optimise()
      * @var array
      */
     public static $replaceColors = array(
@@ -182,11 +183,10 @@ class Color
     }
 
     /**
-     * Color compression function. Converts all rgb() values to #-values and uses the short-form if possible.
+     * Color compression function. Converts all rgb() or hsl() values to #-values and uses the short-form if possible.
      * Also replaces 4 color names by #-values.
      * @param string $color
      * @return string
-     * @version 1.1
      */
     public function optimise($color)
     {
@@ -248,7 +248,7 @@ class Color
                 $colorTmp = array_slice($colorTmp, 0, 3);
                 $color = ($type === 'rgba' ? $this->convertRgbToHex($colorTmp) : $this->convertHslToHex($colorTmp));
             } else if ($colorTmp[3] == 0) { // full transparency
-                $color = 'rgba(0,0,0,0)';
+                $color = 'rgba(0,0,0,0)'; // or 'transparent' keyword
             } else {
                 if ($type === 'hsla') {
                     $colorTmp[0] = $this->compressAngle($colorTmp[0]);
@@ -257,16 +257,34 @@ class Color
                     $colorTmp[2] = '100%';
                     $type = 'hsla';
                 }
-                $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],{$this->optimiseNumber->compressNumber($colorTmp[3])})";
+                $compressedAlpha = $this->optimiseNumber->compressNumber($colorTmp[3]);
+                $color = "$type($colorTmp[0],$colorTmp[1],$colorTmp[2],$compressedAlpha)";
             }
         } else {
-            // Fix bad color names
-            if (isset(self::$replaceColors[strtolower($color)])) {
-                $temp = self::$replaceColors[strtolower($color)];
-                $this->logger->log("Fixed invalid color name: Changed '{$color}' to '{$temp}'", Logger::WARNING);
-                $color = $temp;
-            }
+            $color = $this->fixBadColorName($color);
         }
+
+        $color = $this->mergeSameHex($color);
+
+        if (isset($shorterNames[strtolower($color)])) {
+            $color = $shorterNames[strtolower($color)];
+        }
+
+        if ($original != $color) {
+            $this->logger->log("Optimised color: Changed '{$original}' to '{$color}'", Logger::INFORMATION);
+        }
+
+        return $color;
+    }
+
+    /**
+     * Merge 6 hex value color with # to 3
+     * Example: #ffccbb -> #fcb
+     * @param string $color
+     * @return string
+     */
+    protected function mergeSameHex($color)
+    {
             // strlen($color) === 7
         if (isset($color{6}) && !isset($color{7}) && $color{0} === '#') {
             $color = strtolower($color); // Lower hex color for better gziping
@@ -277,12 +295,21 @@ class Color
             }
         }
 
-        if (isset($shorterNames[strtolower($color)])) {
-            $color = $shorterNames[strtolower($color)];
-        }
+        return $color;
+    }
 
-        if ($original != $color) {
-            $this->logger->log("Optimised color: Changed '{$original}' to '{$color}'", Logger::INFORMATION);
+    /**
+     * @see self::$replaceColors
+     * @param string $color
+     * @return mixed
+     */
+    protected function fixBadColorName($color)
+    {
+        $colorName = strtolower($color);
+        if (isset(self::$replaceColors[$colorName])) {
+            $temp = self::$replaceColors[$colorName];
+            $this->logger->log("Fixed invalid color name: Changed '{$color}' to '{$temp}'", Logger::WARNING);
+            $color = $temp;
         }
 
         return $color;
@@ -317,7 +344,7 @@ class Color
     {
         list ($h, $s, $l) = $parts;
 
-        $h = ((($h % 360) + 360) % 360) / 360;
+        $h = $this->normalizeAngle($h);
 
         $normalizeSOrL = function($value, $name) {
             if (!substr($value, -1) === '%') {
@@ -395,9 +422,18 @@ class Color
      * @param int $angle
      * @return int
      */
+    protected function normalizeAngle($angle)
+    {
+        return (($angle % 360) + 360) % 360; // normalize from 0 to 359
+    }
+
+    /**
+     * @param int $angle
+     * @return int
+     */
     protected function compressAngle($angle)
     {
-        $angle = (($angle % 360) + 360) % 360; // normalize from 0 to 359
+        $this->normalizeAngle($angle);
 
         if ($angle > 350) {
             $angle -= 360;
