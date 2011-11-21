@@ -60,11 +60,12 @@ class Logger
     }
 
     /**
+     * @param int $count
      * @return int
      */
-    public function incrementLine()
+    public function incrementLine($count = 1)
     {
-        return ++$this->line;
+        return $this->line += $count;
     }
 
     /**

@@ -728,14 +728,19 @@ class CSSTidy
      */
     protected function parseComment($string, &$i)
     {
-        $commentEnd = strpos($string, '*/', $i + 2);
-        if ($commentEnd) {
-            $comment = substr($string, $i + 2, $commentEnd - 2);
-            $i = $commentEnd + 1;
-            return $comment;
+        $i += 2; // /*
+        $commentLength = strpos($string, '*/', $i);
+        $commentLength = $commentLength !== false  ? $commentLength - $i :  strlen($string) - $i - 1;
+
+        if ($commentLength > 0) {
+            $this->logger->incrementLine(substr_count($string, "\n", $i, $commentLength));
+            $comment = substr($string, $i, $commentLength);
+        } else {
+            $comment = '';
         }
 
-        return '';
+        $i += $commentLength + 1; // */
+        return $comment;
     }
 
     /**
