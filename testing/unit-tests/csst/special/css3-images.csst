@@ -1,13 +1,8 @@
 --TEST--
 multiples cursor rules
 --CSS--
-a {background-image: image("wavy.svg", 'wavy.png' , "wavy.gif", rgba(0,0,255,0.5));}
 sprites {background-image: url('logos.svg#svgView(viewBox(0,0,200,200))')}
 --PRINT--
-a {
-background-image:image("wavy.svg",'wavy.png',"wavy.gif",rgba(0,0,255,0.5))
-}
-
 sprites {
 background-image:url('logos.svg#svgView(viewBox(0,0,200,200))')
 }
