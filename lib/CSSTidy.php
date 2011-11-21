@@ -60,6 +60,9 @@ class CSSTidy
         COMMENT = 7,
         LINE_AT = 8;
 
+    /** @var string */
+    private static $version = '1.4';
+
     /**
      * All whitespace allowed in CSS without '\r', because is changed to '\n' before parsing
      * @static
@@ -79,7 +82,6 @@ class CSSTidy
      *
      * @var string
      * @static
-     * @version 1.0
      */
     public static $tokensList = '/@}{;:=\'"(,\\!$%&)*+.<>?[]^`|~';
 
@@ -287,7 +289,7 @@ class CSSTidy
     public $configuration;
 
     /** @var string */
-    private static $version = '1.4';
+    private static $stringTokens;
 
     /**
      * @param Configuration|null $configuration
@@ -306,6 +308,7 @@ class CSSTidy
 
         // Prepare array of all CSS whitespaces
         self::$whitespaceArray = str_split(self::$whitespace);
+        self::$stringTokens = self::$whitespace . '\'"()';
     }
 
     /**
@@ -570,7 +573,7 @@ class CSSTidy
                     if ($current === $stringEndsWith && !self::escaped($string, $i)) {
                         $status = array_pop($from);
                         if ($property !== 'content' && $property !== 'quotes' && !$quotedString) {
-                            $currentString = self::removeQuotes($currentString, $status === 'ibrck');
+                            $currentString = self::removeQuotes($currentString);
                         } else {
                             $currentString = self::normalizeQuotes($currentString);
                         }
@@ -995,22 +998,17 @@ class CSSTidy
     }
 
     /**
-     * @todo Check all possible bugs
      * @param string $string
-     * @param bool $bracketInsideStringAllowed
      * @return mixed
      */
-    public static function removeQuotes($string, $bracketInsideStringAllowed = true)
+    public static function removeQuotes($string)
     {
-        if (preg_match('|[' . self::$whitespace . ']|uis', $string)) { // If string contains whitespace
+        $withoutQuotes = substr($string, 1, -1);
+        if (preg_match('|[' . self::$stringTokens .']|uis', $withoutQuotes)) { // If string contains whitespace
             return self::normalizeQuotes($string);
         }
 
-        if (!$bracketInsideStringAllowed && (strpos($string, '(') !== false || strpos($string, ')') !== false)) {
-            return $string;
-        }
-
-        return substr($string, 1, -1);
+        return $withoutQuotes;
     }
 
     /**

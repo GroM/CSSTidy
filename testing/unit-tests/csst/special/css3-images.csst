@@ -4,5 +4,5 @@ multiples cursor rules
 sprites {background-image: url('logos.svg#svgView(viewBox(0,0,200,200))')}
 --PRINT--
 sprites {
-background-image:url('logos.svg#svgView(viewBox(0,0,200,200))')
+background-image:url("logos.svg#svgView(viewBox(0,0,200,200))")
 }
