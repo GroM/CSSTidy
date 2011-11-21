@@ -367,7 +367,7 @@ class CSSTidy
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $selectorSeparate[] = strlen($selector);
-                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        } else if ($current === '/' && $string{$i + 1} === '*') {
                             ++$i;
                             $status = 'ic';
                             $from[] = 'is';
@@ -388,7 +388,7 @@ class CSSTidy
                             $selector = '';
                         } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
-                        } else if ($current === '*' && isset($string{$i + 1}) && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
+                        } else if ($current === '*' && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
                             // remove unnecessary universal selector, FS#147
                         } else {
                             $selector .= $current;
@@ -426,7 +426,7 @@ class CSSTidy
                             $selector = $property = '';
                         } else if ($current === '@') {
                             $status = 'at';
-                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        } else if ($current === '/' && $string{$i + 1} === '*') {
                             ++$i;
                             $status = 'ic';
                             $from[] = 'ip';
@@ -452,7 +452,7 @@ class CSSTidy
                 case 'iv':
                     $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
-                        if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        if ($current === '/' && $string{$i + 1} === '*') {
                             ++$i;
                             $status = 'ic';
                             $from[] = 'iv';
@@ -639,7 +639,7 @@ class CSSTidy
 
                             $subValues = array();
                             $subValue = '';
-                        } else if ($current === '/' && isset($string{$i + 1}) && $string{$i + 1} === '*') {
+                        } else if ($current === '/' && $string{$i + 1} === '*') {
                             $status = 'ic';
                             ++$i;
                             $from[] = 'at';
