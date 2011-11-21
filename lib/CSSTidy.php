@@ -338,7 +338,6 @@ class CSSTidy
          * - iv = in value
          * - instr = in string (started at " or ')
          * - inbrck = in bracket (started by ()
-         * - ic = in comment (ignore everything)
          * - at = in @-block
          */
         $status = 'is';
@@ -368,9 +367,7 @@ class CSSTidy
                             $selector = trim($selector) . ',';
                             $selectorSeparate[] = strlen($selector);
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            ++$i;
-                            $status = 'ic';
-                            $from[] = 'is';
+                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
                         } else if ($current === '@' && trim($selector) == '') {
                             $status = 'at';
                         } else if ($current === '"' || $current === "'") {
@@ -427,9 +424,7 @@ class CSSTidy
                         } else if ($current === '@') {
                             $status = 'at';
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            ++$i;
-                            $status = 'ic';
-                            $from[] = 'ip';
+                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
                         } else if ($current === ';') {
                             $property = '';
                         } else if ($current === '\\') {
@@ -453,9 +448,7 @@ class CSSTidy
                     $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && $string{$i + 1} === '*') {
-                            ++$i;
-                            $status = 'ic';
-                            $from[] = 'iv';
+                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
                         } else if ($current === '"' || $current === "'") {
                             $currentString = $stringEndsWith = $current;
                             $status = 'instr';
@@ -587,18 +580,6 @@ class CSSTidy
                     }
                     break;
 
-                /* Case in-comment */
-                case 'ic':
-                    if ($current === '*' && $string{$i + 1} === '/') {
-                        $status = array_pop($from);
-                        $i++;
-                        $parsed->addToken(self::COMMENT, $currentComment);
-                        $currentComment = '';
-                    } else {
-                        $currentComment .= $current;
-                    }
-                    break;
-
                 /* Case in at rule */
                 case 'at':
                     if ($this->isToken($string, $i)) {
@@ -640,9 +621,7 @@ class CSSTidy
                             $subValues = array();
                             $subValue = '';
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            $status = 'ic';
-                            ++$i;
-                            $from[] = 'at';
+                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
                         } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } else {
@@ -739,6 +718,24 @@ class CSSTidy
             $selector->subSelectors[] = substr($selector->name, $lastPosition, $pos - $lastPosition - 1);
             $lastPosition = $pos;
         }
+    }
+
+    /**
+     * @todo If comment is to end of file
+     * @param string $string
+     * @param int $i
+     * @return string
+     */
+    protected function parseComment($string, &$i)
+    {
+        $commentEnd = strpos($string, '*/', $i + 2);
+        if ($commentEnd) {
+            $comment = substr($string, $i + 2, $commentEnd - 2);
+            $i = $commentEnd + 1;
+            return $comment;
+        }
+
+        return '';
     }
 
     /**
