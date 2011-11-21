@@ -327,7 +327,7 @@ class CSSTidy
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
-        $currentComment = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
+        $function = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
         $quotedString = false;
         $bracketCount = 0;
 
@@ -454,6 +454,7 @@ class CSSTidy
                             $status = 'instr';
                             $from[] = 'iv';
                         } else if ($current === '(') {
+                            $function = $subValue;
                             $subValue .= $current;
                             $bracketCount = 1;
                             $status = 'inbrck';
@@ -532,11 +533,13 @@ class CSSTidy
                             $status = 'instr';
                             $from[] = 'inbrck';
                             $currentString = $stringEndsWith = $current;
+                            $quotedString = $function === 'format';
                             continue;
                         } else if ($current === '(') {
                             ++$bracketCount;
                         } else if ($current === ')' && --$bracketCount === 0) {
                             $status = array_pop($from); // Go back to prev parser
+                            $function = '';
                         } else if ($current === "\n") {
                             $current = ' '; // Change new line character to normal space
                         }
@@ -754,11 +757,6 @@ class CSSTidy
         $output = '';
 
         foreach ($subValues as $subValue) {
-            if (strncmp($subValue, 'format(', 7) === 0) {
-                // format() value must be inside quotes
-                $subValue = str_replace(array('format(', ')'), array('format("', '")'), $subValue);
-            }
-
             if ($subValue === ',') {
                 $prev = true;
             } else if (!$prev) {
