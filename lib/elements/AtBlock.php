@@ -29,19 +29,34 @@ namespace CSSTidy;
 
 class AtBlock extends Block
 {
+    /** @var array */
+    public $nameParts = array();
+
+    /**
+     * @param string|array $name
+     */
+    public function __construct($name)
+    {
+        if (is_array($name)) {
+            $this->nameParts = $name;
+        } else {
+            $this->name = $name;
+        }
+    }
+
     /**
      * @param Block $block
      * @return Block
      */
     public function addBlock(Block $block)
     {
-        $name = '!' . $block->name;
+        $name = '!' . $block->getName();
 
-        while (isset($this->properties[$name])) {
+        while (isset($this->elements[$name])) {
             $name .= ' ';
         }
 
-        return $this->properties[$name] = $block;
+        return $this->elements[$name] = $block;
     }
 
     /**
@@ -50,11 +65,11 @@ class AtBlock extends Block
      */
     public function removeBlock(Block $block)
     {
-        $name = '!' . $block->name;
+        $name = '!' . $block->getName();
 
-        while (isset($this->properties[$name])) {
-            if ($this->properties[$name] === $block) {
-                unset($this->properties[$name]);
+        while (isset($this->elements[$name])) {
+            if ($this->elements[$name] === $block) {
+                unset($this->elements[$name]);
                 return true;
             }
             $name .= ' ';
@@ -69,14 +84,14 @@ class AtBlock extends Block
      */
     public function getBlockWithSameName(Block $block)
     {
-        $name = '!' . $block->name;
+        $name = '!' . $block->getName();
 
-        while (isset($this->properties[$name])) {
-            $sameBlock = $this->properties[$name];
+        while (isset($this->elements[$name])) {
+            $sameBlock = $this->elements[$name];
             if (
                 $sameBlock !== $block &&
                 $sameBlock instanceof $block &&
-                $sameBlock->name === $block->name
+                $sameBlock->getName() === $block->getName()
             ) {
                 return $sameBlock;
             }
@@ -91,13 +106,15 @@ class AtBlock extends Block
      */
     public function merge(Block $block)
     {
-        foreach ($block->properties as $key => $value) {
-            if ($value instanceof Block) {
+        foreach ($block->elements as $value) {
+            if ($value instanceof Property) {
+                $this->addProperty($value);
+            } else if ($value instanceof Block) {
                 $this->addBlock($value);
             } else if ($value instanceof LineAt) {
                 $this->addLineAt($value);
             } else {
-                $this->addProperty($key, $value);
+                throw new \Exception("Invalid element");
             }
         }
     }
@@ -107,6 +124,12 @@ class AtBlock extends Block
      */
     public function addLineAt(LineAt $lineAt)
     {
-        $this->properties[] = $lineAt;
+        $this->elements[] = $lineAt;
+    }
+
+
+    public function getName()
+    {
+        return '@' . $this->mergeSubValues($this->nameParts);
     }
 }

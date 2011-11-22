@@ -27,11 +27,13 @@
  */
 namespace CSSTidy;
 
+require_once __DIR__ . '/Element.php';
 require_once __DIR__ . '/Block.php';
 require_once __DIR__ . '/Selector.php';
 require_once __DIR__ . '/AtBlock.php';
 require_once __DIR__ . '/LineAt.php';
 require_once __DIR__ . '/Comment.php';
+require_once __DIR__ . '/Property.php';
 
 class Parsed extends AtBlock
 {

@@ -36,6 +36,7 @@ use CSSTidy\Logger;
 use CSSTidy\Configuration;
 use CSSTidy\Block;
 use CSSTidy\AtBlock;
+use CSSTidy\Property;
 
 class Shorthand
 {
@@ -123,27 +124,35 @@ class Shorthand
         $this->mergeTwoValuesShorthand($block);
 
         foreach (self::$shorthands as $shorthand => $foo) {
-            if (isset($block->properties[$shorthand])) {
-                $block->properties[$shorthand] = $shorthand === 'border-radius' ?
-                   $this->borderRadiusShorthand($block->properties[$shorthand])  :
-                    $this->compressShorthand($block->properties[$shorthand]);
+            if (isset($block->elements[$shorthand])) {
+                $shorthand === 'border-radius' ?
+                   $this->borderRadiusShorthand($block->elements[$shorthand])  :
+                   $this->compressShorthand($block->elements[$shorthand]);
             }
         }
 
         if ($this->optimiseShorthand >= Configuration::FONT) {
             $this->mergeFont($block);
 
+            if (isset($block->elements['font']) && $block->elements['font'] === false) {
+                unset($block->elements['font']);
+            }
+
             if ($this->optimiseShorthand >= Configuration::BACKGROUND) {
                 $this->mergeBackground($block);
 
-                if (empty($block->properties)) {
+                if (isset($block->elements['background']) && $block->elements['background'] === false) {
+                    unset($block->elements['background']);
+                }
+
+                if (empty($block->elements)) {
                     unset($block);
                 }
             }
         }
 
         if (isset($block) && $block instanceof AtBlock) {
-            foreach ($block->properties as $value) {
+            foreach ($block->elements as $value) {
                 if ($value instanceof Block) {
                     $this->process($value);
                 }
@@ -156,16 +165,16 @@ class Shorthand
     */
     protected function dissolveShorthands(Block $block)
     {
-        if (isset($block->properties['font']) && $this->optimiseShorthand > Configuration::COMMON) {
-            $value = $block->properties['font'];
-            $block->properties['font'] = '';
-            $block->mergeProperties($this->dissolveShortFont($value));
+        if (isset($block->elements['font']) && $this->optimiseShorthand > Configuration::COMMON) {
+            $property = $block->elements['font'];
+            $block->elements['font'] = false;
+            $block->mergeElements($this->dissolveShortFont($property));
         }
 
-        if (isset($block->properties['background']) && $this->optimiseShorthand > Configuration::FONT) {
-            $value = $block->properties['background'];
-            $block->properties['background'] = '';
-            $block->mergeProperties($this->dissolveShortBackground($value));
+        if (isset($block->elements['background']) && $this->optimiseShorthand > Configuration::FONT) {
+            $property = $block->elements['background'];
+            $block->elements['background'] = false;
+            $block->mergeElements($this->dissolveShortBackground($property));
         }
     }
 
@@ -175,17 +184,13 @@ class Shorthand
      * @return string
      * @version 1.0
     */
-    protected function compressShorthand($value)
+    protected function compressShorthand(Property $property)
     {
-        $important = false;
-        if (Parser::isImportant($value)) {
-            $value = Parser::removeImportant($value, false);
-            $important = true;
-        }
+        $value = $property->getValueWithoutImportant();
 
         $values = Parser::explodeWithoutString(' ', $value);
 
-        return $this->compressShorthandValues($values, $important);
+        $property->setValue($this->compressShorthandValues($values));
     }
 
 
@@ -195,29 +200,25 @@ class Shorthand
      * @param string $value
      * @return string
      */
-    protected function borderRadiusShorthand($value)
+    protected function borderRadiusShorthand(Property $property)
     {
-        $important = '';
-        if (Parser::isImportant($value)) {
-            $value = Parser::removeImportant($value, false);
-            $important = '!important';
-        }
-
+        $value = $property->getValueWithoutImportant();
         $parts = explode('/', $value);
 
         if (empty($parts)) { // / delimiter in string not found
-            return $value;
+            return;
         }
 
         if (isset($parts[2])) {
-            return $value; // border-radius value can contains only two parts
+            return; // border-radius value can contains only two parts
         }
 
         foreach ($parts as &$part) {
-            $part = $this->compressShorthand(trim($part));
+            $values = Parser::explodeWithoutString(' ', trim($part));
+            $part = $this->compressShorthandValues($values);
         }
 
-        return implode('/', $parts).$important;
+        $property->setValue(implode('/', $parts));
     }
 
     /**
@@ -225,32 +226,30 @@ class Shorthand
      * @param bool $isImportant
      * @return string
      */
-    protected function compressShorthandValues(array $values, $isImportant)
+    protected function compressShorthandValues(array $values)
     {
-        $important = $isImportant ? '!important' : '';
-
         switch (count($values)) {
             case 4:
                 if ($values[0] == $values[1] && $values[0] == $values[2] && $values[0] == $values[3]) {
-                    return $values[0] . $important;
+                    return $values[0];
                 } else if ($values[1] == $values[3] && $values[0] == $values[2]) {
-                    return $values[0] . ' ' . $values[1] . $important;
+                    return $values[0] . ' ' . $values[1];
                 } else if ($values[1] == $values[3]) {
-                    return $values[0] . ' ' . $values[1] . ' ' . $values[2] . $important;
+                    return $values[0] . ' ' . $values[1] . ' ' . $values[2];
                 }
                 break;
 
             case 3:
                 if ($values[0] == $values[1] && $values[0] == $values[2]) {
-                    return $values[0] . $important;
+                    return $values[0];
                 } else if ($values[0] == $values[2]) {
-                    return $values[0] . ' ' . $values[1] . $important;
+                    return $values[0] . ' ' . $values[1];
                 }
                 break;
 
             case 2:
                 if ($values[0] == $values[1]) {
-                    return $values[0] . $important;
+                    return $values[0];
                 }
                 break;
         }
@@ -316,25 +315,27 @@ class Shorthand
     {
         foreach (self::$shorthands as $shorthand => $properties) {
             if (
-                isset($block->properties[$properties[0]]) &&
-                isset($block->properties[$properties[1]]) &&
-                isset($block->properties[$properties[2]]) &&
-                isset($block->properties[$properties[3]])
+                isset($block->elements[$properties[0]]) &&
+                isset($block->elements[$properties[1]]) &&
+                isset($block->elements[$properties[2]]) &&
+                isset($block->elements[$properties[3]])
             ) {
                 $important = false;
                 $values = array();
+
                 foreach ($properties as $property) {
-                    $val = $block->properties[$property];
-                    if (Parser::isImportant($val)) {
+                    /** @var \CSSTidy\Property $prop */
+                    $prop = $block->elements[$property];
+                    if ($prop->isImportant) {
                         $important = true;
-                        $values[] = Parser::removeImportant($val, false);
-                    } else {
-                        $values[] = $val;
                     }
-                    unset($block->properties[$property]);
+                    $values[] = $prop->getValueWithoutImportant();
+                    $block->removeProperty($prop);
                 }
 
-                $block->properties[$shorthand] = $this->compressShorthandValues($values, $important);
+                $shorthandProperty = new Property($shorthand, $this->compressShorthandValues($values, $important));
+                $shorthandProperty->isImportant = $important;
+                $block->addProperty($shorthandProperty);
             }
         }
     }
@@ -350,31 +351,33 @@ class Shorthand
     {
         foreach (self::$twoValuesShorthand as $shorthandProperty => $properties) {
             if (
-                isset($block->properties[$properties[0]]) &&
-                isset($block->properties[$properties[1]])
+                isset($block->elements[$properties[0]]) &&
+                isset($block->elements[$properties[1]])
             ) {
-                $first = $block->properties[$properties[0]];
-                $second = $block->properties[$properties[1]];
+                /** @var \CSSTidy\Property $first */
+                $first = $block->elements[$properties[0]];
+                /** @var \CSSTidy\Property $second */
+                $second = $block->elements[$properties[1]];
 
-                if (Parser::isImportant($first) !== Parser::isImportant($second)) {
+                if ($first->isImportant !== $second->isImportant) {
                     continue;
                 }
 
-                $important = Parser::isImportant($first) ? '!important' : '';
+                $firstValue = $first->getValueWithoutImportant();
+                $secondValue = $second->getValueWithoutImportant();
 
-                if ($important) {
-                    $first = Parser::removeImportant($first, false);
-                    $second = Parser::removeImportant($second, false);
-                }
-
-                if ($first == $second) {
-                    $output = $first . $important;
+                if ($firstValue == $secondValue) {
+                    $output = $firstValue;
                 } else {
-                    $output = "$first $second$important";
+                    $output = "$firstValue $secondValue";
                 }
 
-                $block->properties[$shorthandProperty] = $output;
-                unset($block->properties[$properties[0]], $block->properties[$properties[1]]);
+                $property = new Property($shorthandProperty, $output);
+                $property->isImportant = $first->isImportant;
+                $block->addProperty($property);
+
+                $block->removeProperty($first);
+                $block->removeProperty($second);
             }
         }
     }
@@ -386,11 +389,12 @@ class Shorthand
      * @return array
      * @todo full CSS 3 compliance
     */
-    protected function dissolveShortBackground($str_value)
+    protected function dissolveShortBackground(Property $property)
     {
+        $str_value = $property->getValueWithoutImportant();
         // don't try to explose background gradient !
         if (stripos($str_value, "gradient(") !== false) {
-            return array('background' => $str_value);
+            return array(new Property('background', $property->getValue()));
         }
 
         static $repeat = array('repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'space');
@@ -409,12 +413,6 @@ class Shorthand
             'background-origin' => null,
             'background-color' => null
         );
-
-        $important = '';
-        if (Parser::isImportant($str_value)) {
-            $important = ' !important';
-            $str_value = Parser::removeImportant($str_value, false);
-        }
 
         $str_value = Parser::explodeWithoutString(',', $str_value);
         foreach ($str_value as $strVal) {
@@ -456,15 +454,16 @@ class Shorthand
             }
         }
 
+        $outputProperties = array();
         foreach (self::$backgroundPropDefault as $backgroundProperty => $defaultValue) {
-            if ($return[$backgroundProperty] !== null) {
-                $return[$backgroundProperty] = substr($return[$backgroundProperty], 0, -1) . $important;
+            if (isset($return[$backgroundProperty])) {
+                $outputProperties[] = new Property($backgroundProperty, substr($return[$backgroundProperty], 0, -1), 0, $property->isImportant);
             } else {
-                $return[$backgroundProperty] = $defaultValue . $important;
+                $outputProperties[] = new Property($backgroundProperty, $defaultValue, 0, $property->isImportant);
             }
         }
 
-        return $return;
+        return $outputProperties;
     }
 
     /**
@@ -474,7 +473,7 @@ class Shorthand
      */
     protected function mergeBackground(Block $block)
     {
-        $properties = $block->properties;
+        $properties = $block->elements;
 
         // if background properties is here and not empty, don't try anything
         if (isset($properties['background']) && $properties['background']) {
@@ -483,10 +482,10 @@ class Shorthand
 
         // Array with background images to check if BG image exists
         $explodedImage = isset($properties['background-image']) ?
-            Parser::explodeWithoutString(',', Parser::removeImportant($block->properties['background-image'])) : array();
+            Parser::explodeWithoutString(',', $block->elements['background-image']->getValueWithoutImportant()) : array();
 
         $colorCount = isset($properties['background-color']) ?
-            count(Parser::explodeWithoutString(',', $block->properties['background-color'])) : 0;
+            count(Parser::explodeWithoutString(',', $block->elements['background-color']->getValueWithoutImportant())) : 0;
 
         // Max number of background images. CSS3 not yet fully implemented
         $numberOfValues = max(count($explodedImage), $colorCount, 1);
@@ -497,11 +496,12 @@ class Shorthand
         for ($i = 0; $i < $numberOfValues; $i++) {
             foreach (self::$backgroundPropDefault as $property => $defaultValue) {
                 // Skip if property does not exist
-                if (!isset($block->properties[$property])) {
+                if (!isset($block->elements[$property])) {
                     continue;
                 }
 
-                $currentValue = $block->properties[$property];
+                $property = $block->elements[$property];
+                $currentValue = $property->getValueWithoutImportant();
                 // skip all optimisation if gradient() somewhere
                 if (stripos($currentValue, "gradient(") !== false) {
                     return;
@@ -514,10 +514,8 @@ class Shorthand
                     continue;
                 }
 
-                // Remove !important
-                if (Parser::isImportant($currentValue)) {
-                    $important = ' !important';
-                    $currentValue = Parser::removeImportant($currentValue, false);
+                if ($property->isImportant) {
+                    $important = true;
                 }
 
                 // Do not add default values
@@ -544,14 +542,20 @@ class Shorthand
 
         // Delete all background-properties
         foreach (self::$backgroundPropDefault as $property => $foo) {
-            unset($block->properties[$property]);
+            if (isset($properties[$property])) {
+                $block->removeProperty($properties[$property]);
+            }
         }
 
         // Add new background property
         if ($newBackgroundValue !== '') {
-            $block->properties['background'] = $newBackgroundValue . $important;
-        } else if (isset($block->properties['background'])) {
-            $block->properties['background'] = 'none';
+            $newProperty = new Property('background', $newBackgroundValue, 0, $important);
+        } else if (isset($block->elements['background'])) {
+            $newProperty = new Property('background', 'none');
+        }
+
+        if (isset($newProperty)) {
+            $block->mergeElements(array($newProperty));
         }
     }
 
@@ -560,17 +564,13 @@ class Shorthand
      * @param string $value
      * @return array
     */
-    protected function dissolveShortFont($value)
+    protected function dissolveShortFont(Property $property)
     {
         static $fontWeight = array('normal', 'bold', 'bolder', 'lighter', 100, 200, 300, 400, 500, 600, 700, 800, 900);
         static $fontVariant = array('normal', 'small-caps');
         static $fontStyle = array('normal', 'italic', 'oblique');
 
-        $important = '';
-        if (Parser::isImportant($value)) {
-            $important = '!important';
-            $value = Parser::removeImportant($value, false);
-        }
+        $value = $property->getValueWithoutImportant();
 
         $return = array(
             'font-style' => null,
@@ -641,15 +641,14 @@ class Shorthand
             unset($return['font-weight']);
         }
 
+        $outputProperties = array();
         foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
-            if (isset($return[$fontProperty])) {
-                $return[$fontProperty] = $return[$fontProperty] . $important;
-            } else {
-                $return[$fontProperty] = $defaultValue . $important;
+            if (isset($return[$fontProperty]) && !empty($return[$fontProperty])) {
+                $outputProperties[] = new Property($fontProperty, $return[$fontProperty], 0, $property->isImportant);
             }
         }
 
-        return $return;
+        return $outputProperties;
     }
 
     /**
@@ -660,19 +659,20 @@ class Shorthand
     protected function mergeFont(Block $block)
     {
         $newFontValue = '';
-        $important = '';
-        $preserveFontVariant = false;
+        $preserveFontVariant = $important = false;
 
         // Skip if is font-size not set
-        if (isset($block->properties['font-size'])) {
+        if (isset($block->elements['font-size'])) {
             foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
 
                 // Skip if property does not exist
-                if (!isset($block->properties[$fontProperty])) {
+                if (!isset($block->elements[$fontProperty])) {
                     continue;
                 }
+                /** @var \CSSTidy\Property $property */
+                $property = $block->elements[$fontProperty];
 
-                $currentValue = $block->properties[$fontProperty];
+                $currentValue = $property->getValueWithoutImportant();
 
                 /**
                  * Skip if default value is used or if font-variant property is not small-caps
@@ -685,17 +685,15 @@ class Shorthand
                     continue;
                 }
 
-                // Remove !important
-                if (Parser::isImportant($currentValue)) {
-                    $important = '!important';
-                    $currentValue = Parser::removeImportant($currentValue, false);
+                if ($property->isImportant) {
+                    $important = true;
                 }
 
                 $newFontValue .= $currentValue;
 
                 if ($fontProperty === 'font-size' &&
-                    isset($block->properties['line-height']) &&
-                    $block->properties['line-height'] !== ''
+                    isset($block->elements['line-height']) &&
+                    $block->elements['line-height'] !== ''
                 ) {
                     $newFontValue .= '/';
                 } else {
@@ -708,13 +706,14 @@ class Shorthand
             if ($newFontValue !== '') {
                 // Delete all font-properties
                 foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
-                    if (!($fontProperty === 'font-variant' && $preserveFontVariant) && $fontProperty !== 'font') {
-                        unset($block->properties[$fontProperty]);
+                    if (isset($block->elements[$fontProperty]) && !($fontProperty === 'font-variant' && $preserveFontVariant) && $fontProperty !== 'font') {
+                        $block->removeProperty($block->elements[$fontProperty]);
                     }
                 }
 
                 // Add new font property
-                $block->properties['font'] = $newFontValue . $important;
+                $property = new Property('font', $newFontValue, 0, $important);
+                $block->mergeElements(array($property));
             }
         }
     }

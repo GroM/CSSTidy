@@ -37,12 +37,12 @@ class SelectorManipulate
     public function mergeWithSameName(AtBlock $block)
     {
         // Because elements are removed from $block->properties, foreach cannot be used
-        reset($block->properties);
-        while ($element = current($block->properties)) {
-            next($block->properties);
+        reset($block->elements);
+        while ($element = current($block->elements)) {
+            next($block->elements);
             if (
                 !$element instanceof Block ||
-                ($element instanceof AtBlock && $element->name === '@font-face') // never merge @font-face
+                ($element instanceof AtBlock && $element->getName() === '@font-face') // never merge @font-face
             ) {
                 continue;
             }
@@ -54,7 +54,7 @@ class SelectorManipulate
                     /** @var AtBlock $element */
                     $element->merge($sameBlock);
                 } else {
-                    $element->mergeProperties($sameBlock->properties);
+                    $element->mergeElements($sameBlock->elements);
                 }
                 $block->removeBlock($sameBlock);
             }
@@ -73,9 +73,9 @@ class SelectorManipulate
     public function mergeWithSameProperties(AtBlock $block)
     {
         // Because elements are removed from $block->properties, foreach cannot be used
-        reset($block->properties);
-        while (($element = current($block->properties))) {
-            next($block->properties);
+        reset($block->elements);
+        while (($element = current($block->elements))) {
+            next($block->elements);
             if (!$element instanceof Block) {
                 continue;
             } else if (!$element instanceof Selector) {
@@ -84,12 +84,12 @@ class SelectorManipulate
             }
 
             $sameSelectors = array();
-            foreach ($block->properties as $val) {
+            foreach ($block->elements as $val) {
                 if (!$val instanceof Selector) {
                     continue;
                 }
 
-                if ($val->properties == $element->properties && $val !== $element) {
+                if ($val !== $element && $element->compareProperties($val)) {
                     $sameSelectors[] = $val;
                 }
             }
@@ -97,7 +97,7 @@ class SelectorManipulate
             if (!empty($sameSelectors)) {
                 foreach ($sameSelectors as $sameSelector) {
                     /** @var Selector $element */
-                    $element->appendSelectorName($sameSelector->name);
+                    $element->appendSelectorName($sameSelector->getName());
                     $block->removeBlock($sameSelector);
                 }
             }
@@ -113,7 +113,7 @@ class SelectorManipulate
      */
     public function discardInvalid(AtBlock $block)
     {
-        foreach ($block->properties as $key => $selector) {
+        foreach ($block->elements as $key => $selector) {
             if ($selector instanceof AtBlock) {
                 $this->discardInvalid($selector);
                 continue;
@@ -122,7 +122,7 @@ class SelectorManipulate
             }
 
             $ok = true;
-            $selectors = array_map('trim', explode(',', $selector->name));
+            $selectors = array_map('trim', explode(',', $selector->getName()));
 
             foreach ($selectors as $s) {
                 $simpleSelectors = preg_split('/\s*[+>~\s]\s*/', $s);
@@ -137,7 +137,7 @@ class SelectorManipulate
             }
 
             if (!$ok) {
-                unset($block->properties[$key]);
+                unset($block->elements[$key]);
             }
         }
     }
@@ -149,7 +149,7 @@ class SelectorManipulate
      */
     public function separate(AtBlock $block)
     {
-        foreach ($block->properties as $element) {
+        foreach ($block->elements as $element) {
             if (!$element instanceof Block) {
                 continue;
             } else if ($element instanceof AtBlock) {
@@ -164,7 +164,7 @@ class SelectorManipulate
 
             foreach ($element->subSelectors as $subSelector) {
                 $newSelector = new Selector($subSelector);
-                $newSelector->properties = $element->properties;
+                $newSelector->elements = $element->elements;
                 $block->addBlock($newSelector);
             }
 

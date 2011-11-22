@@ -29,7 +29,12 @@
  * @author Nikolay Matsievsky (speed at webo dot name) 2009-2010
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
-namespace CSSTidy;
+namespace CSSTidy\Optimise;
+use CSSTidy\CSSTidy as Parser;
+use CSSTidy\Logger;
+use CSSTidy\Configuration;
+use CSSTidy\Property;
+use CSSTidy\Block;
 /**
  * CSS Optimising Class
  *
@@ -39,7 +44,7 @@ namespace CSSTidy;
  * @author Florian Schmitz (floele at gmail dot com) 2005-2006
  * @version 1.0
  */
-class Optimise
+class Value
 {
     /** @var \CSSTidy\Logger */
     protected $logger;
@@ -65,41 +70,16 @@ class Optimise
         $this->optimiseNumber = $optimiseNumber;
     }
 
-    /**
-     * Optimises values
-     * @param string $property
-     * @param string $value
-     * @return string
-     */
-    public function value($property, $value)
+    public function process(Block $block)
     {
-        // optimise shorthand properties
-        /*if (isset(self::$shorthands[$property])) {
-            if ($property === 'border-radius') {
-                $temp = $this->borderRadiusShorthand($value);
-            } else {
-                $temp = $this->compressShorthand($value); // FIXME - move
+        foreach ($block->elements as $element) {
+            if ($element instanceof Property) {
+                $this->subValue($element);
+                $this->value($element);
+            } else if ($element instanceof Block) {
+                $this->process($element);
             }
-            if ($temp != $value) {
-                $this->logger->log("Optimised shorthand notation ($property): Changed '$value' to '$temp'", Logger::INFORMATION);
-            }
-            $value = $temp;
-        }*/
-
-        if ($property === 'background-image' && $this->configuration->getCompressColors()) {
-            $value = $this->optimizeGradients($value);
-        } else if ($this->removeVendorPrefix($property) === 'transform') {
-            $value = $this->optimizeTransform($value);
         }
-
-        // Remove whitespace at ! important
-        $tmp = $this->compressImportant($value);
-        if ($value != $tmp) {
-            $value = $tmp;
-            $this->logger->log('Optimised !important', Logger::INFORMATION);
-        }
-
-        return $value;
     }
 
     /**
@@ -109,51 +89,40 @@ class Optimise
      * @param string $subValue
      * @return string
      */
-    public function subValue($property, $subValue)
+    public function subValue(Property $property)
     {
-        $important = '';
-        if (CSSTidy::isImportant($subValue)) {
-            $important = '!important';
-            $subValue = CSSTidy::removeImportant($subValue, false);
-        }
+        foreach ($property->subValues as &$subValue) {
+            // Compress font-weight
+            if ($property->getName() === 'font-weight' && $this->configuration->getCompressFontWeight()) {
+                static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
+                if (isset($optimizedFontWeight[$subValue])) {
+                    $optimized = $optimizedFontWeight[$subValue];
+                    $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", Logger::INFORMATION);
+                    $subValue = $optimized;
+                }
 
-        // Compress font-weight
-        if ($property === 'font-weight' && $this->configuration->getCompressFontWeight()) {
-            static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
-            if (isset($optimizedFontWeight[$subValue])) {
-                $optimized = $optimizedFontWeight[$subValue];
-                $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", Logger::INFORMATION);
-                $subValue = $optimized;
+                continue;
             }
 
-            return $subValue . $important;
+            if ($property->getName() === 'background-image' && $this->configuration->getCompressColors()) {
+                $subValue = $this->optimizeGradients($subValue);
+            }
+
+            $subValue = $this->optimiseNumber->optimise($property->getName(), $subValue);
+
+            if ($this->configuration->getCompressColors()) {
+                $subValue = $this->optimiseColor->optimise($subValue);
+            }
+
+            $subValue = $this->optimizeCalc($subValue);
         }
-
-        $subValue = $this->optimiseNumber->optimise($property, $subValue);
-
-        if ($this->configuration->getCompressColors()) {
-            $subValue = $this->optimiseColor->optimise($subValue);
-        }
-
-        $subValue = $this->optimizeCalc($subValue);
-
-        return $subValue . $important;
     }
 
-    /**
-     * Removes unnecessary whitespace in ! important
-     * @param string $string
-     * @return string
-     * @access public
-     * @version 1.1
-     */
-    public function compressImportant($string)
+    public function value(Property $property)
     {
-        if (CSSTidy::isImportant($string)) {
-            return CSSTidy::removeImportant($string, false) . '!important';
+        if ($this->removeVendorPrefix($property->getName()) === 'transform') {
+            $property->setValue($this->optimizeTransform($property->getValueWithoutImportant()));
         }
-
-        return $string;
     }
 
     /**
@@ -182,7 +151,7 @@ class Optimise
         }
 
         $string = substr($string, strlen($originalType) + 1, -1); // Remove linear-gradient()
-        $parts = CSSTidy::explodeWithoutString(',', $string);
+        $parts = Parser::explodeWithoutString(',', $string);
 
         $start = $supportedGradients[$type];
         foreach ($parts as $i => &$part) {
@@ -190,7 +159,7 @@ class Optimise
                 continue;
             }
 
-            $colorAndLength = CSSTidy::explodeWithoutString(' ', $part);
+            $colorAndLength = Parser::explodeWithoutString(' ', $part);
             $colorAndLength[0] = $this->optimiseColor->optimise($colorAndLength[0]);
             $part = implode(' ', $colorAndLength);
         }
@@ -216,7 +185,7 @@ class Optimise
         }
 
         $string = substr($string, strlen($type) + 1, -1); // Remove calc()
-        $parts = CSSTidy::explodeWithoutString(',', $string);
+        $parts = Parser::explodeWithoutString(',', $string);
 
         foreach ($parts as &$part) {
             $part = str_replace(' ', '', $part);
@@ -254,7 +223,7 @@ class Optimise
             'skew' => true,
         );
 
-        $functions = CSSTidy::explodeWithoutString(' ', $string);
+        $functions = Parser::explodeWithoutString(' ', $string);
 
         $output = array();
         foreach ($functions as $function) {
@@ -266,7 +235,7 @@ class Optimise
             }
 
             $function = substr($function, strlen($type) + 1, -1); // Remove function()
-            $parts = CSSTidy::explodeWithoutString(',', $function);
+            $parts = Parser::explodeWithoutString(',', $function);
 
             foreach ($parts as &$part) {
                 $part = $this->optimiseNumber->optimise(null, $part);

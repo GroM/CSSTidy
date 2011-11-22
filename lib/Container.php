@@ -31,7 +31,7 @@ namespace CSSTidy;
  * @property \CSSTidy\Logger $logger
  * @property \CSSTidy\Configuration $configuration
  * @property \CSSTidy\SelectorManipulate $selectorManipulate
- * @property \CSSTidy\Optimise $optimise
+ * @property \CSSTidy\Optimise\Value $optimiseValue
  * @property \CSSTidy\Optimise\Color $optimiseColor
  * @property \CSSTidy\Optimise\Number $optimiseNumber
  * @property \CSSTidy\Optimise\Shorthand $optimiseShorthand
@@ -57,9 +57,9 @@ class Container
                 require_once __DIR__ . '/SelectorManipulate.php';
                 return new SelectorManipulate;
             },
-            'optimise' => function() use ($cont) {
-                require_once __DIR__ . '/Optimise.php';
-                return new Optimise($cont->logger, $cont->configuration, $cont->optimiseColor, $cont->optimiseNumber);
+            'optimiseValue' => function() use ($cont) {
+                require_once __DIR__ . '/optimise/Value.php';
+                return new \CSSTidy\Optimise\Value($cont->logger, $cont->configuration, $cont->optimiseColor, $cont->optimiseNumber);
             },
             'optimiseColor' => function() use($cont) {
                 require_once __DIR__ . '/optimise/Color.php';

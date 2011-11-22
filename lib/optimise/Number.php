@@ -117,10 +117,10 @@ class Number
      * @param string $subValue
      * @return string
      */
-    public function optimise($property, $subValue)
+    public function optimise($propertyName, $subValue)
     {
         // for font:1em/1em sans-serif...;
-        if ($property === 'font') {
+        if ($propertyName === 'font') {
             $parts = explode('/', $subValue);
         } else {
             $parts = array($subValue);
@@ -134,17 +134,17 @@ class Number
             }
 
             // Fix colors without # character
-            if (isset(self::$colorValues[$property])) {
+            if (isset(self::$colorValues[$propertyName])) {
                 if ($this->checkHexValue($part)) {
                     $part = '#' . $part;
                     continue;
                 } else {
-                    $this->logger->log("Invalid color value '$part' for property '$property'", Logger::ERROR);
+                    $this->logger->log("Invalid color value '$part' for property '$propertyName'", Logger::ERROR);
                 }
             }
 
             if (abs($number[0]) > 0) {
-                if ($number[1] === '' && in_array($property, self::$unitValues, true)) {
+                if ($number[1] === '' && in_array($propertyName, self::$unitValues, true)) {
                     $number[1] = 'px';
                     $this->logger->log("Fixed invalid number: Added 'px' unit to '$part'", Logger::WARNING);
                 }

@@ -29,8 +29,19 @@ namespace CSSTidy;
 
 class Selector extends Block
 {
+    /** @var string */
+    protected $name;
+
     /** @var array */
     public $subSelectors = array();
+
+    /**
+     * @param string $name
+     */
+    public function __construct($name)
+    {
+        $this->name = $name;
+    }
 
     /**
      * @param string $name
@@ -39,5 +50,38 @@ class Selector extends Block
     {
         $this->subSelectors[] = $name;
         $this->name .= ',' . $name;
+    }
+
+    /**
+     * @param Selector $selector
+     * @return bool
+     */
+    public function compareProperties(Selector $selector)
+    {
+        return $this->propertiesToArray($selector) == $this->propertiesToArray($selector);
+    }
+
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @param Selector $selector
+     * @return array
+     */
+    protected function propertiesToArray(Selector $selector)
+    {
+        $output = array();
+        foreach ($this->elements as $element) {
+            if ($element instanceof Property) {
+                $output[] = "{$element->getName()}:{$element->getValue()}";
+            }
+        }
+
+        return $output;
     }
 }

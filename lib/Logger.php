@@ -69,6 +69,14 @@ class Logger
     }
 
     /**
+     * @return int
+     */
+    public function getCurrentLine()
+    {
+        return $this->line;
+    }
+
+    /**
      * @return array
      */
     public function getMessages()

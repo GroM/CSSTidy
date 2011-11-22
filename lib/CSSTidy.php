@@ -279,9 +279,6 @@ class CSSTidy
     /** @var \CSSTidy\Container */
     private $container;
 
-    /** @var \CSSTidy\Optimise */
-    private $optimise;
-
     /** @var \CSSTidy\Logger */
     public $logger;
 
@@ -323,7 +320,6 @@ class CSSTidy
         $old = @setlocale(LC_ALL, 0);
         @setlocale(LC_ALL, 'C');
 
-        $this->optimise = $this->container->optimise;
         $parsed = new Parsed();
 
         // Normalize new line characters
@@ -450,12 +446,12 @@ class CSSTidy
                             $bracketCount = 1;
                             $status = 'inbrck';
                             $from[] = 'iv';
-                        } else if ($current === ',') {
+                        } else if ($current === ',' || $current === '!') {
                             if (($trimmed = trim($subValue, self::$whitespace)) !== '') {
                                 $subValues[] = $trimmed;
-                                $subValues[] = ',';
                                 $subValue = '';
                             }
+                            $subValues[] = $current;
                         } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } else if ($current === ';' || $pn) {
@@ -472,13 +468,10 @@ class CSSTidy
                                 $subValue = '';
                             }
 
-                            $value = $this->mergeSubValues($property, $subValues);
-                            $value = $this->optimise->value($property, $value);
-
                             // Remove right spaces added by Block::addProperty
                             $valid = $this->propertyIsValid(rtrim($property));
                             if ($valid || !$this->configuration->getDiscardInvalidProperties()) {
-                                end($stack)->addProperty($property, $value);
+                                end($stack)->addProperty(new Property($property, $subValues, $this->logger->getCurrentLine()));
                             } else {
                                 $this->logger->log("Removed invalid property: $property", Logger::WARNING);
                             }
@@ -596,18 +589,17 @@ class CSSTidy
                             $subValues[] = ',';
                             $subValue = '';
                         } else if ($current === '{') {
-                            $subValues[] = $subValue;
-                            $data = '@' . rtrim($this->mergeSubValues(null, $subValues));
+                            if (trim($subValue) !== '') {
+                                $subValues[] = $subValue;
+                            }
 
                             $status = $this->nextParserInAtRule($string, $i);
                             if ($status === 'ip') {
-                                $selector = $data;
-                            } else {
-                                $status = 'is';
+                                $selector = ' ';
                             }
                             $from[] = 'is';
 
-                            $stack[] = end($stack)->addBlock(new AtBlock($data));
+                            $stack[] = end($stack)->addBlock(new AtBlock($subValues));
 
                             $subValues = array();
                             $subValue = '';
@@ -629,6 +621,8 @@ class CSSTidy
                     break;
             }
         }
+
+        $this->container->optimiseValue->process($parsed);
 
         // TODO: Move to another location
         if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
@@ -652,7 +646,7 @@ class CSSTidy
 
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 
-        if (!(empty($parsed->properties) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->namespace))) {
+        if (!(empty($parsed->elements) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->namespace))) {
             return new Output($this->configuration, $this->logger, $original, $parsed);
         } else {
             var_dump($original);
@@ -702,7 +696,7 @@ class CSSTidy
     protected function setSubSelectors(Selector $selector, array $selectorSeparate)
     {
         $lastPosition = 0;
-        $selectorSeparate[] = strlen($selector->name);
+        $selectorSeparate[] = strlen($selector->getName());
 
         $lastSelectorSeparateKey = count($selectorSeparate) - 1;
         foreach ($selectorSeparate as $num => $pos) {
@@ -710,7 +704,7 @@ class CSSTidy
                 ++$pos;
             }
 
-            $selector->subSelectors[] = substr($selector->name, $lastPosition, $pos - $lastPosition - 1);
+            $selector->subSelectors[] = substr($selector->getName(), $lastPosition, $pos - $lastPosition - 1);
             $lastPosition = $pos;
         }
     }
@@ -752,10 +746,10 @@ class CSSTidy
             if ($subValue === ',') {
                 $prev = true;
             } else if (!$prev) {
-                $subValue = $this->optimise->subValue($property, $subValue);
+                //$subValue = $this->optimise->subValue($property, $subValue);
                 $output .= ' ';
             } else {
-                $subValue = $this->optimise->subValue($property, $subValue);
+                //$subValue = $this->optimise->subValue($property, $subValue);
                 $prev = false;
             }
             $output .= $subValue;
@@ -783,7 +777,7 @@ class CSSTidy
 
                 $parsed->charset = $subValues[0];
 
-                if (!empty($parsed->properties) || !empty($parsed->import) || !empty($parsed->namespace)) {
+                if (!empty($parsed->elements) || !empty($parsed->import) || !empty($parsed->namespace)) {
                     $this->logger->log("@charset must be before anything", Logger::WARNING);
                 }
                 break;
@@ -794,14 +788,14 @@ class CSSTidy
                 }
 
                 $parsed->namespace[] = implode(' ', $subValues);
-                if (!empty($parsed->properties)) {
+                if (!empty($parsed->elements)) {
                     $this->logger->log("@namespace must be before selectors", Logger::WARNING);
                 }
                 break;
 
             case 'import':
                 $parsed->import[] = $this->mergeSubValues(null, $subValues);
-                if (!empty($parsed->properties)) {
+                if (!empty($parsed->elements)) {
                     $this->logger->log("@import must be before anything selectors", Logger::WARNING);
                 } else if (isset($stack[1])) {
                     $this->logger->log("@import cannot be inside @media", Logger::WARNING);
@@ -809,9 +803,7 @@ class CSSTidy
                 break;
 
             default:
-                $data = $this->mergeSubValues(null, $subValues);
-                $lineAt = new LineAt($rule, $data);
-                $parsed->addToken(self::LINE_AT, $lineAt->__toString());
+                $lineAt = new LineAt($rule, $subValues);
                 end($stack)->addLineAt($lineAt);
                 break;
         }

@@ -2,7 +2,7 @@
 /**
  * CSSTidy - CSS Parser and Optimiser
  *
- * Line at rule element
+ * Abstract block element
  *
  * Copyright 2005, 2006, 2007 Florian Schmitz
  *
@@ -27,23 +27,32 @@
  */
 namespace CSSTidy;
 
-class LineAt extends Element
+abstract class Element
 {
-    /** @var string */
-    public $subValues;
+    /** @var int */
+    public $line;
 
     /**
-     * @param string $name
-     * @param string $value
+     * @param string $property
+     * @param array $subValues
+     * @return string
      */
-    public function __construct($name, array $value)
+    protected function mergeSubValues(array $subValues)
     {
-        $this->name = $name;
-        $this->subValues = $value;
-    }
+        $prev = false;
+        $output = '';
 
-    public function __toString()
-    {
-        return "@$this->name {$this->mergeSubValues($this->subValues)};";
+        foreach ($subValues as $subValue) {
+            if ($subValue === ',') {
+                $prev = true;
+            } else if (!$prev) {
+                $output .= ' ';
+            } else {
+                $prev = false;
+            }
+            $output .= $subValue;
+        }
+
+        return ltrim($output, ' ');
     }
 }

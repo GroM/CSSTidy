@@ -27,33 +27,22 @@
  */
 namespace CSSTidy;
 
-abstract class Block
+abstract class Block extends Element
 {
-    /** @var string */
-    public $name;
-
     /** @var string[] */
-    public $properties = array();
+    public $elements = array();
 
     /**
-     * @param string $name
+     * @param Property $property
      */
-    public function __construct($name)
+    public function addProperty(Property $property)
     {
-        $this->name = $name;
-    }
-
-    /**
-     * @param string $name
-     * @param string $value
-     */
-    public function addProperty($name, $value)
-    {
-        while (isset($this->properties[$name])) {
+        $name = $property->getName();
+        while (isset($this->elements[$name])) {
             $name .= ' ';
         }
 
-        $this->properties[$name] = $value;
+        $this->elements[$name] = $property;
     }
 
     /**
@@ -61,26 +50,28 @@ abstract class Block
      */
     public function setProperties(array $properties)
     {
-        foreach ($properties as $name => $value) {
-            $this->addProperty($name, $value);
+        foreach ($properties as $property) {
+            $this->addProperty($property);
         }
     }
 
     /**
-     * @param array $properties
+     * @param Property $property
+     * @return bool
      */
-    public function mergeProperties(array $properties)
+    public function removeProperty(Property $property)
     {
-        foreach ($properties as $property => $value) {
-            if (
-                $value !== '' && (
-                !isset($this->properties[$property]) ||
-                !CSSTidy::isImportant($this->properties[$property]) ||
-                (CSSTidy::isImportant($this->properties[$property]) && CSSTidy::isImportant($value))
-            )) {
-                $this->properties[$property] = $value;
+        $name = $property->getName();
+        while (isset($this->elements[$name])) {
+            if ($this->elements[$name] === $property) {
+                unset($this->elements[$name]);
+                return true;
             }
+
+            $name .= ' ';
         }
+
+        return false;
     }
 
     /**
@@ -88,6 +79,30 @@ abstract class Block
      */
     public function addComment(Comment $comment)
     {
-        $this->properties[] = $comment;
+        $this->elements[] = $comment;
     }
+
+    /**
+     * @param Elements[] $elements
+     */
+    public function mergeElements(array $elements)
+    {
+        foreach ($elements as $element) {
+            if ($element instanceof Property) {
+                if (isset($this->elements[$element->getName()]) && $this->elements[$element->getName()] === false) {
+                    $this->elements[$element->getName()] = $element;
+                } else {
+                    $this->addProperty($element);
+                }
+            } else {
+                $this->elements[] = $element;
+            }
+        }
+    }
+
+    /**
+     * @abstract
+     * @return string
+     */
+    abstract public function getName();
 }

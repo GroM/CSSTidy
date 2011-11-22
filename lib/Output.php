@@ -397,25 +397,29 @@ HTML;
         }
 
         if ($block instanceof Selector) {
-            $this->parsed->addToken(CSSTidy::SEL_START, $block->name);
+            $this->parsed->addToken(CSSTidy::SEL_START, $block->getName());
         } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::AT_START, $block->name);
+            $this->parsed->addToken(CSSTidy::AT_START, $block->getName());
         }
 
-        foreach ($block->properties as $property => $value) {
-            if ($value instanceof Block) {
-                /** @var Element $value */
-                $this->blockToTokens($value, $sortSelectors, $sortProperties);
-            } else if ($value instanceof LineAt) {
-                /** @var LineAt $value */
-                $this->parsed->addToken(CSSTidy::LINE_AT, $value->__toString());
-            } else if ($value instanceof Comment) {
+        foreach ($block->elements as $element) {
+            if ($element instanceof Property) {
+                /** @var Property $element */
+                $this->parsed->addToken(CSSTidy::PROPERTY, $element->getName());
+                $this->parsed->addToken(CSSTidy::VALUE, $element->getValue());
+            } else if ($element instanceof Block) {
+                /** @var Element $element */
+                $this->blockToTokens($element, $sortSelectors, $sortProperties);
+            } else if ($element instanceof LineAt) {
+                /** @var LineAt $element */
+                $this->parsed->addToken(CSSTidy::LINE_AT, $element->__toString());
+            } else if ($element instanceof Comment) {
                 if ($this->configuration->getPreserveComments()) {
-                    $this->parsed->addToken(CSSTidy::COMMENT, $value->__toString());
+                    $this->parsed->addToken(CSSTidy::COMMENT, $element->__toString());
                 }
             } else {
-                $this->parsed->addToken(CSSTidy::PROPERTY, rtrim($property));
-                $this->parsed->addToken(CSSTidy::VALUE, $value);
+                var_dump($this->inputCss);
+                throw new \Exception("Not supported element " . is_object($element) ? get_class($element) : 'n');
             }
         }
 
@@ -432,12 +436,12 @@ HTML;
      */
     protected function sortSelectors(AtBlock $block)
     {
-        uasort($block->properties, function($a, $b) {
+        uasort($block->elements, function($a, $b) {
             if (!$a instanceof Selector || !$b instanceof Selector) {
                 return 0;
             }
 
-            return strcasecmp($a->name, $b->name);
+            return strcasecmp($a->getName(), $b->getName());
         });
     }
 
@@ -447,7 +451,7 @@ HTML;
      */
     protected function sortProperties(Block $block)
     {
-        uksort($block->properties, function($a, $b) {
+        uksort($block->elements, function($a, $b) {
             static $ieHacks = array(
                 '*' => 1, // IE7 hacks first
                 '_' => 2, // IE6 hacks
