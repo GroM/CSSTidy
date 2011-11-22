@@ -56,9 +56,9 @@ class Selector extends Block
      * @param Selector $selector
      * @return bool
      */
-    public function compareProperties(Selector $selector)
+    public function hasSameProperties(Selector $selector)
     {
-        return $this->propertiesToArray($selector) == $this->propertiesToArray($selector);
+        return $this->propertiesToArray($this) == $this->propertiesToArray($selector);
     }
 
     /**
@@ -76,7 +76,7 @@ class Selector extends Block
     protected function propertiesToArray(Selector $selector)
     {
         $output = array();
-        foreach ($this->elements as $element) {
+        foreach ($selector->elements as $element) {
             if ($element instanceof Property) {
                 $output[] = "{$element->getName()}:{$element->getValue()}";
             }
