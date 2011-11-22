@@ -89,7 +89,7 @@ class SelectorManipulate
                     continue;
                 }
 
-                if ($val !== $element && $element->compareProperties($val)) {
+                if ($val !== $element && $element->hasSameProperties($val)) {
                     $sameSelectors[] = $val;
                 }
             }
