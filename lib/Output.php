@@ -230,9 +230,7 @@ HTML;
             return;
         }
 
-        if (!$this->configuration->getPreserveCss()) {
-            $this->convertRawCss($defaultMedia);
-        }
+        $this->convertRawCss($defaultMedia);
 
         $template = $this->configuration->getTemplate();
 
@@ -411,6 +409,10 @@ HTML;
             } else if ($value instanceof LineAt) {
                 /** @var LineAt $value */
                 $this->parsed->addToken(CSSTidy::LINE_AT, $value->__toString());
+            } else if ($value instanceof Comment) {
+                if ($this->configuration->getPreserveComments()) {
+                    $this->parsed->addToken(CSSTidy::COMMENT, $value->__toString());
+                }
             } else {
                 $this->parsed->addToken(CSSTidy::PROPERTY, rtrim($property));
                 $this->parsed->addToken(CSSTidy::VALUE, $value);

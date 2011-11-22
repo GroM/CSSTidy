@@ -365,12 +365,11 @@ class CSSTidy
                             $stack[] = end($stack)->addBlock(new Selector($selector));
                             $this->setSubSelectors(end($stack), $selectorSeparate);
                             $selectorSeparate = array();
-                            $parsed->addToken(self::SEL_START, $selector);
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $selectorSeparate[] = strlen($selector);
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
+                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
                         } else if ($current === '@' && trim($selector) == '') {
                             $status = 'at';
                         } else if ($current === '"' || $current === "'") {
@@ -380,11 +379,7 @@ class CSSTidy
                             /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
                             $quotedString = ($string{$i - 1} === '=');
                         } else if ($current === '}') {
-                            if (array_pop($stack) instanceof AtBlock) {
-                                $parsed->addToken(self::AT_END);
-                            } else {
-                                $parsed->addToken(self::SEL_END);
-                            }
+                            array_pop($stack);
                             $selector = '';
                         } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
@@ -413,21 +408,14 @@ class CSSTidy
                         if (($current === ':' || $current === '=') && isset($property{0})) {
                             $status = 'iv';
                             $from[] = 'ip';
-                            if (!$this->configuration->getDiscardInvalidProperties() || $this->propertyIsValid($property)) {
-                                $parsed->addToken(self::PROPERTY, trim($property));
-                            }
                         } else if ($current === '}') {
+                            array_pop($stack);
                             $status = array_pop($from);
-                            if (array_pop($stack) instanceof AtBlock) {
-                                $parsed->addToken(self::AT_END);
-                            } else {
-                                $parsed->addToken(self::SEL_END);
-                            }
                             $selector = $property = '';
                         } else if ($current === '@') {
                             $status = 'at';
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
+                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
                         } else if ($current === ';') {
                             $property = '';
                         } else if ($current === '\\') {
@@ -451,7 +439,7 @@ class CSSTidy
                     $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && $string{$i + 1} === '*') {
-                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
+                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
                         } else if ($current === '"' || $current === "'") {
                             $currentString = $stringEndsWith = $current;
                             $status = 'instr';
@@ -491,7 +479,6 @@ class CSSTidy
                             $valid = $this->propertyIsValid(rtrim($property));
                             if ($valid || !$this->configuration->getDiscardInvalidProperties()) {
                                 end($stack)->addProperty($property, $value);
-                                $parsed->addToken(self::VALUE, $value);
                             } else {
                                 $this->logger->log("Removed invalid property: $property", Logger::WARNING);
                             }
@@ -506,7 +493,6 @@ class CSSTidy
                             $subValues = array();
                         }
                         if ($current === '}') {
-                            $parsed->addToken(self::SEL_END);
                             array_pop($stack);
 
                             array_pop($from);
@@ -621,13 +607,12 @@ class CSSTidy
                             }
                             $from[] = 'is';
 
-                            $parsed->addToken(self::AT_START, $data);
                             $stack[] = end($stack)->addBlock(new AtBlock($data));
 
                             $subValues = array();
                             $subValue = '';
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            $parsed->addToken(self::COMMENT, $this->parseComment($string, $i));
+                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
                         } else if ($current === '\\') {
                             $subValue .= $this->unicode($string, $i);
                         } else {
@@ -667,9 +652,10 @@ class CSSTidy
 
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 
-        if (!(empty($parsed->properties) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->tokens) && empty($parsed->namespace))) {
+        if (!(empty($parsed->properties) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->namespace))) {
             return new Output($this->configuration, $this->logger, $original, $parsed);
         } else {
+            var_dump($original);
             throw new \Exception("Invalid CSS");
         }
 

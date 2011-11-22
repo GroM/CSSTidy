@@ -2,7 +2,7 @@
 /**
  * CSSTidy - CSS Parser and Optimiser
  *
- * Class which storage parsed CSS in two forms: tokens and elements
+ * Comment element
  *
  * Copyright 2005, 2006, 2007 Florian Schmitz
  *
@@ -27,40 +27,24 @@
  */
 namespace CSSTidy;
 
-require_once __DIR__ . '/Block.php';
-require_once __DIR__ . '/Selector.php';
-require_once __DIR__ . '/AtBlock.php';
-require_once __DIR__ . '/LineAt.php';
-require_once __DIR__ . '/Comment.php';
-
-class Parsed extends AtBlock
+class Comment
 {
-    /** @var array */
-    public $tokens = array();
-
     /** @var string */
-    public $charset = '';
+    public $comment;
 
-    /** @var array */
-    public $import = array();
-
-    /** @var string */
-    public $namespace = array();
-
-    // Overwrite Block constructor
-    public function __construct()
+    /**
+     * @param string $comment
+     */
+    public function __construct($comment)
     {
-
+        $this->comment = $comment;
     }
 
     /**
-     * Adds a token to $this->tokens
-     * @param int $type
-     * @param string $data
-     * @return void
+     * @return string
      */
-    public function addToken($type, $data = null)
+    public function __toString()
     {
-        $this->tokens[] = array($type, $data);
+        return $this->comment;
     }
 }

@@ -68,7 +68,7 @@ class Configuration
         UPPERCASE = 2;
 
     /** @var bool */
-    protected $preserveCss = false;
+    protected $preserveComments = false;
 
     /**
      * Rewrite all properties with low case, better for later gzip OK, safe
@@ -377,20 +377,20 @@ class Configuration
     }
 
     /**
-     * @param bool $preserveCss
+     * @param bool $preserveComments
      */
-    public function setPreserveCss($preserveCss = true)
+    public function setPreserveComments($preserveComments = true)
     {
-        $this->checkBool(__FUNCTION__, $preserveCss);
-        $this->preserveCss = $preserveCss;
+        $this->checkBool(__FUNCTION__, $preserveComments);
+        $this->preserveComments = $preserveComments;
     }
 
     /**
      * @return bool
      */
-    public function getPreserveCss()
+    public function getPreserveComments()
     {
-        return $this->preserveCss;
+        return $this->preserveComments;
     }
 
     /**

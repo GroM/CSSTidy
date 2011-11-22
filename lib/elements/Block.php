@@ -82,4 +82,12 @@ abstract class Block
             }
         }
     }
+
+    /**
+     * @param Comment $comment
+     */
+    public function addComment(Comment $comment)
+    {
+        $this->properties[] = $comment;
+    }
 }
