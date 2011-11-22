@@ -657,11 +657,14 @@ class CSSTidy
             $this->container->selectorManipulate->discardInvalid($parsed);
         }
 
+        if ($this->configuration->getOptimiseShorthands()){
+            $this->container->optimiseShorthand->process($parsed);
+        }
+
         /*echo '<pre>';
         var_export($parsed->properties);
         echo '</pre>';*/
 
-        $this->optimise->postparse($parsed);
         @setlocale(LC_ALL, $old); // Set locale back to original setting
 
         if (!(empty($parsed->properties) && empty($parsed->import) && empty($parsed->charset) && empty($parsed->tokens) && empty($parsed->namespace))) {
@@ -1023,6 +1026,45 @@ class CSSTidy
         }
 
         return $string;
+    }
+
+     /**
+     * Explodes a string as explode() does, however, not if $sep is escaped or within a string.
+     * @param string $sep separator
+     * @param string $string
+     * @return array
+     */
+    public static function explodeWithoutString($sep, $string)
+    {
+        if ($string === '' || $string === $sep) {
+            return array();
+        }
+
+        $insideString = false;
+        $to = '';
+        $output = array(0 => '');
+        $num = 0;
+
+        for ($i = 0, $len = strlen($string); $i < $len; $i++) {
+            if ($insideString) {
+                if ($string{$i} === $to && !self::escaped($string, $i)) {
+                    $insideString = false;
+                }
+            } else {
+                if ($string{$i} === $sep && !self::escaped($string, $i)) {
+                    ++$num;
+                    $output[$num] = '';
+                    continue;
+                } else if ($string{$i} === '"' || $string{$i} === '\'' || $string{$i} === '(' && !self::escaped($string, $i)) {
+                    $insideString = true;
+                    $to = ($string{$i} === '(') ? ')' : $string{$i};
+                }
+            }
+
+            $output[$num] .= $string{$i};
+        }
+
+        return $output;
     }
 
     /**

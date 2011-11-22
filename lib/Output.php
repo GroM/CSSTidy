@@ -289,7 +289,7 @@ HTML;
 
         $output .= $template->lastLineInAtRule;
         $inAtOut = '';
-        $out = & $output;
+        $out = &$output;
 
         foreach ($this->parsed->tokens as $key => $token) {
             switch ($token[0]) {

@@ -28,10 +28,13 @@
 namespace CSSTidy;
 
 /**
- * @property \CSSTidy\Configuration $configuration
  * @property \CSSTidy\Logger $logger
+ * @property \CSSTidy\Configuration $configuration
  * @property \CSSTidy\SelectorManipulate $selectorManipulate
  * @property \CSSTidy\Optimise $optimise
+ * @property \CSSTidy\Optimise\Color $optimiseColor
+ * @property \CSSTidy\Optimise\Number $optimiseNumber
+ * @property \CSSTidy\Optimise\Shorthand $optimiseShorthand
  */
 class Container
 {
@@ -66,6 +69,10 @@ class Container
                 require_once __DIR__ . '/optimise/Number.php';
                 return new \CSSTidy\Optimise\Number($cont->logger, $cont->configuration->getConvertUnit());
             },
+            'optimiseShorthand' => function() use($cont) {
+                require_once __DIR__ . '/optimise/Shorthand.php';
+                return new \CSSTidy\Optimise\Shorthand($cont->configuration->getOptimiseShorthands());
+            }
         );
     }
 
