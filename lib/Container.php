@@ -36,6 +36,7 @@ namespace CSSTidy;
  * @property \CSSTidy\Optimise\Color $optimiseColor
  * @property \CSSTidy\Optimise\Number $optimiseNumber
  * @property \CSSTidy\Optimise\Shorthand $optimiseShorthand
+ * @property \CSSTidy\Optimise\LineAt $optimiseLineAt
  */
 class Container
 {
@@ -87,7 +88,11 @@ class Container
             'optimiseShorthand' => function() use($cont) {
                 require_once __DIR__ . '/optimise/Shorthand.php';
                 return new \CSSTidy\Optimise\Shorthand($cont->configuration->getOptimiseShorthands());
-            }
+            },
+            'optimiseLineAt' => function() use($cont) {
+                require_once __DIR__ . '/optimise/LineAt.php';
+                return new \CSSTidy\Optimise\LineAt($cont->logger);
+            },
         );
     }
 

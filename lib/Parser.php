@@ -643,7 +643,7 @@ class Parser
                     $subValues[0] = ' ' . $subValues[0];
                 }
 
-                $parsed->namespace[] = implode(' ', $subValues);
+                $parsed->namespace[] = new LineAt($rule, $subValues);
                 if (!empty($parsed->elements)) {
                     $this->logger->log("@namespace must be before selectors", Logger::WARNING, $this->currentLine);
                 }

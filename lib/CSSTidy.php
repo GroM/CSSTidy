@@ -115,6 +115,14 @@ class CSSTidy
             $this->container->optimiseShorthand->process($parsed);
         }
 
+        foreach ($parsed->import as $import) {
+            $this->container->optimiseLineAt->process($import);
+        }
+
+        foreach ($parsed->namespace as $namespace) {
+            $this->container->optimiseLineAt->process($namespace);
+        }
+
         /*echo '<pre>';
         var_export($parsed->properties);
         echo '</pre>';*/

@@ -43,7 +43,7 @@ class Root extends AtBlock
     /** @var LineAt[] */
     public $import = array();
 
-    /** @var string */
+    /** @var LineAt[] */
     public $namespace = array();
 
     // Overwrite Block constructor

@@ -280,22 +280,12 @@ HTML;
 
         foreach ($this->parsed->import as $import) {
             $importValue = $import->getValue();
-            $replaced = $this->removeUrl($importValue);
-            if ($replaced !== $importValue) {
-                $importValue = $replaced;
-                $this->logger->log('Optimised @import: Removed "url("', Logger::INFORMATION);
-            }
-
             $output .= "{$template->beforeAtRule}@import{$template->beforeValue}{$importValue}{$template->afterValueWithSemicolon}";
         }
 
         foreach ($this->parsed->namespace as $namespace) {
-            $replaced = $this->removeUrl($namespace);
-            if ($replaced !== $namespace) {
-                $namespace = $replaced;
-                $this->logger->log('Optimised @namespace: Removed "url("', Logger::INFORMATION);
-            }
-            $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$namespace}{$template->afterValueWithSemicolon}";
+            $namespaceValue = $namespace->getValue();
+            $output .= "{$template->beforeAtRule}@namespace{$template->beforeValue}{$namespaceValue}{$template->afterValueWithSemicolon}";
         }
 
         $output .= $template->lastLineInAtRule;
@@ -500,16 +490,6 @@ HTML;
             return htmlspecialchars($string, ENT_QUOTES, 'utf-8');
         }
         return $string;
-    }
-
-    /**
-     * Replace url('abc.css') with "abc.css"
-     * @param string $string
-     * @return string
-     */
-    protected function removeUrl($string)
-    {
-        return preg_replace('~url\(["\']?([^\)\'" ]*)["\']?[ ]?\)~', '"$1"', $string);
     }
 
     /**

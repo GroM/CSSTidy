@@ -32,6 +32,9 @@ class LineAt extends Element
     /** @var string */
     public $subValues;
 
+    /** @var string */
+    protected $value;
+
     /**
      * @param string $name
      * @param string $value
@@ -51,11 +54,23 @@ class LineAt extends Element
     }
 
     /**
+     * @param string $value
+     */
+    public function setValue($value)
+    {
+        $this->value = $value;
+    }
+
+    /**
      * @return string
      */
     public function getValue()
     {
-        return $this->mergeSubValues($this->subValues);
+        if (!isset($this->value)) {
+            $this->value = ' ' . $this->mergeSubValues($this->subValues);
+        }
+
+        return $this->value;
     }
 
     /**
@@ -63,6 +78,6 @@ class LineAt extends Element
      */
     public function __toString()
     {
-        return "@{$this->getName()} {$this->getValue()};";
+        return "@{$this->getName()}{$this->getValue()};";
     }
 }
