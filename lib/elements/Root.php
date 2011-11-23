@@ -35,7 +35,7 @@ require_once __DIR__ . '/LineAt.php';
 require_once __DIR__ . '/Comment.php';
 require_once __DIR__ . '/Property.php';
 
-class Parsed extends AtBlock
+class Root extends AtBlock
 {
     /** @var string */
     public $charset = '';

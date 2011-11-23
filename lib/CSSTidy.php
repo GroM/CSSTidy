@@ -34,7 +34,6 @@ namespace CSSTidy;
 require_once __DIR__ . '/Container.php';
 require_once __DIR__ . '/Template.php';
 require_once __DIR__ . '/Configuration.php';
-require_once __DIR__ . '/elements/Parsed.php';
 require_once __DIR__ . '/Output.php';
 
 /**

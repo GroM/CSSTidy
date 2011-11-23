@@ -1,6 +1,8 @@
 <?php
 namespace CSSTidy;
 
+require_once __DIR__ . '/elements/Root.php';
+
 class Parser
 {
     /**
@@ -250,12 +252,10 @@ class Parser
 
     /**
      * @param $string
-     * @return Parsed
+     * @return Root
      */
     public function parse($string)
     {
-        $parsed = new Parsed;
-
         // Normalize new line characters
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
@@ -276,7 +276,9 @@ class Parser
          */
         $status = 'is';
         $subValues = $from = $selectorSeparate = array();
-        $stack = array($parsed);
+
+        $root = new Root;
+        $stack = array($root);
 
         for ($i = 0, $size = strlen($string); $i < $size; $i++) {
             $current = $string{$i};
@@ -403,12 +405,15 @@ class Parser
                                 $subValue = '';
                             }
 
-                            // Remove right spaces added by Block::addProperty
-                            $valid = $this->propertyIsValid(rtrim($property));
+                            $valid = $this->propertyIsValid($property);
                             if ($valid || !$this->discardInvalidProperties) {
                                 end($stack)->addProperty(new Property($property, $subValues, $this->currentLine));
                             } else {
-                                $this->logger->log("Removed invalid property: $property", Logger::WARNING, $this->currentLine);
+                                $this->logger->log(
+                                    "Removed invalid property: $property",
+                                    Logger::WARNING,
+                                    $this->currentLine
+                                );
                             }
                             if (!$valid && !$this->discardInvalidProperties) {
                                 $this->logger->log(
@@ -558,7 +563,7 @@ class Parser
             }
         }
 
-        return $parsed;
+        return $root;
     }
 
     /**
@@ -583,25 +588,26 @@ class Parser
     }
 
     /**
-     * @todo If comment is to end of file
      * @param string $string
      * @param int $i
      * @return string
      */
     protected function parseComment($string, &$i)
     {
-        $i += 2; // /*
+        $i += 2; // Skip /* characters
         $commentLength = strpos($string, '*/', $i);
+
+        // Comment end not exists, rest of string is inside comment
         $commentLength = $commentLength !== false  ? $commentLength - $i :  strlen($string) - $i - 1;
 
         if ($commentLength > 0) {
-            $this->currentLine += substr_count($string, "\n", $i, $commentLength);
+            $this->currentLine += substr_count($string, "\n", $i, $commentLength); // Count new lines inside comment
             $comment = substr($string, $i, $commentLength);
         } else {
             $comment = '';
         }
 
-        $i += $commentLength + 1; // */
+        $i += $commentLength + 1; // Continue outside of */
         return $comment;
     }
 
@@ -612,7 +618,7 @@ class Parser
      */
     protected function processAtRule(array $subValues, array $stack)
     {
-        /** @var Parsed $parsed */
+        /** @var Root $parsed */
         $parsed = $stack[0];
         $rule = strtolower(array_shift($subValues));
 

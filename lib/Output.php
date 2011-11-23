@@ -77,7 +77,7 @@ class Output
     /** @var Logger */
     protected $logger;
 
-    /** @var Parsed */
+    /** @var Root */
     protected $parsed;
 
     /** @var array */
@@ -87,9 +87,9 @@ class Output
      * @param Configuration $configuration
      * @param Logger $logger
      * @param string $inputCss
-     * @param Parsed $parsed
+     * @param Root $parsed
      */
-    public function __construct(Configuration $configuration, Logger $logger, $inputCss, Parsed $parsed)
+    public function __construct(Configuration $configuration, Logger $logger, $inputCss, Root $parsed)
     {
         $this->configuration = $configuration;
         $this->logger = $logger;
@@ -411,7 +411,7 @@ HTML;
 
         if ($block instanceof Selector) {
             $this->addToken(self::SEL_START, $block->getName());
-        } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
+        } else if ($block instanceof AtBlock && !$block instanceof Root) {
             $this->addToken(self::AT_START, $block->getName());
         }
 
@@ -438,7 +438,7 @@ HTML;
 
         if ($block instanceof Selector) {
             $this->addToken(self::SEL_END);
-        } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
+        } else if ($block instanceof AtBlock && !$block instanceof Root) {
             $this->addToken(self::AT_END);
         }
     }
