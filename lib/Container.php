@@ -32,6 +32,7 @@ namespace CSSTidy;
  * @property \CSSTidy\Configuration $configuration
  * @property \CSSTidy\Parser $parser
  * @property \CSSTidy\SelectorManipulate $selectorManipulate
+ * @property \CSSTidy\Sorter $sorter
  * @property \CSSTidy\Optimise\Value $optimiseValue
  * @property \CSSTidy\Optimise\Color $optimiseColor
  * @property \CSSTidy\Optimise\Number $optimiseNumber
@@ -67,6 +68,10 @@ class Container
             'selectorManipulate' => function() {
                 require_once __DIR__ . '/SelectorManipulate.php';
                 return new SelectorManipulate;
+            },
+            'sorter' => function() {
+                require_once __DIR__ . '/Sorter.php';
+                return new Sorter;
             },
             'optimiseValue' => function() use ($cont) {
                 require_once __DIR__ . '/optimise/Value.php';

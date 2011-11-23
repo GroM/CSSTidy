@@ -123,6 +123,14 @@ class CSSTidy
             $this->container->optimiseLineAt->process($namespace);
         }
 
+        if ($this->configuration->getSortProperties()) {
+            $this->container->sorter->sortProperties($parsed);
+        }
+
+        if ($this->configuration->getSortSelectors()) {
+            $this->container->sorter->sortSelectors($parsed);
+        }
+
         /*echo '<pre>';
         var_export($parsed->properties);
         echo '</pre>';*/

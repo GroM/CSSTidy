@@ -378,10 +378,7 @@ HTML;
     {
         $this->tokens = array();
 
-        $sortSelectors = $this->configuration->getSortSelectors();
-        $sortProperties = $this->configuration->getSortProperties();
-
-        $this->blockToTokens($this->parsed, $sortSelectors, $sortProperties);
+        $this->blockToTokens($this->parsed);
     }
 
     /**
@@ -389,16 +386,8 @@ HTML;
      * @param bool $sortSelectors
      * @param bool $sortProperties
      */
-    protected function blockToTokens(Block $block, $sortSelectors = false, $sortProperties = false)
+    protected function blockToTokens(Block $block)
     {
-        if ($sortSelectors && $block instanceof AtBlock) {
-            $this->sortSelectors($block);
-        }
-
-        if ($sortProperties) {
-            $this->sortProperties($block);
-        }
-
         if ($block instanceof Selector) {
             $this->addToken(self::SEL_START, $block->getName());
         } else if ($block instanceof AtBlock && !$block instanceof Root) {
@@ -412,7 +401,7 @@ HTML;
                 $this->addToken(self::VALUE, $element->getValue());
             } else if ($element instanceof Block) {
                 /** @var Element $element */
-                $this->blockToTokens($element, $sortSelectors, $sortProperties);
+                $this->blockToTokens($element);
             } else if ($element instanceof LineAt) {
                 /** @var LineAt $element */
                 $this->addToken(self::LINE_AT, $element->__toString());
@@ -431,51 +420,6 @@ HTML;
         } else if ($block instanceof AtBlock && !$block instanceof Root) {
             $this->addToken(self::AT_END);
         }
-    }
-
-    /**
-     * Sort selectors inside at block
-     * @param AtBlock $block
-     */
-    protected function sortSelectors(AtBlock $block)
-    {
-        uasort($block->elements, function($a, $b) {
-            if (!$a instanceof Selector || !$b instanceof Selector) {
-                return 0;
-            }
-
-            return strcasecmp($a->getName(), $b->getName());
-        });
-    }
-
-    /**
-     * Sort properties inside block with right order IE hacks
-     * @param Block $block
-     */
-    protected function sortProperties(Block $block)
-    {
-        uksort($block->elements, function($a, $b) {
-            static $ieHacks = array(
-                '*' => 1, // IE7 hacks first
-                '_' => 2, // IE6 hacks
-                '/' => 2, // IE6 hacks
-                '-' => 2  // IE6 hacks
-            );
-
-            if ($a{0} === '!' || $b{0} === '!') { // Compared keys are for selector, not for properties
-                return 0;
-            } else if (!isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
-                return strcasecmp($a, $b);
-            } else if (isset($ieHacks[$a{0}]) && !isset($ieHacks[$b{0}])) {
-                return 1;
-            } else if (!isset($ieHacks[$a{0}]) && isset($ieHacks[$b{0}])) {
-                return -1;
-            } else if ($ieHacks[$a{0}] === $ieHacks[$b{0}]) {
-                return strcasecmp(substr($a, 1), substr($b, 1));
-            } else {
-                return $ieHacks[$a{0}] > $ieHacks[$b{0}] ? 1 : -1;
-            }
-        });
     }
 
     /**
