@@ -37,9 +37,6 @@ require_once __DIR__ . '/Property.php';
 
 class Parsed extends AtBlock
 {
-    /** @var array */
-    public $tokens = array();
-
     /** @var string */
     public $charset = '';
 
@@ -53,16 +50,5 @@ class Parsed extends AtBlock
     public function __construct()
     {
 
-    }
-
-    /**
-     * Adds a token to $this->tokens
-     * @param int $type
-     * @param string $data
-     * @return void
-     */
-    public function addToken($type, $data = null)
-    {
-        $this->tokens[] = array($type, $data);
     }
 }

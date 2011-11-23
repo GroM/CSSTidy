@@ -71,6 +71,9 @@ class Output
     /** @var Parsed */
     protected $parsed;
 
+    /** @var array */
+    protected $tokens = array();
+
     /**
      * @param Configuration $configuration
      * @param Logger $logger
@@ -236,7 +239,7 @@ HTML;
 
         if ($this->configuration->getAddTimestamp()) {
             array_unshift(
-                $this->parsed->tokens,
+                $this->tokens,
                 array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' ')
             );
         }
@@ -289,7 +292,7 @@ HTML;
         $inAtOut = '';
         $out = &$output;
 
-        foreach ($this->parsed->tokens as $key => $token) {
+        foreach ($this->tokens as $key => $token) {
             switch ($token[0]) {
                 case CSSTidy::PROPERTY:
                     if ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
@@ -356,12 +359,12 @@ HTML;
      */
     protected function seekNoComment($key)
     {
-        while (isset($this->parsed->tokens[++$key])) {
-            if ($this->parsed->tokens[$key][0] === CSSTidy::COMMENT) {
+        while (isset($this->tokens[++$key])) {
+            if ($this->tokens[$key][0] === CSSTidy::COMMENT) {
                 continue;
             }
 
-            return $this->parsed->tokens[$key][0];
+            return $this->tokens[$key][0];
         }
 
         return 0;
@@ -373,7 +376,7 @@ HTML;
      */
     protected function convertRawCss($defaultMediaIsCurrentlyNotSupported = '')
     {
-        $this->parsed->tokens = array();
+        $this->tokens = array();
 
         $sortSelectors = $this->configuration->getSortSelectors();
         $sortProperties = $this->configuration->getSortProperties();
@@ -397,25 +400,25 @@ HTML;
         }
 
         if ($block instanceof Selector) {
-            $this->parsed->addToken(CSSTidy::SEL_START, $block->getName());
+            $this->addToken(CSSTidy::SEL_START, $block->getName());
         } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::AT_START, $block->getName());
+            $this->addToken(CSSTidy::AT_START, $block->getName());
         }
 
         foreach ($block->elements as $element) {
             if ($element instanceof Property) {
                 /** @var Property $element */
-                $this->parsed->addToken(CSSTidy::PROPERTY, $element->getName());
-                $this->parsed->addToken(CSSTidy::VALUE, $element->getValue());
+                $this->addToken(CSSTidy::PROPERTY, $element->getName());
+                $this->addToken(CSSTidy::VALUE, $element->getValue());
             } else if ($element instanceof Block) {
                 /** @var Element $element */
                 $this->blockToTokens($element, $sortSelectors, $sortProperties);
             } else if ($element instanceof LineAt) {
                 /** @var LineAt $element */
-                $this->parsed->addToken(CSSTidy::LINE_AT, $element->__toString());
+                $this->addToken(CSSTidy::LINE_AT, $element->__toString());
             } else if ($element instanceof Comment) {
                 if ($this->configuration->getPreserveComments()) {
-                    $this->parsed->addToken(CSSTidy::COMMENT, $element->__toString());
+                    $this->addToken(CSSTidy::COMMENT, $element->__toString());
                 }
             } else {
                 var_dump($this->inputCss);
@@ -424,9 +427,9 @@ HTML;
         }
 
         if ($block instanceof Selector) {
-            $this->parsed->addToken(CSSTidy::SEL_END);
+            $this->addToken(CSSTidy::SEL_END);
         } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->parsed->addToken(CSSTidy::AT_END);
+            $this->addToken(CSSTidy::AT_END);
         }
     }
 
@@ -497,5 +500,16 @@ HTML;
     protected function removeUrl($string)
     {
         return preg_replace('~url\(["\']?([^\)\'" ]*)["\']?[ ]?\)~', '"$1"', $string);
+    }
+
+    /**
+     * Adds a token to $this->tokens
+     * @param int $type
+     * @param string $data
+     * @return void
+     */
+    public function addToken($type, $data = null)
+    {
+        $this->tokens[] = array($type, $data);
     }
 }
