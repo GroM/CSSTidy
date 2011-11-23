@@ -42,8 +42,27 @@ class LineAt extends Element
         $this->subValues = $value;
     }
 
+    /**
+     * @return string
+     */
+    public function getName()
+    {
+        return $this->name;
+    }
+
+    /**
+     * @return string
+     */
+    public function getValue()
+    {
+        return $this->mergeSubValues($this->subValues);
+    }
+
+    /**
+     * @return string
+     */
     public function __toString()
     {
-        return "@$this->name {$this->mergeSubValues($this->subValues)};";
+        return "@{$this->getName()} {$this->getValue()};";
     }
 }

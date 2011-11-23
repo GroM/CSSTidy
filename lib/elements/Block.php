@@ -89,8 +89,9 @@ abstract class Block extends Element
     {
         foreach ($elements as $element) {
             if ($element instanceof Property) {
-                if (isset($this->elements[$element->getName()]) && $this->elements[$element->getName()] === false) {
-                    $this->elements[$element->getName()] = $element;
+                $elementName = $element->getName();
+                if (isset($this->elements[$elementName]) && $this->elements[$elementName] === false) {
+                    $this->elements[$elementName] = $element;
                 } else {
                     $this->addProperty($element);
                 }

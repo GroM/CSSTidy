@@ -270,13 +270,14 @@ HTML;
         }
 
         foreach ($this->parsed->import as $import) {
-            $replaced = $this->removeUrl($import);
-            if ($replaced !== $import) {
-                $import = $replaced;
+            $importValue = $import->getValue();
+            $replaced = $this->removeUrl($importValue);
+            if ($replaced !== $importValue) {
+                $importValue = $replaced;
                 $this->logger->log('Optimised @import: Removed "url("', Logger::INFORMATION);
             }
 
-            $output .= "{$template->beforeAtRule}@import{$template->beforeValue}{$import}{$template->afterValueWithSemicolon}";
+            $output .= "{$template->beforeAtRule}@import{$template->beforeValue}{$importValue}{$template->afterValueWithSemicolon}";
         }
 
         foreach ($this->parsed->namespace as $namespace) {

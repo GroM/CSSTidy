@@ -30,6 +30,7 @@ namespace CSSTidy;
 /**
  * @property \CSSTidy\Logger $logger
  * @property \CSSTidy\Configuration $configuration
+ * @property \CSSTidy\Parser $parser
  * @property \CSSTidy\SelectorManipulate $selectorManipulate
  * @property \CSSTidy\Optimise\Value $optimiseValue
  * @property \CSSTidy\Optimise\Color $optimiseColor
@@ -53,13 +54,27 @@ class Container
                 require_once __DIR__ . '/Configuration.php';
                 return new Configuration;
             },
+            'parser' => function() use ($cont) {
+                require_once __DIR__ . '/Parser.php';
+                return new Parser(
+                    $cont->logger,
+                    $cont->configuration->getDiscardInvalidProperties(),
+                    $cont->configuration->getCssLevel(),
+                    $cont->configuration->getRemoveBackSlash()
+                );
+            },
             'selectorManipulate' => function() {
                 require_once __DIR__ . '/SelectorManipulate.php';
                 return new SelectorManipulate;
             },
             'optimiseValue' => function() use ($cont) {
                 require_once __DIR__ . '/optimise/Value.php';
-                return new \CSSTidy\Optimise\Value($cont->logger, $cont->configuration, $cont->optimiseColor, $cont->optimiseNumber);
+                return new \CSSTidy\Optimise\Value(
+                    $cont->logger,
+                    $cont->configuration,
+                    $cont->optimiseColor,
+                    $cont->optimiseNumber
+                );
             },
             'optimiseColor' => function() use($cont) {
                 require_once __DIR__ . '/optimise/Color.php';

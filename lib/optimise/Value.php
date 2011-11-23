@@ -30,7 +30,7 @@
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
 namespace CSSTidy\Optimise;
-use CSSTidy\CSSTidy as Parser;
+use CSSTidy\Parser;
 use CSSTidy\Logger;
 use CSSTidy\Configuration;
 use CSSTidy\Property;
@@ -97,7 +97,11 @@ class Value
                 static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
                 if (isset($optimizedFontWeight[$subValue])) {
                     $optimized = $optimizedFontWeight[$subValue];
-                    $this->logger->log("Optimised font-weight: Changed '$subValue' to '$optimized'", Logger::INFORMATION);
+                    $this->logger->log(
+                        "Optimised font-weight: Changed '$subValue' to '$optimized'",
+                        Logger::INFORMATION,
+                        $property->line
+                    );
                     $subValue = $optimized;
                 }
 

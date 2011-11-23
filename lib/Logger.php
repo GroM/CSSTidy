@@ -60,23 +60,6 @@ class Logger
     }
 
     /**
-     * @param int $count
-     * @return int
-     */
-    public function incrementLine($count = 1)
-    {
-        return $this->line += $count;
-    }
-
-    /**
-     * @return int
-     */
-    public function getCurrentLine()
-    {
-        return $this->line;
-    }
-
-    /**
      * @return array
      */
     public function getMessages()

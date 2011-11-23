@@ -40,7 +40,7 @@ class Parsed extends AtBlock
     /** @var string */
     public $charset = '';
 
-    /** @var array */
+    /** @var LineAt[] */
     public $import = array();
 
     /** @var string */
@@ -50,5 +50,13 @@ class Parsed extends AtBlock
     public function __construct()
     {
 
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOk()
+    {
+        return !(empty($this->elements) && empty($this->import) && empty($this->charset) && empty($this->namespace));
     }
 }

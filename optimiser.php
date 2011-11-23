@@ -14,16 +14,17 @@ if (isset($_POST['input'])) {
     $cssTidy = new \CSSTidy\CSSTidy;
     $cssTidy->configuration->loadPredefinedTemplate($_POST['template']);
     $cssTidy->configuration->setCssLevel(\CSSTidy\Configuration::CSS3_0);
+    $cssTidy->configuration->setPreserveComments();
     $cssTidy->configuration->setMergeSelectors(\CSSTidy\Configuration::MERGE_SELECTORS);
     $cssTidy->configuration->setOptimiseShorthands(\CSSTidy\Configuration::BACKGROUND);
-    $cssTidy->configuration->setDiscardInvalidSelectors();
+    //$cssTidy->configuration->setDiscardInvalidSelectors();
     //$cssTidy->configuration->setSortProperties();
     //$cssTidy->configuration->setLowerCaseSelectors();
     //$cssTidy->configuration->setConvertUnit();
     //$cssTidy->configuration->setPreserveCss();
 
     try {
-        $output = $cssTidy->parse($inputCss);
+        $output = $cssTidy->process($inputCss);
         $inputError = false;
     } catch (\Exception $e) {
         $inputError = true;

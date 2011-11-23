@@ -31,7 +31,7 @@
  */
 namespace CSSTidy\Optimise;
 
-use CSSTidy\CSSTidy as Parser;
+use CSSTidy\Parser;
 use CSSTidy\Logger;
 use CSSTidy\Configuration;
 use CSSTidy\Block;

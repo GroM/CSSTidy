@@ -78,7 +78,7 @@ class csstidy_csst extends SimpleExpectation
         }
 
         $css = new \CSSTidy\CSSTidy($configure);
-        $output = $css->parse($this->css);
+        $output = $css->process($this->css);
         $this->actual = $output->plain();
         return $this->expect === $this->actual;
     }

@@ -91,7 +91,9 @@ class Property extends Element
         return $this->value;
     }
 
-
+    /**
+     * Check, if subValues contains !important.
+     */
     protected function removeImportant()
     {
         foreach ($this->subValues as $key => $value) {
