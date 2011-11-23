@@ -2,7 +2,13 @@
 Duplicate combinator selector
 --CSS--
 div + + b {display: inherit;}
---PRINT--
 
+.okSelector {
+color:red
+}
+--PRINT--
+.okSelector {
+color:red
+}
 --SETTINGS--
 discard_invalid_selectors=1

@@ -4,8 +4,12 @@ Dangling combinator selector
 + b {display: inherit;}
 b > {font-family: inherit;}
 <b>asdf</b> {font-size: inherit;}
---PRINT--
 
+.okSelector {color:red}
+--PRINT--
+.okSelector {
+color:red
+}
 --SETTINGS--
 optimise_shorthands=0
 discard_invalid_selectors=1
