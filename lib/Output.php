@@ -41,6 +41,15 @@ namespace CSSTidy;
  */
 class Output
 {
+    const AT_START = 1,
+        AT_END = 2,
+        SEL_START = 3,
+        SEL_END = 4,
+        PROPERTY = 5,
+        VALUE = 6,
+        COMMENT = 7,
+        LINE_AT = 8;
+    
     const INPUT = 'input',
         OUTPUT = 'output';
 
@@ -240,7 +249,7 @@ HTML;
         if ($this->configuration->getAddTimestamp()) {
             array_unshift(
                 $this->tokens,
-                array(CSSTidy::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' ')
+                array(self::COMMENT, ' CSSTidy ' . CSSTidy::getVersion() . ': ' . date('r') . ' ')
             );
         }
 
@@ -295,7 +304,7 @@ HTML;
 
         foreach ($this->tokens as $key => $token) {
             switch ($token[0]) {
-                case CSSTidy::PROPERTY:
+                case self::PROPERTY:
                     if ($this->configuration->getCaseProperties() === Configuration::LOWERCASE) {
                         $token[1] = strtolower($token[1]);
                     } else if ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
@@ -304,47 +313,47 @@ HTML;
                     $out .= $template->beforeProperty . $this->htmlsp($token[1], $plain) . ':' . $template->beforeValue;
                     break;
 
-                case CSSTidy::VALUE:
+                case self::VALUE:
                     $out .= $this->htmlsp($token[1], $plain);
                     $nextToken = $this->seekNoComment($key);
-                    if (($nextToken === CSSTidy::SEL_END || $nextToken === CSSTidy::AT_END) && $this->configuration->getRemoveLastSemicolon()) {
+                    if (($nextToken === self::SEL_END || $nextToken === self::AT_END) && $this->configuration->getRemoveLastSemicolon()) {
                         $out .= str_replace(';', '', $template->afterValueWithSemicolon);
                     } else {
                         $out .= $template->afterValueWithSemicolon;
                     }
                     break;
 
-                case CSSTidy::SEL_START:
+                case self::SEL_START:
                     if ($this->configuration->getLowerCaseSelectors()) {
                         $token[1] = strtolower($token[1]);
                     }
                     $out .= $template->beforeSelector . $this->htmlsp($token[1], $plain) . $template->selectorOpeningBracket;
                     break;
 
-                case CSSTidy::SEL_END:
+                case self::SEL_END:
                     $out .= $template->selectorClosingBracket;
-                    if ($this->seekNoComment($key) !== CSSTidy::AT_END) {
+                    if ($this->seekNoComment($key) !== self::AT_END) {
                         $out .= $template->spaceBetweenBlocks;
                     }
                     break;
 
-                case CSSTidy::AT_START:
+                case self::AT_START:
                     $out .= $template->beforeAtRule . $this->htmlsp($token[1], $plain) . $template->bracketAfterAtRule;
                     $out = & $inAtOut;
                     break;
 
-                case CSSTidy::AT_END:
+                case self::AT_END:
                     $out = & $output;
                     $out .= $template->indentInAtRule . str_replace("\n", "\n" . $template->indentInAtRule, $inAtOut);
                     $inAtOut = '';
                     $out .= $template->atRuleClosingBracket;
                     break;
 
-                case CSSTidy::COMMENT:
+                case self::COMMENT:
                     $out .= "$template->beforeComment/*{$this->htmlsp($token[1], $plain)}*/$template->afterComment";
                     break;
 
-                case CSSTidy::LINE_AT:
+                case self::LINE_AT:
                     $out .= $token[1];
                     break;
             }
@@ -361,7 +370,7 @@ HTML;
     protected function seekNoComment($key)
     {
         while (isset($this->tokens[++$key])) {
-            if ($this->tokens[$key][0] === CSSTidy::COMMENT) {
+            if ($this->tokens[$key][0] === self::COMMENT) {
                 continue;
             }
 
@@ -401,25 +410,25 @@ HTML;
         }
 
         if ($block instanceof Selector) {
-            $this->addToken(CSSTidy::SEL_START, $block->getName());
+            $this->addToken(self::SEL_START, $block->getName());
         } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->addToken(CSSTidy::AT_START, $block->getName());
+            $this->addToken(self::AT_START, $block->getName());
         }
 
         foreach ($block->elements as $element) {
             if ($element instanceof Property) {
                 /** @var Property $element */
-                $this->addToken(CSSTidy::PROPERTY, $element->getName());
-                $this->addToken(CSSTidy::VALUE, $element->getValue());
+                $this->addToken(self::PROPERTY, $element->getName());
+                $this->addToken(self::VALUE, $element->getValue());
             } else if ($element instanceof Block) {
                 /** @var Element $element */
                 $this->blockToTokens($element, $sortSelectors, $sortProperties);
             } else if ($element instanceof LineAt) {
                 /** @var LineAt $element */
-                $this->addToken(CSSTidy::LINE_AT, $element->__toString());
+                $this->addToken(self::LINE_AT, $element->__toString());
             } else if ($element instanceof Comment) {
                 if ($this->configuration->getPreserveComments()) {
-                    $this->addToken(CSSTidy::COMMENT, $element->__toString());
+                    $this->addToken(self::COMMENT, $element->__toString());
                 }
             } else {
                 var_dump($this->inputCss);
@@ -428,9 +437,9 @@ HTML;
         }
 
         if ($block instanceof Selector) {
-            $this->addToken(CSSTidy::SEL_END);
+            $this->addToken(self::SEL_END);
         } else if ($block instanceof AtBlock && !$block instanceof Parsed) {
-            $this->addToken(CSSTidy::AT_END);
+            $this->addToken(self::AT_END);
         }
     }
 

@@ -249,7 +249,7 @@ class Parser
     }
 
     /**
-     * @param string $string
+     * @param $string
      * @return Parsed
      */
     public function parse($string)

@@ -51,15 +51,6 @@ require_once __DIR__ . '/Output.php';
  */
 class CSSTidy
 {
-    const AT_START = 1,
-        AT_END = 2,
-        SEL_START = 3,
-        SEL_END = 4,
-        PROPERTY = 5,
-        VALUE = 6,
-        COMMENT = 7,
-        LINE_AT = 8;
-
     /** @var string */
     private static $version = '1.4';
 
@@ -88,6 +79,11 @@ class CSSTidy
         $this->logger = $this->container->logger;
     }
 
+    /**
+     * @param $string
+     * @return Output
+     * @throws \Exception
+     */
     public function process($string)
     {
         $original = $string;
@@ -161,38 +157,6 @@ class CSSTidy
 
         return implode("\n", $notResolvedImports) . $string;
     }
-
-
-
-    /**
-     * @param string $property
-     * @param array $subValues
-     * @return string
-     */
-    protected function mergeSubValues($property, array $subValues)
-    {
-        $prev = false;
-        $output = '';
-
-        foreach ($subValues as $subValue) {
-            if ($subValue === ',') {
-                $prev = true;
-            } else if (!$prev) {
-                //$subValue = $this->optimise->subValue($property, $subValue);
-                $output .= ' ';
-            } else {
-                //$subValue = $this->optimise->subValue($property, $subValue);
-                $prev = false;
-            }
-            $output .= $subValue;
-        }
-
-        return ltrim($output, ' ');
-    }
-
-
-
-
 
     /**
      * @return string
