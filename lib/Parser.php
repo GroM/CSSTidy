@@ -222,7 +222,7 @@ class Parser
     );
 
     /** @var int */
-    protected $currentLine;
+    protected $line;
 
     /** @var Logger */
     protected $logger;
@@ -263,7 +263,7 @@ class Parser
         $function = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
         $quotedString = false;
         $bracketCount = 0;
-        $this->currentLine = 1;
+        $this->line = 1;
 
         /*
          * Possible values:
@@ -284,7 +284,7 @@ class Parser
             $current = $string{$i};
 
             if ($current === "\n") {
-                ++$this->currentLine;
+                ++$this->line;
             }
 
             switch ($status) {
@@ -407,19 +407,19 @@ class Parser
 
                             $valid = $this->propertyIsValid($property);
                             if ($valid || !$this->discardInvalidProperties) {
-                                end($stack)->addProperty(new Property($property, $subValues, $this->currentLine));
+                                end($stack)->addProperty(new Property($property, $subValues, $this->line));
                             } else {
                                 $this->logger->log(
                                     "Removed invalid property: $property",
                                     Logger::WARNING,
-                                    $this->currentLine
+                                    $this->line
                                 );
                             }
                             if (!$valid && !$this->discardInvalidProperties) {
                                 $this->logger->log(
                                     "Invalid property in {$this->cssLevel}: $property",
                                     Logger::WARNING,
-                                    $this->currentLine
+                                    $this->line
                                 );
                             }
 
@@ -485,7 +485,7 @@ class Parser
                     // ...and no not-escaped backslash at the previous position
                     if ($current === "\n" && !($string{$i - 1} === '\\' && !self::escaped($string, $i - 1))) {
                         $current = "\\A ";
-                        $this->logger->log('Fixed incorrect newline in string', Logger::WARNING, $this->currentLine);
+                        $this->logger->log('Fixed incorrect newline in string', Logger::WARNING, $this->line);
                     }
 
                     $currentString .= $current;
@@ -601,7 +601,7 @@ class Parser
         $commentLength = $commentLength !== false  ? $commentLength - $i :  strlen($string) - $i - 1;
 
         if ($commentLength > 0) {
-            $this->currentLine += substr_count($string, "\n", $i, $commentLength); // Count new lines inside comment
+            $this->line += substr_count($string, "\n", $i, $commentLength); // Count new lines inside comment
             $comment = substr($string, $i, $commentLength);
         } else {
             $comment = '';
@@ -627,14 +627,14 @@ class Parser
                 if (!empty($parsed->charset)) {
                    $this->logger->log("Only one @charset may be in document, previous is ignored",
                        Logger::WARNING,
-                       $this->currentLine
+                       $this->line
                    );
                 }
 
                 $parsed->charset = $subValues[0];
 
                 if (!empty($parsed->elements) || !empty($parsed->import) || !empty($parsed->namespace)) {
-                    $this->logger->log("@charset must be before anything", Logger::WARNING, $this->currentLine);
+                    $this->logger->log("@charset must be before anything", Logger::WARNING, $this->line);
                 }
                 break;
 
@@ -645,16 +645,16 @@ class Parser
 
                 $parsed->namespace[] = new LineAt($rule, $subValues);
                 if (!empty($parsed->elements)) {
-                    $this->logger->log("@namespace must be before selectors", Logger::WARNING, $this->currentLine);
+                    $this->logger->log("@namespace must be before selectors", Logger::WARNING, $this->line);
                 }
                 break;
 
             case 'import':
                 $parsed->import[] = new LineAt($rule, $subValues);
                 if (!empty($parsed->elements)) {
-                    $this->logger->log("@import must be before anything selectors", Logger::WARNING, $this->currentLine);
+                    $this->logger->log("@import must be before anything selectors", Logger::WARNING, $this->line);
                 } else if (isset($stack[1])) {
-                    $this->logger->log("@import cannot be inside @media", Logger::WARNING, $this->currentLine);
+                    $this->logger->log("@import cannot be inside @media", Logger::WARNING, $this->line);
                 }
                 break;
 
@@ -722,7 +722,7 @@ class Parser
             $this->logger->log(
                 "Replaced unicode notation: Changed \\$add to " . chr($decAdd),
                 Logger::INFORMATION,
-                $this->currentLine
+                $this->line
             );
             $add = chr($decAdd);
             $replaced = true;
@@ -740,7 +740,7 @@ class Parser
         }
 
         if ($add === '\\') {
-            $this->logger->log('Removed unnecessary backslash', Logger::INFORMATION, $this->currentLine);
+            $this->logger->log('Removed unnecessary backslash', Logger::INFORMATION, $this->line);
         }
         return '';
     }
@@ -765,7 +765,7 @@ class Parser
         $string = strtolower(trim($string));
 
         if (isset(self::$allProperties[$string])) {
-            $this->logger->log('Added semicolon to the end of declaration', Logger::WARNING, $this->currentLine);
+            $this->logger->log('Added semicolon to the end of declaration', Logger::WARNING, $this->line);
             return true;
         }
 
