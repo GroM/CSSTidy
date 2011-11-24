@@ -32,35 +32,50 @@ namespace CSSTidy;
 
 class Template
 {
+    /** @var string */
     public $beforeAtRule;
 
+    /** @var string */
     public $atRuleClosingBracket;
 
+    /** @var string */
     public $indentInAtRule;
 
+    /** @var string */
     public $lastLineInAtRule;
 
+    /** @var string */
     public $bracketAfterAtRule;
 
+    /** @var string */
     public $beforeSelector;
 
+    /** @var string */
     public $selectorOpeningBracket;
 
+    /** @var string */
     public $beforeProperty;
 
+    /** @var string */
     public $beforeValue;
 
+    /** @var string */
     public $afterValueWithSemicolon;
 
+    /** @var string */
     public $selectorClosingBracket;
 
+    /** @var string */
     public $spaceBetweenBlocks;
 
+    /** @var string */
     public $beforeComment;
 
+    /** @var string */
     public $afterComment;
 
     /**
+     * Returns template clone without HTML tags for plain output
      * @return Template
      */
     public function getWithoutHtml()
@@ -74,6 +89,8 @@ class Template
     }
 
     /**
+     * Convert string template separated with '|' character to instance of Template class
+     *
      * @static
      * @param string $content
      * @return Template

@@ -30,6 +30,7 @@
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
 namespace CSSTidy\Optimise;
+
 use CSSTidy\Logger;
 
 class Color

@@ -30,7 +30,6 @@
  */
 namespace CSSTidy;
 
-
 class Configuration
 {
     /*

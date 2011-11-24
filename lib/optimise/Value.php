@@ -30,11 +30,13 @@
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
 namespace CSSTidy\Optimise;
+
 use CSSTidy\Parser;
 use CSSTidy\Logger;
 use CSSTidy\Configuration;
 use CSSTidy\Property;
 use CSSTidy\Block;
+
 /**
  * CSS Optimising Class
  *
