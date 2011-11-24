@@ -182,7 +182,6 @@ class Shorthand
      * Compresses shorthand values. Example: margin:1px 1px 1px 1px -> margin:1px
      * @param string $value
      * @return string
-     * @version 1.0
     */
     protected function compressShorthand(Property $property)
     {
@@ -197,8 +196,7 @@ class Shorthand
     /**
      * Optimize border-radius property
      *
-     * @param string $value
-     * @return string
+     * @param Property $property
      */
     protected function borderRadiusShorthand(Property $property)
     {
@@ -223,7 +221,6 @@ class Shorthand
 
     /**
      * @param array $values
-     * @param bool $isImportant
      * @return string
      */
     protected function compressShorthandValues(array $values)
@@ -561,7 +558,7 @@ class Shorthand
 
     /**
      * Dissolve font property
-     * @param string $value
+     * @param Property $property
      * @return array
     */
     protected function dissolveShortFont(Property $property)
@@ -654,7 +651,7 @@ class Shorthand
     /**
      * Merge font properties into font shorthand
      * @todo: refactor
-     * @param Element $block
+     * @param Block $block
      */
     protected function mergeFont(Block $block)
     {

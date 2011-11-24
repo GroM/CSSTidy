@@ -420,6 +420,7 @@ class Color
     }
 
     /**
+     * Normalize angle from 0 to 359
      * @param int $angle
      * @return int
      */
@@ -429,6 +430,7 @@ class Color
     }
 
     /**
+     * Convert angle from for example 355 to -5
      * @param int $angle
      * @return int
      */

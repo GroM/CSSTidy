@@ -44,6 +44,9 @@ class Container
     /** @var object[] */
     protected $services = array();
 
+    /**
+     * Service definition
+     */
     public function __construct()
     {
         $cont = $this;

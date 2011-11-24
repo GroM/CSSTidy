@@ -37,7 +37,7 @@ class LineAt extends Element
 
     /**
      * @param string $name
-     * @param string $value
+     * @param array $value
      */
     public function __construct($name, array $value)
     {

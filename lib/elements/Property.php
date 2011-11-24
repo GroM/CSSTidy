@@ -38,8 +38,15 @@ class Property extends Element
     /** @var array */
     public $subValues = array();
 
+    /** @var bool */
     public $isImportant = false;
 
+    /**
+     * @param string $name
+     * @param array|string $value
+     * @param int|null $line
+     * @param bool $isImportant
+     */
     public function __construct($name, $value, $line = null, $isImportant = false)
     {
         $this->name = $name;

@@ -45,6 +45,10 @@ class LineAt
         $this->logger = $logger;
     }
 
+    /**
+     * Remove url() and first space if is not required from LineAt
+     * @param \CSSTidy\LineAt $lineAt
+     */
     public function process(LineAtElement $lineAt)
     {
         $value = $lineAt->getValue();

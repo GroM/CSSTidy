@@ -53,15 +53,6 @@ class Selector extends Block
     }
 
     /**
-     * @param Selector $selector
-     * @return bool
-     */
-    public function hasSameProperties(Selector $selector)
-    {
-        return $this->propertiesToArray($this) == $this->propertiesToArray($selector);
-    }
-
-    /**
      * @return string
      */
     public function getName()
@@ -71,13 +62,25 @@ class Selector extends Block
 
     /**
      * @param Selector $selector
-     * @return array
+     * @return bool True, if $selector has same properties as $this
+     */
+    public function hasSameProperties(Selector $selector)
+    {
+        return $this->propertiesToArray($this) == $this->propertiesToArray($selector);
+    }
+
+    /**
+     * Return Selector properties in format for comparing with other selector
+     * @see hasSameProperties()
+     * @param Selector $selector
+     * @return array in format ['color:red', 'font-weight:bold]
      */
     protected function propertiesToArray(Selector $selector)
     {
         $output = array();
         foreach ($selector->elements as $element) {
             if ($element instanceof Property) {
+                /** @var Property $element */
                 $output[] = "{$element->getName()}:{$element->getValue()}";
             }
         }

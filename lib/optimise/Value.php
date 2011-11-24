@@ -72,6 +72,9 @@ class Value
         $this->optimiseNumber = $optimiseNumber;
     }
 
+    /**
+     * @param \CSSTidy\Block $block
+     */
     public function process(Block $block)
     {
         foreach ($block->elements as $element) {
@@ -86,10 +89,7 @@ class Value
 
     /**
      * Optimises a sub-value
-     * @version 1.1
-     * @param string $property
-     * @param string $subValue
-     * @return string
+     * @param Property $property
      */
     public function subValue(Property $property)
     {
@@ -124,6 +124,10 @@ class Value
         }
     }
 
+    /**
+     * Compress value
+     * @param \CSSTidy\Property $property
+     */
     public function value(Property $property)
     {
         if ($this->removeVendorPrefix($property->getName()) === 'transform') {
@@ -279,6 +283,7 @@ class Value
     }
 
     /**
+     * Remove vendor prefix pro property. For example '-moz-transform' is changed to 'transform'
      * @param string $string
      * @return string
      */

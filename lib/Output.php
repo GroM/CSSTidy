@@ -411,8 +411,7 @@ HTML;
                     $this->addToken(self::COMMENT, $element->__toString());
                 }
             } else {
-                var_dump($this->inputCss);
-                throw new \Exception("Not supported element " . is_object($element) ? get_class($element) : 'n');
+                throw new \Exception("Not supported element " . is_object($element) ? get_class($element) : gettype($element));
             }
         }
 

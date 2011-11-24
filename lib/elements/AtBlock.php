@@ -45,6 +45,14 @@ class AtBlock extends Block
     }
 
     /**
+     * @return string with @ character at begin
+     */
+    public function getName()
+    {
+        return '@' . $this->mergeSubValues($this->nameParts);
+    }
+
+    /**
      * @param Block $block
      * @return Block
      */
@@ -125,11 +133,5 @@ class AtBlock extends Block
     public function addLineAt(LineAt $lineAt)
     {
         $this->elements[] = $lineAt;
-    }
-
-
-    public function getName()
-    {
-        return '@' . $this->mergeSubValues($this->nameParts);
     }
 }

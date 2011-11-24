@@ -100,11 +100,15 @@ class CSSTidy
 
         $this->container->optimiseValue->process($parsed);
 
-        if ($this->configuration->getMergeSelectors() === Configuration::SEPARATE_SELECTORS) {
-            $this->container->selectorManipulate->separate($parsed);
-        } else if ($this->configuration->getMergeSelectors() === Configuration::MERGE_SELECTORS) {
-            $this->container->selectorManipulate->mergeWithSameName($parsed);
-            $this->container->selectorManipulate->mergeWithSameProperties($parsed);
+        switch ($this->configuration->getMergeSelectors()) {
+            case Configuration::SEPARATE_SELECTORS:
+                $this->container->selectorManipulate->separate($parsed);
+                break;
+
+            case Configuration::MERGE_SELECTORS:
+                $this->container->selectorManipulate->mergeWithSameName($parsed);
+                $this->container->selectorManipulate->mergeWithSameProperties($parsed);
+                break;
         }
 
         if ($this->configuration->getDiscardInvalidSelectors()) {

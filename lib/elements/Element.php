@@ -29,11 +29,13 @@ namespace CSSTidy;
 
 abstract class Element
 {
-    /** @var int */
+    /**
+     * Number of line in file, which contains element in input CSS file
+     * @var int
+     */
     public $line;
 
     /**
-     * @param string $property
      * @param array $subValues
      * @return string
      */
