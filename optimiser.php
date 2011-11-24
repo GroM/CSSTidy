@@ -36,17 +36,49 @@ if (isset($_POST['input'])) {
         <meta charset="utf-8">
         <title>CSSTidy - the best CSS minifier</title>
         <link rel="stylesheet" href="bootstrap.min.css">
-        <script type="text/javascript" src="http://bowser.effectgames.com/~jhuckaby/zeroclipboard/ZeroClipboard.js"></script>
+        <!--<script type="text/javascript" src="http://bowser.effectgames.com/~jhuckaby/zeroclipboard/ZeroClipboard.js"></script>-->
         <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.0/jquery.min.js"></script>
         <script type="text/javascript">
-        ZeroClipboard.setMoviePath('http://bowser.effectgames.com/~jhuckaby/zeroclipboard/ZeroClipboard.swf');
+        /*ZeroClipboard.setMoviePath('http://bowser.effectgames.com/~jhuckaby/zeroclipboard/ZeroClipboard.swf');*/
         $(function() {
-			clip = new ZeroClipboard.Client();
+            // Clipboard
+			/*clip = new ZeroClipboard.Client();
 			clip.addEventListener('mouseDown', function(client) {
                 clip.setText($('#output').text());
             });
-			clip.glue('copyToClipboard');
+			clip.glue('copyToClipboard');*/
+
+            // Drop file
+            var dropbox = $('textarea')[0];
+            dropbox.addEventListener("dragenter", stopPropagation, false);
+            dropbox.addEventListener("dragexit", stopPropagation, false);
+            dropbox.addEventListener("dragover", stopPropagation, false);
+            dropbox.addEventListener("drop", drop, false);
 		});
+
+        var stopPropagation = function(evt) {
+            evt.stopPropagation();
+            evt.preventDefault();
+        }
+
+        var drop = function(evt) {
+            stopPropagation(evt);
+
+            var files = evt.dataTransfer.files;
+	        var count = files.length;
+
+            if (count > 0) {
+                var file = files[0];
+                var reader = new FileReader();
+                reader.onloadend = handleReaderLoadEnd;
+                reader.readAsDataURL(file);
+            }
+        }
+
+        var handleReaderLoadEnd = function(evt) {
+            $('textarea').val(evt.target.result);
+        }
+
         </script>
         <style type="text/css">
             form textarea {font-family: "Monaco", Courier New, monospace; font-size: 90%; width: 100%}
@@ -56,6 +88,7 @@ if (isset($_POST['input'])) {
             pre .selector {color: #195F91}
             pre .property {color: #CB4B16}
             pre .value {color: #268BD2}
+            pre .comment {color: #93a1a1}
             .size {text-align: center}
             .size .value {font-family: Georgia, 'New York CE', utopia, serif;font-size: 170%}
             .size .description {color: gray}
