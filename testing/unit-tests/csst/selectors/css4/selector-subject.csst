@@ -1,0 +1,10 @@
+--TEST--
+http://www.w3.org/TR/2011/WD-selectors4-20110929/#subject
+--CSS--
+$ol > li:only-child {
+  list-style-type: none;
+}
+--PRINT--
+$ol>li:only-child {
+list-style-type:none
+}

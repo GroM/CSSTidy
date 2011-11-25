@@ -1,0 +1,11 @@
+--TEST--
+Reference combinator
+http://www.w3.org/TR/2011/WD-selectors4-20110929/#idref-combinators
+--CSS--
+label:matches(:hover, :focus) /for/ input {
+  box-shadow: #fffea1 0 0 8px
+}
+--PRINT--
+label:matches(:hover,:focus) /for/ input {
+box-shadow:#fffea1 0 0 8px
+}
