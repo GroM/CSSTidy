@@ -254,7 +254,7 @@ class Parser
         $string = str_replace(array("\r\n", "\r"), array("\n", "\n"), $string) . ' ';
 
         // Initialize variables
-        $function = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
+        $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
         $bracketCount = 0;
         $this->line = 1;
 
@@ -367,7 +367,6 @@ class Parser
                             $status = 'instr';
                             $from[] = 'iv';
                         } else if ($current === '(') {
-                            $function = $subValue;
                             $subValue .= $current;
                             $bracketCount = 1;
                             $status = 'inbrck';
@@ -445,13 +444,11 @@ class Parser
                             $status = 'instr';
                             $from[] = 'inbrck';
                             $currentString = $stringEndsWith = $current;
-                            $quotedString = $function === 'format';
                             continue;
                         } else if ($current === '(') {
                             ++$bracketCount;
                         } else if ($current === ')' && --$bracketCount === 0) {
                             $status = array_pop($from); // Go back to prev parser
-                            $function = '';
                         } else if ($current === "\n") {
                             $current = ' '; // Change new line character to normal space
                         }
@@ -497,7 +494,6 @@ class Parser
                         if ($current === '"' || $current === '\'') {
                             $status = 'instr';
                             $from[] = 'at';
-                            $quotedString = true;
                             $currentString = $stringEndsWith = $current;
                         } else if ($current === '(') {
                             $subValue .= $current;
