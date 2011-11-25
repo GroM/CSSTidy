@@ -112,7 +112,7 @@ class Shorthand
     }
 
     /**
-     * @param Block $block
+     * @param Element\Block $block
      */
     public function process(Element\Block $block)
     {
@@ -556,7 +556,7 @@ class Shorthand
 
     /**
      * Dissolve font property
-     * @param Property $property
+     * @param Element\Property $property
      * @return array
     */
     protected function dissolveShortFont(Element\Property $property)
@@ -649,15 +649,15 @@ class Shorthand
     /**
      * Merge font properties into font shorthand
      * @todo: refactor
-     * @param Block $block
+     * @param Element\Block $block
      */
     protected function mergeFont(Element\Block $block)
     {
         $newFontValue = '';
         $preserveFontVariant = $important = false;
 
-        // Skip if is font-size not set
-        if (isset($block->elements['font-size'])) {
+        // Skip if is font-size and font-family not set
+        if (isset($block->elements['font-size']) && isset($block->elements['font-family'])) {
             foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
 
                 // Skip if property does not exist
@@ -671,6 +671,7 @@ class Shorthand
 
                 /**
                  * Skip if default value is used or if font-variant property is not small-caps
+                 * Stop if font-family contains inherit, because is not valid inside font shorthand
                  * @see http://www.w3.org/TR/css3-fonts/#propdef-font
                 */
                 if ($currentValue === $defaultValue) {
@@ -678,6 +679,8 @@ class Shorthand
                 } else if ($fontProperty === 'font-variant' && $currentValue !== 'small-caps') {
                     $preserveFontVariant = true;
                     continue;
+                } else if ($fontProperty === 'font-family' && $currentValue === 'inherit') {
+                    return;
                 }
 
                 if ($property->isImportant) {

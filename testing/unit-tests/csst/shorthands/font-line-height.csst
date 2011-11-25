@@ -4,7 +4,8 @@ Test font-weight optimization (full)
 a {font:100%;line-height:1.2}
 --PRINT--
 a {
-font:100%/1.2
+line-height:1.2;
+font-size:100%
 }
 --SETTINGS--
 optimise_shorthands=2
