@@ -3,6 +3,6 @@ Chained selector
 --CSS--
 a * > div[attr="value"].class + div#id:hover {display: inherit;}
 --PRINT--
-a * > div[attr="value"].class + div#id:hover {
+a *>div[attr="value"].class+div#id:hover {
 display:inherit
 }

@@ -3,6 +3,6 @@ Adjacent selector
 --CSS--
 a + b {display: inherit;}
 --PRINT--
-a + b {
+a+b {
 display:inherit
 }

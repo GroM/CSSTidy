@@ -3,6 +3,6 @@ Child selector
 --CSS--
 table > tr {display: inherit;}
 --PRINT--
-table > tr {
+table>tr {
 display:inherit
 }
