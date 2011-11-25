@@ -49,9 +49,7 @@ class Selector
     /** @var \CSSTidy\Logger */
     protected $logger;
 
-    public function __construct(
-        Logger $logger
-    ) {
+    public function __construct(Logger $logger) {
         $this->logger = $logger;
     }
 
@@ -78,14 +76,14 @@ class Selector
             for ($i = 0, $length = strlen($subSelector); $i < $length; $i++) {
                 $current = $subSelector{$i};
 
-                if ($current === '"' || $current === "'") {
+                if (($current === '"' || $current === "'") && !Parser::escaped($subSelector, $i)) {
                     $optimised .= $this->skipString($subSelector, $i, $current);
                 } else if ($current === '*' && isset($subSelector{$i+1}) && in_array($subSelector{$i+1}, array('.', '#', '[', ':'))) {
                     // remove unnecessary universal selector, FS#147
                 } else if ($current === '>' || $current === '+') {
                     $optimised = rtrim($optimised) . $current;
                     if (isset($subSelector{$i+1}) && ctype_space($subSelector{$i+1})) {
-                        ++$i;
+                        ++$i; // Skip next space
                     }
                 } else {
                     $optimised .= $current;
