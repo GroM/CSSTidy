@@ -106,6 +106,10 @@ class Number
     /** @var bool */
     protected $convertUnit = false;
 
+    /**
+     * @param \CSSTidy\Logger $logger
+     * @param bool $convertUnit
+     */
     public function __construct(Logger $logger, $convertUnit)
     {
         $this->logger = $logger;
@@ -113,8 +117,8 @@ class Number
     }
 
     /**
-     * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1 )
-     * @param string $property
+     * Compresses numbers (ie. 1.0 becomes 1 or 1.100 becomes 1.1)
+     * @param string $propertyName
      * @param string $subValue
      * @return string
      */

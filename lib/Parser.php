@@ -246,7 +246,7 @@ class Parser
 
     /**
      * @param $string
-     * @return Root
+     * @return \CSSTidy\Element\Root
      */
     public function parse($string)
     {
@@ -397,11 +397,7 @@ class Parser
                             if ($valid || !$this->discardInvalidProperties) {
                                 end($stack)->addProperty(new Element\Property($property, $subValues, $this->line));
                             } else {
-                                $this->logger->log(
-                                    "Removed invalid property: $property",
-                                    Logger::WARNING,
-                                    $this->line
-                                );
+                                $this->logger->log("Removed invalid property: $property", Logger::WARNING, $this->line);
                             }
                             if (!$valid && !$this->discardInvalidProperties) {
                                 $this->logger->log(

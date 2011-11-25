@@ -29,7 +29,7 @@ namespace CSSTidy\Element;
 
 abstract class Block extends Element
 {
-    /** @var string[] */
+    /** @var \CSSTidy\Element\Element[] */
     public $elements = array();
 
     /**

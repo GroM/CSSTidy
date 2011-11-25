@@ -112,7 +112,7 @@ class Shorthand
     }
 
     /**
-     * @param Element\Block $block
+     * @param \CSSTidy\Element\Block $block
      */
     public function process(Element\Block $block)
     {
@@ -159,7 +159,7 @@ class Shorthand
     }
 
     /**
-     * @param Block $block
+     * @param \CSSTidy\Element\Block $block
     */
     protected function dissolveShorthands(Element\Block $block)
     {
@@ -178,8 +178,7 @@ class Shorthand
 
     /**
      * Compresses shorthand values. Example: margin:1px 1px 1px 1px -> margin:1px
-     * @param string $value
-     * @return string
+     * @param \CSSTidy\Element\Property $property
     */
     protected function compressShorthand(Element\Property $property)
     {
@@ -194,7 +193,7 @@ class Shorthand
     /**
      * Optimize border-radius property
      *
-     * @param Property $property
+     * @param \CSSTidy\Element\Property $property
      */
     protected function borderRadiusShorthand(Element\Property $property)
     {
@@ -252,59 +251,9 @@ class Shorthand
         return implode(' ', $values);
     }
 
-
-    /**
-     * Dissolves properties like padding:10px 10px 10px to padding-top:10px;padding-bottom:10px;...
-     * @param string $property
-     * @param string $value
-     * @return array
-
-    protected function dissolveFourValueShorthands($property, $value)
-    {
-        $shorthands = self::$shorthands[$property];
-
-        $important = '';
-        if (Parser::isImportant($value)) {
-            $value = Parser::removeImportant($value, false);
-            $important = '!important';
-        }
-
-        $values = Parser::explodeWithoutString(' ', $value);
-
-        $return = array();
-        switch (count($values)) {
-            case 4:
-                for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$i]] = $values[$i] . $important;
-                }
-                break;
-
-            case 3:
-                $return[$shorthands[0]] = $values[0] . $important;
-                $return[$shorthands[1]] = $values[1] . $important;
-                $return[$shorthands[3]] = $values[1] . $important;
-                $return[$shorthands[2]] = $values[2] . $important;
-                break;
-
-            case 2:
-                for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$i]] = $values[$i % 2] . $important;
-                }
-                break;
-
-            default:
-                for ($i = 0; $i < 4; $i++) {
-                    $return[$shorthands[$i]] = $values[0] . $important;
-                }
-                break;
-        }
-
-        return $return;
-    }*/
-
     /**
      * Merges Shorthand properties again, the opposite of self::dissolveFourValueShorthands
-     * @param Block $block
+     * @param \CSSTidy\Element\Block $block
      */
     protected function mergeFourValueShorthands(Element\Block $block)
     {
@@ -319,7 +268,7 @@ class Shorthand
                 $values = array();
 
                 foreach ($properties as $property) {
-                    /** @var \CSSTidy\Property $prop */
+                    /** @var \CSSTidy\Element\Property $prop */
                     $prop = $block->elements[$property];
                     if ($prop->isImportant) {
                         $important = true;
@@ -339,7 +288,7 @@ class Shorthand
      * Merge two values shorthand
      * Shorthand for merging are defined in self::$twoValuesShorthand
      * Example: overflow-x and overflow-y are merged to overflow shorthand
-     * @param Block $block
+     * @param \CSSTidy\Element\Block $block
      * @see self::$twoValuesShorthand
      */
     protected function mergeTwoValuesShorthand(Element\Block $block)
@@ -380,7 +329,7 @@ class Shorthand
 
     /**
      * Dissolve background property
-     * @param string $str_value
+     * @param \CSSTidy\Element\Property $property
      * @return array
      * @todo full CSS 3 compliance
     */
@@ -463,7 +412,7 @@ class Shorthand
 
     /**
      * Merges all background properties
-     * @param Block $block
+     * @param \CSSTidy\Element\Block $block
      * @todo full CSS 3 compliance
      */
     protected function mergeBackground(Element\Block $block)
@@ -556,7 +505,7 @@ class Shorthand
 
     /**
      * Dissolve font property
-     * @param Element\Property $property
+     * @param \CSSTidy\Element\Property $property
      * @return array
     */
     protected function dissolveShortFont(Element\Property $property)
@@ -632,7 +581,7 @@ class Shorthand
     /**
      * Merge font properties into font shorthand
      * @todo: refactor
-     * @param Element\Block $block
+     * @param \CSSTidy\Element\Block $block
      */
     protected function mergeFont(Element\Block $block)
     {
