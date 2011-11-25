@@ -38,6 +38,7 @@ namespace CSSTidy;
  * @property \CSSTidy\Optimise\Number $optimiseNumber
  * @property \CSSTidy\Optimise\Shorthand $optimiseShorthand
  * @property \CSSTidy\Optimise\LineAt $optimiseLineAt
+ * @property \CSSTidy\Optimise\Selector $optimiseSelector
  */
 class Container
 {
@@ -100,6 +101,10 @@ class Container
             'optimiseLineAt' => function() use($cont) {
                 require_once __DIR__ . '/optimise/LineAt.php';
                 return new \CSSTidy\Optimise\LineAt($cont->logger);
+            },
+            'optimiseSelector' => function() use($cont) {
+                require_once __DIR__ . '/optimise/Selector.php';
+                return new \CSSTidy\Optimise\Selector($cont->logger);
             },
         );
     }

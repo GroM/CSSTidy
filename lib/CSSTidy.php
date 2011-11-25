@@ -98,6 +98,7 @@ class CSSTidy
             throw new \Exception("Invalid CSS");
         }
 
+        $this->container->optimiseSelector->process($parsed);
         $this->container->optimiseValue->process($parsed);
 
         switch ($this->configuration->getMergeSelectors()) {
