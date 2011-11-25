@@ -477,9 +477,9 @@ class Parser
                     $currentString .= $current;
 
                     if ($current === $stringEndsWith && !self::escaped($string, $i)) {
-                        $status = array_pop($from);
                         $currentString = self::normalizeQuotes($currentString);
 
+                        $status = array_pop($from);
                         if ($status === 'is') {
                             $selector .= $currentString;
                         } else {
