@@ -196,7 +196,7 @@ HTML;
 
     /**
      * Get the size of either input or output CSS in KB
-     * @param string $loc default is "output"
+     * @param string $loc Output::INPUT or Output::OUTPUT
      * @return float
      * @version 1.0
      */
@@ -208,14 +208,17 @@ HTML;
 
         if ($loc === self::INPUT) {
             return (strlen($this->inputCss) / 1000);
-        } else {
+        } else if ($loc === self::OUTPUT) {
             return (strlen($this->outputCssPlain) / 1000);
+        } else {
+            throw new \InvalidArgumentException("Loc must be Output::INPUT or Output::OUTPUT constant, '$loc' given");
         }
     }
 
     /**
+     * Get the gzipped size of either input or output CSS in KB
      * @param string $loc
-     * @param int $level
+     * @param int $level gzip level
      * @return float
      */
     public function gzippedSize($loc = self::OUTPUT, $level = -1)
@@ -226,8 +229,10 @@ HTML;
 
         if ($loc === self::INPUT) {
             return (strlen(gzencode($this->inputCss, $level)) / 1000);
-        } else {
+        } else if ($loc === self::OUTPUT) {
             return (strlen(gzencode($this->outputCssPlain, $level)) / 1000);
+        } else {
+            throw new \InvalidArgumentException("Loc must be Output::INPUT or Output::OUTPUT constant, '$loc' given");
         }
     }
 
@@ -330,11 +335,11 @@ HTML;
 
                 case self::AT_START:
                     $out .= $template->beforeAtRule . $this->htmlsp($token[1], $plain) . $template->bracketAfterAtRule;
-                    $out = & $inAtOut;
+                    $out = &$inAtOut;
                     break;
 
                 case self::AT_END:
-                    $out = & $output;
+                    $out = &$output;
                     $out .= $template->indentInAtRule . str_replace("\n", "\n" . $template->indentInAtRule, $inAtOut);
                     $inAtOut = '';
                     $out .= $template->atRuleClosingBracket;
@@ -384,8 +389,6 @@ HTML;
 
     /**
      * @param Element\Block $block
-     * @param bool $sortSelectors
-     * @param bool $sortProperties
      */
     protected function blockToTokens(Element\Block $block)
     {
