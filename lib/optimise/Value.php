@@ -72,7 +72,7 @@ class Value
     }
 
     /**
-     * @param \CSSTidy\Block $block
+     * @param \CSSTidy\Element\Block $block
      */
     public function process(Element\Block $block)
     {
@@ -88,29 +88,26 @@ class Value
 
     /**
      * Optimises a sub-value
-     * @param Property $property
+     * @param Element\Property $property
      */
     public function subValue(Element\Property $property)
     {
-        foreach ($property->subValues as &$subValue) {
-            // Compress font-weight
-            if ($property->getName() === 'font-weight' && $this->configuration->getCompressFontWeight()) {
-                static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
-                if (isset($optimizedFontWeight[$subValue])) {
-                    $optimized = $optimizedFontWeight[$subValue];
-                    $this->logger->log(
-                        "Optimised font-weight: Changed '$subValue' to '$optimized'",
-                        Logger::INFORMATION,
-                        $property->line
-                    );
-                    $subValue = $optimized;
-                }
+        $compressFontWeight = $property->getName() === 'font-weight' && $this->configuration->getCompressFontWeight();
+        $optimiseGradients = $property->getName() === 'background-image' && $this->configuration->getCompressColors();
+        $removeQuotes = $property->getName() === 'font' || $property->getName() === 'font-family';
 
-                continue;
+        foreach ($property->subValues as &$subValue) {
+
+            if ($compressFontWeight) {
+                $subValue = $this->compressFontWeight($subValue);
+            } else if ($optimiseGradients) {
+                $subValue = $this->optimizeGradients($subValue);
+            } else if ($removeQuotes) {
+                $subValue = $this->removeQuotes($subValue);
             }
 
-            if ($property->getName() === 'background-image' && $this->configuration->getCompressColors()) {
-                $subValue = $this->optimizeGradients($subValue);
+            if (substr_compare($subValue, 'url(', 0, 4, true) === 0) {
+                $subValue = "url(" . $this->removeQuotes(substr($subValue, 4, -1)) . ')';
             }
 
             $subValue = $this->optimiseNumber->optimise($property->getName(), $subValue);
@@ -125,12 +122,47 @@ class Value
 
     /**
      * Compress value
-     * @param \CSSTidy\Property $property
+     * @param \CSSTidy\Element\Property $property
      */
     public function value(Element\Property $property)
     {
         if ($this->removeVendorPrefix($property->getName()) === 'transform') {
             $property->setValue($this->optimizeTransform($property->getValueWithoutImportant()));
+        }
+    }
+
+    /**
+     * Change 'bold' to '700' and 'normal' to '400'
+     * @see http://www.w3.org/TR/css3-fonts/#font-weight-prop
+     * @param string $value
+     * @return string
+     */
+    public function compressFontWeight($value)
+    {
+        static $optimizedFontWeight = array('bold' => 700, 'normal' => 400);
+
+        if (isset($optimizedFontWeight[$value])) {
+            return $optimizedFontWeight[$value];
+        }
+
+        return $value;
+    }
+
+    /**
+     * @param string $string
+     * @return string
+     */
+    protected function removeQuotes($string)
+    {
+        if ($string{0} === '"' || $string{0} === "'") {
+            $withoutQuotes = substr($string, 1, -1);
+            if (preg_match('|[' . Parser::$whitespace . '\'"()]|uis', $withoutQuotes)) { // If string contains whitespace
+                return $string;
+            }
+
+            return $withoutQuotes;
+        } else {
+            return $string;
         }
     }
 

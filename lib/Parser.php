@@ -28,12 +28,6 @@ class Parser
     public static $tokensList = '/@}{;:=\'"(,\\!$%&)*+.<>?[]^`|~';
 
     /**
-     * @var string
-     * @static
-     */
-    private static $stringTokens;
-
-    /**
      * All properties, value contains comma separated CSS supported versions
      *
      * @static
@@ -248,9 +242,6 @@ class Parser
 
         // Prepare array of all CSS whitespaces
         self::$whitespaceArray = str_split(self::$whitespace);
-
-        // String tokens
-        self::$stringTokens = self::$whitespace . '\'"()';
     }
 
     /**
@@ -264,7 +255,6 @@ class Parser
 
         // Initialize variables
         $function = $currentString = $stringEndsWith = $subValue = $value = $property = $selector = '';
-        $quotedString = false;
         $bracketCount = 0;
         $this->line = 1;
 
@@ -312,8 +302,6 @@ class Parser
                             $currentString = $stringEndsWith = $current;
                             $status = 'instr';
                             $from[] = 'is';
-                            /* fixing CSS3 attribute selectors, i.e. a[href$=".mp3" */
-                            $quotedString = ($string{$i - 1} === '=');
                         } else if ($current === '}') {
                             array_pop($stack);
                             $selector = '';
@@ -493,17 +481,13 @@ class Parser
 
                     if ($current === $stringEndsWith && !self::escaped($string, $i)) {
                         $status = array_pop($from);
-                        if ($property !== 'content' && $property !== 'quotes' && !$quotedString) {
-                            $currentString = self::removeQuotes($currentString);
-                        } else {
-                            $currentString = self::normalizeQuotes($currentString);
-                        }
+                        $currentString = self::normalizeQuotes($currentString);
+
                         if ($status === 'is') {
                             $selector .= $currentString;
                         } else {
                             $subValue .= $currentString;
                         }
-                        $quotedString = false;
                     }
                     break;
 
@@ -806,20 +790,6 @@ class Parser
     public static function escaped($string, $pos)
     {
         return !((!isset($string{$pos - 1}) || $string{$pos - 1} !== '\\') || self::escaped($string, $pos - 1));
-    }
-
-    /**
-     * @param string $string
-     * @return mixed
-     */
-    public static function removeQuotes($string)
-    {
-        $withoutQuotes = substr($string, 1, -1);
-        if (preg_match('|[' . self::$stringTokens .']|uis', $withoutQuotes)) { // If string contains whitespace
-            return self::normalizeQuotes($string);
-        }
-
-        return $withoutQuotes;
     }
 
     /**
