@@ -5,12 +5,12 @@ class Sorter
 {
     /**
      * Sort selectors inside at block
-     * @param AtBlock $block
+     * @param Element\AtBlock $block
      */
-    public function sortSelectors(AtBlock $block)
+    public function sortSelectors(Element\AtBlock $block)
     {
         uasort($block->elements, function($a, $b) {
-            if (!$a instanceof Selector || !$b instanceof Selector) {
+            if (!$a instanceof Element\Selector || !$b instanceof Element\Selector) {
                 return 0;
             }
 
@@ -18,7 +18,7 @@ class Sorter
         });
 
         foreach ($block->elements as $element) {
-            if ($element instanceof AtBlock) {
+            if ($element instanceof Element\AtBlock) {
                 $this->sortSelectors($element);
             }
         }
@@ -26,9 +26,9 @@ class Sorter
 
     /**
      * Sort properties inside block with right order IE hacks
-     * @param Block $block
+     * @param Element\Block $block
      */
-    public function sortProperties(Block $block)
+    public function sortProperties(Element\Block $block)
     {
         uksort($block->elements, function($a, $b) {
             static $ieHacks = array(
@@ -54,7 +54,7 @@ class Sorter
         });
 
         foreach ($block->elements as $element) {
-            if ($element instanceof Block) {
+            if ($element instanceof Element\Block) {
                 $this->sortProperties($element);
             }
         }

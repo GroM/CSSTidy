@@ -34,9 +34,7 @@ namespace CSSTidy\Optimise;
 use CSSTidy\Parser;
 use CSSTidy\Logger;
 use CSSTidy\Configuration;
-use CSSTidy\Block;
-use CSSTidy\AtBlock;
-use CSSTidy\Property;
+use CSSTidy\Element;
 
 class Shorthand
 {
@@ -116,7 +114,7 @@ class Shorthand
     /**
      * @param Block $block
      */
-    public function process(Block $block)
+    public function process(Element\Block $block)
     {
         $this->dissolveShorthands($block);
 
@@ -151,9 +149,9 @@ class Shorthand
             }
         }
 
-        if (isset($block) && $block instanceof AtBlock) {
+        if (isset($block) && $block instanceof Element\AtBlock) {
             foreach ($block->elements as $value) {
-                if ($value instanceof Block) {
+                if ($value instanceof Element\Block) {
                     $this->process($value);
                 }
             }
@@ -163,7 +161,7 @@ class Shorthand
     /**
      * @param Block $block
     */
-    protected function dissolveShorthands(Block $block)
+    protected function dissolveShorthands(Element\Block $block)
     {
         if (isset($block->elements['font']) && $this->optimiseShorthand > Configuration::COMMON) {
             $property = $block->elements['font'];
@@ -183,7 +181,7 @@ class Shorthand
      * @param string $value
      * @return string
     */
-    protected function compressShorthand(Property $property)
+    protected function compressShorthand(Element\Property $property)
     {
         $value = $property->getValueWithoutImportant();
 
@@ -198,7 +196,7 @@ class Shorthand
      *
      * @param Property $property
      */
-    protected function borderRadiusShorthand(Property $property)
+    protected function borderRadiusShorthand(Element\Property $property)
     {
         $value = $property->getValueWithoutImportant();
         $parts = explode('/', $value);
@@ -308,7 +306,7 @@ class Shorthand
      * Merges Shorthand properties again, the opposite of self::dissolveFourValueShorthands
      * @param Block $block
      */
-    protected function mergeFourValueShorthands(Block $block)
+    protected function mergeFourValueShorthands(Element\Block $block)
     {
         foreach (self::$shorthands as $shorthand => $properties) {
             if (
@@ -330,7 +328,7 @@ class Shorthand
                     $block->removeProperty($prop);
                 }
 
-                $shorthandProperty = new Property($shorthand, $this->compressShorthandValues($values, $important));
+                $shorthandProperty = new Element\Property($shorthand, $this->compressShorthandValues($values, $important));
                 $shorthandProperty->isImportant = $important;
                 $block->addProperty($shorthandProperty);
             }
@@ -344,16 +342,16 @@ class Shorthand
      * @param Block $block
      * @see self::$twoValuesShorthand
      */
-    protected function mergeTwoValuesShorthand(Block $block)
+    protected function mergeTwoValuesShorthand(Element\Block $block)
     {
         foreach (self::$twoValuesShorthand as $shorthandProperty => $properties) {
             if (
                 isset($block->elements[$properties[0]]) &&
                 isset($block->elements[$properties[1]])
             ) {
-                /** @var \CSSTidy\Property $first */
+                /** @var \CSSTidy\Element\Property $first */
                 $first = $block->elements[$properties[0]];
-                /** @var \CSSTidy\Property $second */
+                /** @var \CSSTidy\Element\Property $second */
                 $second = $block->elements[$properties[1]];
 
                 if ($first->isImportant !== $second->isImportant) {
@@ -369,7 +367,7 @@ class Shorthand
                     $output = "$firstValue $secondValue";
                 }
 
-                $property = new Property($shorthandProperty, $output);
+                $property = new Element\Property($shorthandProperty, $output);
                 $property->isImportant = $first->isImportant;
                 $block->addProperty($property);
 
@@ -386,12 +384,12 @@ class Shorthand
      * @return array
      * @todo full CSS 3 compliance
     */
-    protected function dissolveShortBackground(Property $property)
+    protected function dissolveShortBackground(Element\Property $property)
     {
         $str_value = $property->getValueWithoutImportant();
         // don't try to explose background gradient !
         if (stripos($str_value, "gradient(") !== false) {
-            return array(new Property('background', $property->getValue()));
+            return array(new Element\Property('background', $property->getValue()));
         }
 
         static $repeat = array('repeat', 'repeat-x', 'repeat-y', 'no-repeat', 'space');
@@ -454,9 +452,9 @@ class Shorthand
         $outputProperties = array();
         foreach (self::$backgroundPropDefault as $backgroundProperty => $defaultValue) {
             if (isset($return[$backgroundProperty])) {
-                $outputProperties[] = new Property($backgroundProperty, substr($return[$backgroundProperty], 0, -1), 0, $property->isImportant);
+                $outputProperties[] = new Element\Property($backgroundProperty, substr($return[$backgroundProperty], 0, -1), 0, $property->isImportant);
             } else {
-                $outputProperties[] = new Property($backgroundProperty, $defaultValue, 0, $property->isImportant);
+                $outputProperties[] = new Element\Property($backgroundProperty, $defaultValue, 0, $property->isImportant);
             }
         }
 
@@ -468,7 +466,7 @@ class Shorthand
      * @param Block $block
      * @todo full CSS 3 compliance
      */
-    protected function mergeBackground(Block $block)
+    protected function mergeBackground(Element\Block $block)
     {
         $properties = $block->elements;
 
@@ -546,9 +544,9 @@ class Shorthand
 
         // Add new background property
         if ($newBackgroundValue !== '') {
-            $newProperty = new Property('background', $newBackgroundValue, 0, $important);
+            $newProperty = new Element\Property('background', $newBackgroundValue, 0, $important);
         } else if (isset($block->elements['background'])) {
-            $newProperty = new Property('background', 'none');
+            $newProperty = new Element\Property('background', 'none');
         }
 
         if (isset($newProperty)) {
@@ -561,7 +559,7 @@ class Shorthand
      * @param Property $property
      * @return array
     */
-    protected function dissolveShortFont(Property $property)
+    protected function dissolveShortFont(Element\Property $property)
     {
         static $fontWeight = array('normal', 'bold', 'bolder', 'lighter', 100, 200, 300, 400, 500, 600, 700, 800, 900);
         static $fontVariant = array('normal', 'small-caps');
@@ -641,7 +639,7 @@ class Shorthand
         $outputProperties = array();
         foreach (self::$fontPropDefault as $fontProperty => $defaultValue) {
             if (isset($return[$fontProperty]) && !empty($return[$fontProperty])) {
-                $outputProperties[] = new Property($fontProperty, $return[$fontProperty], 0, $property->isImportant);
+                $outputProperties[] = new Element\Property($fontProperty, $return[$fontProperty], 0, $property->isImportant);
             }
         }
 
@@ -653,7 +651,7 @@ class Shorthand
      * @todo: refactor
      * @param Block $block
      */
-    protected function mergeFont(Block $block)
+    protected function mergeFont(Element\Block $block)
     {
         $newFontValue = '';
         $preserveFontVariant = $important = false;
@@ -709,7 +707,7 @@ class Shorthand
                 }
 
                 // Add new font property
-                $property = new Property('font', $newFontValue, 0, $important);
+                $property = new Element\Property('font', $newFontValue, 0, $important);
                 $block->mergeElements(array($property));
             }
         }

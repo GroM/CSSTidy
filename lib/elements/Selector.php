@@ -25,7 +25,7 @@
  * @package CSSTidy
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
-namespace CSSTidy;
+namespace CSSTidy\Element;
 
 class Selector extends Block
 {

@@ -33,7 +33,7 @@ namespace CSSTidy\Optimise;
 
 use CSSTidy\Logger;
 use CSSTidy\Parser;
-use CSSTidy\Selector as SelectorElement;
+use CSSTidy\Element;
 
 /**
  * CSS Optimising Class
@@ -55,12 +55,12 @@ class Selector
         $this->logger = $logger;
     }
 
-    public function process(\CSSTidy\Block $block)
+    public function process(Element\Block $block)
     {
         foreach ($block->elements as $element) {
-            if ($element instanceof SelectorElement) {
+            if ($element instanceof Element\Selector) {
                 $this->optimise($element);
-            } else if ($element instanceof \CSSTidy\AtBlock) {
+            } else if ($element instanceof Element\AtBlock) {
                 $this->process($element);
             }
         }
@@ -68,9 +68,9 @@ class Selector
 
     /**
      * Removes universal selector * if is not necessary and spaces before and after '+' and '>'
-     * @param \CSSTidy\Selector $selector
+     * @param \CSSTidy\Element\Selector $selector
      */
-    public function optimise(SelectorElement $selector)
+    public function optimise(Element\Selector $selector)
     {
         foreach ($selector->subSelectors as &$subSelector) {
             $optimised = '';

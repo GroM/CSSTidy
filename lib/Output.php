@@ -78,7 +78,7 @@ class Output
     /** @var Logger */
     protected $logger;
 
-    /** @var Root */
+    /** @var \CSSTidy\Element\Root */
     protected $parsed;
 
     /** @var array */
@@ -90,7 +90,7 @@ class Output
      * @param string $inputCss
      * @param Root $parsed
      */
-    public function __construct(Configuration $configuration, Logger $logger, $inputCss, Root $parsed)
+    public function __construct(Configuration $configuration, Logger $logger, $inputCss, Element\Root $parsed)
     {
         $this->configuration = $configuration;
         $this->logger = $logger;
@@ -383,30 +383,30 @@ HTML;
     }
 
     /**
-     * @param Block $block
+     * @param Element\Block $block
      * @param bool $sortSelectors
      * @param bool $sortProperties
      */
-    protected function blockToTokens(Block $block)
+    protected function blockToTokens(Element\Block $block)
     {
-        if ($block instanceof Selector) {
+        if ($block instanceof Element\Selector) {
             $this->addToken(self::SEL_START, $block->getName());
-        } else if ($block instanceof AtBlock && !$block instanceof Root) {
+        } else if ($block instanceof Element\AtBlock && !$block instanceof Element\Root) {
             $this->addToken(self::AT_START, $block->getName());
         }
 
         foreach ($block->elements as $element) {
-            if ($element instanceof Property) {
-                /** @var Property $element */
+            if ($element instanceof Element\Property) {
+                /** @var Element\Property $element */
                 $this->addToken(self::PROPERTY, $element->getName());
                 $this->addToken(self::VALUE, $element->getValue());
-            } else if ($element instanceof Block) {
-                /** @var Element $element */
+            } else if ($element instanceof Element\Block) {
+                /** @var Element\Element $element */
                 $this->blockToTokens($element);
-            } else if ($element instanceof LineAt) {
-                /** @var LineAt $element */
+            } else if ($element instanceof Element\LineAt) {
+                /** @var Element\LineAt $element */
                 $this->addToken(self::LINE_AT, $element->__toString());
-            } else if ($element instanceof Comment) {
+            } else if ($element instanceof Element\Comment) {
                 if ($this->configuration->getPreserveComments()) {
                     $this->addToken(self::COMMENT, $element->__toString());
                 }
@@ -415,9 +415,9 @@ HTML;
             }
         }
 
-        if ($block instanceof Selector) {
+        if ($block instanceof Element\Selector) {
             $this->addToken(self::SEL_END);
-        } else if ($block instanceof AtBlock && !$block instanceof Root) {
+        } else if ($block instanceof Element\AtBlock && !$block instanceof Element\Root) {
             $this->addToken(self::AT_END);
         }
     }

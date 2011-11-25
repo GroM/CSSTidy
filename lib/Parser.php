@@ -27,7 +27,10 @@ class Parser
      */
     public static $tokensList = '/@}{;:=\'"(,\\!$%&)*+.<>?[]^`|~';
 
-    /** @var string */
+    /**
+     * @var string
+     * @static
+     */
     private static $stringTokens;
 
     /**
@@ -277,7 +280,7 @@ class Parser
         $status = 'is';
         $subValues = $from = $selectorSeparate = array();
 
-        $root = new Root;
+        $root = new Element\Root;
         $stack = array($root);
 
         for ($i = 0, $size = strlen($string); $i < $size; $i++) {
@@ -295,14 +298,14 @@ class Parser
                             $status = 'ip';
                             $from[] = 'is';
                             $selector = trim($selector);
-                            $stack[] = end($stack)->addBlock(new Selector($selector));
+                            $stack[] = end($stack)->addBlock(new Element\Selector($selector));
                             $this->setSubSelectors(end($stack), $selectorSeparate);
                             $selectorSeparate = array();
                         } else if ($current === ',') {
                             $selector = trim($selector) . ',';
                             $selectorSeparate[] = strlen($selector);
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
+                            end($stack)->addComment(new Element\Comment($this->parseComment($string, $i)));
                         } else if ($current === '@' && trim($selector) == '') {
                             $status = 'at';
                         } else if ($current === '"' || $current === "'") {
@@ -316,8 +319,6 @@ class Parser
                             $selector = '';
                         } else if ($current === '\\') {
                             $selector .= $this->unicode($string, $i);
-                        } else if ($current === '*' && in_array($string{$i + 1}, array('.', '#', '[', ':'))) {
-                            // remove unnecessary universal selector, FS#147
                         } else {
                             $selector .= $current;
                         }
@@ -348,7 +349,7 @@ class Parser
                         } else if ($current === '@') {
                             $status = 'at';
                         } else if ($current === '/' && $string{$i + 1} === '*') {
-                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
+                            end($stack)->addComment(new Element\Comment($this->parseComment($string, $i)));
                         } else if ($current === ';') {
                             $property = '';
                         } else if ($current === '\\') {
@@ -372,7 +373,7 @@ class Parser
                     $pn = ($current === "\n" && $this->propertyIsNext($string, $i + 1) || $i === $size - 1);
                     if ($this->isToken($string, $i) || $pn) {
                         if ($current === '/' && $string{$i + 1} === '*') {
-                            end($stack)->addComment(new Comment($this->parseComment($string, $i)));
+                            end($stack)->addComment(new Element\Comment($this->parseComment($string, $i)));
                         } else if ($current === '"' || $current === "'") {
                             $currentString = $stringEndsWith = $current;
                             $status = 'instr';
@@ -407,7 +408,7 @@ class Parser
 
                             $valid = $this->propertyIsValid($property);
                             if ($valid || !$this->discardInvalidProperties) {
-                                end($stack)->addProperty(new Property($property, $subValues, $this->line));
+                                end($stack)->addProperty(new Element\Property($property, $subValues, $this->line));
                             } else {
                                 $this->logger->log(
                                     "Removed invalid property: $property",
@@ -540,7 +541,7 @@ class Parser
                             }
                             $from[] = 'is';
 
-                            $stack[] = end($stack)->addBlock(new AtBlock($subValues));
+                            $stack[] = end($stack)->addBlock(new Element\AtBlock($subValues));
 
                             $subValues = array();
                             $subValue = '';
@@ -568,10 +569,10 @@ class Parser
 
     /**
      * @todo Refactor
-     * @param Selector $selector
+     * @param Element\Selector $selector
      * @param array $selectorSeparate
      */
-    protected function setSubSelectors(Selector $selector, array $selectorSeparate)
+    protected function setSubSelectors(Element\Selector $selector, array $selectorSeparate)
     {
         $lastPosition = 0;
         $selectorSeparate[] = strlen($selector->getName());
@@ -611,14 +612,14 @@ class Parser
         return $comment;
     }
 
-        /**
+    /**
      * Process charset, namespace or import at rule
      * @param array $subValues
      * @param array $stack
      */
     protected function processAtRule(array $subValues, array $stack)
     {
-        /** @var Root $parsed */
+        /** @var Element\Root $parsed */
         $parsed = $stack[0];
         $rule = strtolower(array_shift($subValues));
 
@@ -643,14 +644,14 @@ class Parser
                     $subValues[0] = ' ' . $subValues[0];
                 }
 
-                $parsed->namespace[] = new LineAt($rule, $subValues);
+                $parsed->namespace[] = new Element\LineAt($rule, $subValues);
                 if (!empty($parsed->elements)) {
                     $this->logger->log("@namespace must be before selectors", Logger::WARNING, $this->line);
                 }
                 break;
 
             case 'import':
-                $parsed->import[] = new LineAt($rule, $subValues);
+                $parsed->import[] = new Element\LineAt($rule, $subValues);
                 if (!empty($parsed->elements)) {
                     $this->logger->log("@import must be before anything selectors", Logger::WARNING, $this->line);
                 } else if (isset($stack[1])) {
@@ -659,7 +660,7 @@ class Parser
                 break;
 
             default:
-                $lineAt = new LineAt($rule, $subValues);
+                $lineAt = new Element\LineAt($rule, $subValues);
                 end($stack)->addLineAt($lineAt);
                 break;
         }

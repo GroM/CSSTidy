@@ -34,8 +34,7 @@ namespace CSSTidy\Optimise;
 use CSSTidy\Parser;
 use CSSTidy\Logger;
 use CSSTidy\Configuration;
-use CSSTidy\Property;
-use CSSTidy\Block;
+use CSSTidy\Element;
 
 /**
  * CSS Optimising Class
@@ -75,13 +74,13 @@ class Value
     /**
      * @param \CSSTidy\Block $block
      */
-    public function process(Block $block)
+    public function process(Element\Block $block)
     {
         foreach ($block->elements as $element) {
-            if ($element instanceof Property) {
+            if ($element instanceof Element\Property) {
                 $this->subValue($element);
                 $this->value($element);
-            } else if ($element instanceof Block) {
+            } else if ($element instanceof Element\Block) {
                 $this->process($element);
             }
         }
@@ -91,7 +90,7 @@ class Value
      * Optimises a sub-value
      * @param Property $property
      */
-    public function subValue(Property $property)
+    public function subValue(Element\Property $property)
     {
         foreach ($property->subValues as &$subValue) {
             // Compress font-weight
@@ -128,7 +127,7 @@ class Value
      * Compress value
      * @param \CSSTidy\Property $property
      */
-    public function value(Property $property)
+    public function value(Element\Property $property)
     {
         if ($this->removeVendorPrefix($property->getName()) === 'transform') {
             $property->setValue($this->optimizeTransform($property->getValueWithoutImportant()));

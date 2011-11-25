@@ -34,15 +34,15 @@ class SelectorManipulate
      * Example: a {color:red} a {font-weight:bold} -> a {color:red;font-weight:bold}
      * @param AtBlock $block
      */
-    public function mergeWithSameName(AtBlock $block)
+    public function mergeWithSameName(Element\AtBlock $block)
     {
         // Because elements are removed from $block->properties, foreach cannot be used
         reset($block->elements);
         while ($element = current($block->elements)) {
             next($block->elements);
             if (
-                !$element instanceof Block ||
-                ($element instanceof AtBlock && $element->getName() === '@font-face') // never merge @font-face
+                !$element instanceof Element\Block ||
+                ($element instanceof Element\AtBlock && $element->getName() === '@font-face') // never merge @font-face
             ) {
                 continue;
             }
@@ -50,8 +50,8 @@ class SelectorManipulate
             /** @var Block $element */
             $sameBlock = $block->getBlockWithSameName($element);
             if ($sameBlock) {
-                if ($element instanceof AtBlock) {
-                    /** @var AtBlock $element */
+                if ($element instanceof Element\AtBlock) {
+                    /** @var Element\AtBlock $element */
                     $element->merge($sameBlock);
                 } else {
                     $element->mergeElements($sameBlock->elements);
@@ -59,7 +59,7 @@ class SelectorManipulate
                 $block->removeBlock($sameBlock);
             }
 
-            if ($element instanceof AtBlock) {
+            if ($element instanceof Element\AtBlock) {
                 $this->mergeWithSameName($element);
             }
         }
@@ -68,24 +68,24 @@ class SelectorManipulate
     /**
      * Merge selector with same properties
      * Example: a {color:red} b {color:red} -> a,b {color:red}
-     * @param AtBlock $block
+     * @param Element\AtBlock $block
      */
-    public function mergeWithSameProperties(AtBlock $block)
+    public function mergeWithSameProperties(Element\AtBlock $block)
     {
         // Because elements are removed from $block->properties, foreach cannot be used
         reset($block->elements);
         while (($element = current($block->elements))) {
             next($block->elements);
-            if (!$element instanceof Block) {
+            if (!$element instanceof Element\Block) {
                 continue;
-            } else if (!$element instanceof Selector) {
+            } else if (!$element instanceof Element\Selector) {
                 $this->mergeWithSameProperties($element);
                 continue;
             }
 
             $sameSelectors = array();
             foreach ($block->elements as $val) {
-                if (!$val instanceof Selector) {
+                if (!$val instanceof Element\Selector) {
                     continue;
                 }
 
@@ -96,7 +96,7 @@ class SelectorManipulate
 
             if (!empty($sameSelectors)) {
                 foreach ($sameSelectors as $sameSelector) {
-                    /** @var Selector $element */
+                    /** @var Element\Selector $element */
                     $element->appendSelectorName($sameSelector->getName());
                     $block->removeBlock($sameSelector);
                 }
@@ -109,15 +109,15 @@ class SelectorManipulate
      * defined by 4.1.7 in REC-CSS2. This is a very rudimentary check
      * and should be replaced by a full-blown parsing algorithm or
      * regular expression
-     * @param AtBlock $block
+     * @param Element\AtBlock $block
      */
-    public function discardInvalid(AtBlock $block)
+    public function discardInvalid(Element\AtBlock $block)
     {
         foreach ($block->elements as $key => $selector) {
-            if ($selector instanceof AtBlock) {
+            if ($selector instanceof Element\AtBlock) {
                 $this->discardInvalid($selector);
                 continue;
-            } else if (!$selector instanceof Block) {
+            } else if (!$selector instanceof Element\Block) {
                 continue;
             }
 
@@ -145,25 +145,25 @@ class SelectorManipulate
     /**
      * Separate selector for better reability
      * Example: a,b {color:red} -> b {color:red} b {color:red}
-     * @param AtBlock $block
+     * @param Element\AtBlock $block
      */
-    public function separate(AtBlock $block)
+    public function separate(Element\AtBlock $block)
     {
         foreach ($block->elements as $element) {
-            if (!$element instanceof Block) {
+            if (!$element instanceof Element\Block) {
                 continue;
-            } else if ($element instanceof AtBlock) {
+            } else if ($element instanceof Element\AtBlock) {
                 $this->separate($element);
                 continue;
             }
 
-            /** @var Selector $element */
+            /** @var Element\Selector $element */
             if (count($element->subSelectors) <= 1) {
                 continue;
             }
 
             foreach ($element->subSelectors as $subSelector) {
-                $newSelector = new Selector($subSelector);
+                $newSelector = new Element\Selector($subSelector);
                 $newSelector->elements = $element->elements;
                 $block->addBlock($newSelector);
             }

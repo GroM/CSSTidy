@@ -32,7 +32,7 @@
 namespace CSSTidy\Optimise;
 
 use CSSTidy\Logger;
-use CSSTidy\LineAt as LineAtElement;
+use CSSTidy\Element;;
 
 class LineAt
 {
@@ -49,7 +49,7 @@ class LineAt
      * Remove url() and first space if is not required from LineAt
      * @param \CSSTidy\LineAt $lineAt
      */
-    public function process(LineAtElement $lineAt)
+    public function process(Element\LineAt $lineAt)
     {
         $value = $lineAt->getValue();
         $value = $this->removeUrl($value);

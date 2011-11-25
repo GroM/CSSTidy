@@ -25,7 +25,7 @@
  * @package CSSTidy
  * @author Jakub Onderka (acci at acci dot cz) 2011
  */
-namespace CSSTidy;
+namespace CSSTidy\Element;
 
 require_once __DIR__ . '/Element.php';
 require_once __DIR__ . '/Block.php';
