@@ -94,7 +94,7 @@ class Value
             } else if ($optimiseGradients) {
                 $subValue = $this->optimizeGradients($subValue);
             } else if ($removeQuotes) {
-                $subValue = $this->removeQuotes($subValue);
+                $subValue = $this->removeQuotesFromFontFamily($subValue);
             }
 
             if (substr_compare($subValue, 'url(', 0, 4, true) === 0) {
@@ -137,6 +137,39 @@ class Value
         }
 
         return $value;
+    }
+
+    /**
+     * @param string $fontFamily
+     * @return string
+     */
+    protected function removeQuotesFromFontFamily($fontFamily)
+    {
+        if ($fontFamily{0} === '"' || $fontFamily{0} === "'") {
+
+            if (ctype_space($fontFamily{1}) || ctype_space(substr($fontFamily, -2, 1))) {
+                // If first or last character inside font-family string is whitespace
+               // or first character is number, don't remove quotes
+                return $fontFamily;
+            } else if (preg_match('|[' . Parser::$whitespace .']{2}|uis', $fontFamily)) {
+                // If string contains two or more consecutive whitespace character, don't remove quotes
+                return $fontFamily;
+            }
+
+            $withoutQuotes = substr($fontFamily, 1, -1);
+            $parts = explode(' ', $withoutQuotes);
+
+            foreach ($parts as $part) {
+                if (ctype_digit($part{0}) || !preg_match('~^[a-zA-Z0-9_-]+$~', $part)) {
+                    return $fontFamily;
+                }
+            }
+
+            // Remove quotes
+            return $withoutQuotes;
+        }
+
+        return $fontFamily;
     }
 
     /**

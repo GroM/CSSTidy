@@ -5,13 +5,27 @@ a { font:10px Arial, sans-serif}
 b { font:10px "Arial", "Trebuchet MS","sans-serif"}
 em { font:10px/normal "Arial", 'Trebuchet" MS',"sans-serif"}
 i { font:10px/1.5em "Arial", 'Trebuchet MS',"sans-serif"}
+
+.dont-remove1 {font-family:" Ahoj"}
+.dont-remove2 {font-family:"Ahoj "}
+.dont-remove3 {font-family:"8Ahoj"}
+.dont-remove4 {font-family:"Aho@j"}
+.dont-remove5 {font-family:"Aho/j"}
+.dont-remove6 {font-family:"Ahoj!"}
+.dont-remove7 {font-family:"#Ahoj"}
+.dont-remove8 {font-family:" Ah  oj "}
+.dont-remove9 {font-family:"Ah  oj"}
+.dont-remove10 {font-family:"Ah  5-0"}
+
+.remove1 {font-family: "Arial"}
+.remove2 {font-family: "Arial CE"}
 --PRINT--
 a {
 font:10px Arial,sans-serif
 }
 
 b {
-font:10px Arial,"Trebuchet MS",sans-serif
+font:10px Arial,Trebuchet MS,sans-serif
 }
 
 em {
@@ -19,7 +33,55 @@ font:10px/normal Arial,'Trebuchet" MS',sans-serif
 }
 
 i {
-font:10px/1.5em Arial,"Trebuchet MS",sans-serif
+font:10px/1.5em Arial,Trebuchet MS,sans-serif
+}
+
+.dont-remove1 {
+font-family:" Ahoj"
+}
+
+.dont-remove2 {
+font-family:"Ahoj "
+}
+
+.dont-remove3 {
+font-family:"8Ahoj"
+}
+
+.dont-remove4 {
+font-family:"Aho@j"
+}
+
+.dont-remove5 {
+font-family:"Aho/j"
+}
+
+.dont-remove6 {
+font-family:"Ahoj!"
+}
+
+.dont-remove7 {
+font-family:"#Ahoj"
+}
+
+.dont-remove8 {
+font-family:" Ah  oj "
+}
+
+.dont-remove9 {
+font-family:"Ah  oj"
+}
+
+.dont-remove10 {
+font-family:"Ah  5-0"
+}
+
+.remove1 {
+font-family:Arial
+}
+
+.remove2 {
+font-family:Arial CE
 }
 --SETTINGS--
 optimise_shorthands=2

@@ -12,11 +12,11 @@ b {
 }
 --PRINT--
 a {
-font:700 12px/2em Arial,"Trebuchet MS",serif
+font:700 12px/2em Arial,Trebuchet MS,serif
 }
 
 b {
-font:14px/1.25 "Trebuchet MS",Arial,Tahoma,sans-serif
+font:14px/1.25 Trebuchet MS,Arial,Tahoma,sans-serif
 }
 --SETTINGS--
 optimise_shorthands=2

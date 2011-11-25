@@ -583,9 +583,6 @@ class Shorthand
             'size' => false,
         );
 
-        // Detects if font-family consists of several words w/o quotes
-        $multiwords = false;
-
         // Workaround with multiple font-family
         $value = Parser::explodeWithoutString(',', trim($value));
 
@@ -605,24 +602,11 @@ class Shorthand
             } else if ($have['size'] === false && (is_numeric($propertyValue{0}) || $propertyValue{0} === null || $propertyValue{0} === '.')) {
                 $size = Parser::explodeWithoutString('/', trim($propertyValue));
                 $return['font-size'] = $size[0];
-                if (isset($size[1])) {
-                    $return['line-height'] = $size[1];
-                } else {
-                    $return['line-height'] = ''; // don't add 'normal' !
-                }
+                $return['line-height'] = isset($size[1]) ? $size[1] : '';
                 $have['size'] = true;
             } else {
-                if (isset($return['font-family'])) {
-                    $return['font-family'] .= ' ' . $propertyValue;
-                    $multiwords = true;
-                } else {
-                    $return['font-family'] = $propertyValue;
-                }
+                $return['font-family'] .= isset($return['font-family']) ? ' ' . $propertyValue : $propertyValue;
             }
-        }
-        // add quotes if we have several words in font-family
-        if ($multiwords !== false) {
-            $return['font-family'] = '"' . $return['font-family'] . '"';
         }
 
         foreach ($value as $fontFamily) {
@@ -630,8 +614,7 @@ class Shorthand
         }
 
         // Fix for 100 and more font-size
-        if ($have['size'] === false && isset($return['font-weight']) &&
-                        is_numeric($return['font-weight']{0})) {
+        if ($have['size'] === false && isset($return['font-weight']) && is_numeric($return['font-weight']{0})) {
             $return['font-size'] = $return['font-weight'];
             unset($return['font-weight']);
         }

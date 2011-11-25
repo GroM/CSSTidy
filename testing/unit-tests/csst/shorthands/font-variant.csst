@@ -17,12 +17,12 @@ b {
 }
 --PRINT--
 a {
-font:small-caps 700 12px/2em Arial,"Trebuchet MS",serif
+font:small-caps 700 12px/2em Arial,Trebuchet MS,serif
 }
 
 b {
 font-variant:swash(flowing);
-font:700 12px/2em Arial,"Trebuchet MS",serif
+font:700 12px/2em Arial,Trebuchet MS,serif
 }
 --SETTINGS--
 optimise_shorthands=2

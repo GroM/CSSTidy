@@ -46,7 +46,7 @@ class Logger
      * @param string $type
      * @param integer $line
      */
-    public function log($message, $type, $line)
+    public function log($message, $type, $line = -1)
     {
         $add = array(self::MESSAGE => $message, self::TYPE => $type);
         if (!isset($this->log[$line]) || !in_array($add, $this->log[$line])) {
