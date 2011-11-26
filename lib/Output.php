@@ -88,7 +88,7 @@ class Output
      * @param Configuration $configuration
      * @param Logger $logger
      * @param string $inputCss
-     * @param Root $parsed
+     * @param Element\Root $parsed
      */
     public function __construct(Configuration $configuration, Logger $logger, $inputCss, Element\Root $parsed)
     {
@@ -107,7 +107,7 @@ class Output
      */
     public function plain($defaultMedia = null)
     {
-        $this->generate(true, $defaultMedia);
+        $this->generate($defaultMedia);
         return $this->outputCssPlain;
     }
 
@@ -120,7 +120,7 @@ class Output
      */
     public function formatted($defaultMedia = null)
     {
-        $this->generate(false, $defaultMedia);
+        $this->generate($defaultMedia);
         return $this->outputCss;
     }
 
@@ -238,11 +238,10 @@ HTML;
 
     /**
      * Returns the formatted CSS Code and saves it into $this->output_css and $this->output_css_plain
-     * @param bool $plain plain text or not
      * @param string $defaultMedia default @media to add to selectors without any @media
      * @version 2.0
      */
-    protected function generate($plain = false, $defaultMedia = null)
+    protected function generate($defaultMedia = null)
     {
         if ($this->outputCss && $this->outputCssPlain) {
             return;
@@ -259,12 +258,10 @@ HTML;
             );
         }
 
-        if (!$plain) {
-            $this->outputCss = $this->tokensToCss($template, false);
-        }
+        $this->outputCss = $this->tokensToCss($template);
 
-        $template = $template->getWithoutHtml();
-        $this->outputCssPlain = $this->tokensToCss($template, true);
+        $this->outputCssPlain = strip_tags($this->outputCss);
+        $this->outputCssPlain = htmlspecialchars_decode($this->outputCssPlain, ENT_QUOTES);
 
         // If using spaces in the template, don't want these to appear in the plain output
         $this->outputCssPlain = str_replace('&#160;', '', $this->outputCssPlain);
@@ -272,10 +269,9 @@ HTML;
 
     /**
      * @param Template $template
-     * @param bool $plain
      * @return string
      */
-    protected function tokensToCss(Template $template, $plain)
+    protected function tokensToCss(Template $template)
     {
         $output = '';
 
@@ -306,11 +302,11 @@ HTML;
                     } else if ($this->configuration->getCaseProperties() === Configuration::UPPERCASE) {
                         $token[1] = strtoupper($token[1]);
                     }
-                    $out .= $template->beforeProperty . $this->htmlsp($token[1], $plain) . ':' . $template->beforeValue;
+                    $out .= $template->beforeProperty . $this->htmlsp($token[1]) . ':' . $template->beforeValue;
                     break;
 
                 case self::VALUE:
-                    $out .= $this->htmlsp($token[1], $plain);
+                    $out .= $this->htmlsp($token[1]);
                     $nextToken = $this->seekNoComment($key);
                     if (($nextToken === self::SEL_END || $nextToken === self::AT_END) && $this->configuration->getRemoveLastSemicolon()) {
                         $out .= str_replace(';', '', $template->afterValueWithSemicolon);
@@ -323,7 +319,7 @@ HTML;
                     if ($this->configuration->getLowerCaseSelectors()) {
                         $token[1] = strtolower($token[1]);
                     }
-                    $out .= $template->beforeSelector . $this->htmlsp($token[1], $plain) . $template->selectorOpeningBracket;
+                    $out .= $template->beforeSelector . $this->htmlsp($token[1]) . $template->selectorOpeningBracket;
                     break;
 
                 case self::SEL_END:
@@ -334,7 +330,7 @@ HTML;
                     break;
 
                 case self::AT_START:
-                    $out .= $template->beforeAtRule . $this->htmlsp($token[1], $plain) . $template->bracketAfterAtRule;
+                    $out .= $template->beforeAtRule . $this->htmlsp($token[1]) . $template->bracketAfterAtRule;
                     $out = &$inAtOut;
                     break;
 
@@ -346,7 +342,7 @@ HTML;
                     break;
 
                 case self::COMMENT:
-                    $out .= "$template->beforeComment/*{$this->htmlsp($token[1], $plain)}*/$template->afterComment";
+                    $out .= "$template->beforeComment/*{$this->htmlsp($token[1])}*/$template->afterComment";
                     break;
 
                 case self::LINE_AT:
@@ -426,17 +422,12 @@ HTML;
     }
 
     /**
-     * Same as htmlspecialchars, only that chars are not replaced if $plain !== true.
      * @param string $string
-     * @param bool $plain
      * @return string
      */
-    protected function htmlsp($string, $plain)
+    protected function htmlsp($string)
     {
-        if (!$plain) {
-            return htmlspecialchars($string, ENT_QUOTES, 'utf-8');
-        }
-        return $string;
+        return htmlspecialchars($string, ENT_QUOTES, 'utf-8');
     }
 
     /**
@@ -445,7 +436,7 @@ HTML;
      * @param string $data
      * @return void
      */
-    public function addToken($type, $data = null)
+    protected function addToken($type, $data = null)
     {
         $this->tokens[] = array($type, $data);
     }
