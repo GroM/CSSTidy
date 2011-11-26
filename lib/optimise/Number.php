@@ -106,6 +106,9 @@ class Number
     /** @var bool */
     protected $convertUnit = false;
 
+    /** @var array */
+    protected $unitsInKey = array();
+
     /**
      * @param \CSSTidy\Logger $logger
      * @param bool $convertUnit
@@ -114,6 +117,8 @@ class Number
     {
         $this->logger = $logger;
         $this->convertUnit = $convertUnit;
+
+        $this->unitsInKey = array_flip(self::$units);
     }
 
     /**
@@ -210,7 +215,7 @@ class Number
         $value = $optimisedValue = trim($value);
         $unit = $optimisedUnit = strtolower(trim($unit));
 
-        if ($unit !== '' && !in_array($unit, self::$units)) {
+        if ($unit !== '' && !isset($this->unitsInKey[$unit])) {
             return false; // Unit is not supported
         }
 
