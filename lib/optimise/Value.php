@@ -79,18 +79,32 @@ class Value
 
     /**
      * Optimises a sub-value
-     * @param Element\Property $property
+     * @param \CSSTidy\Element\Property $property
      */
     public function subValue(Element\Property $property)
     {
-        $compressFontWeight = $property->getName() === 'font-weight' && $this->configuration->getCompressFontWeight();
-        $optimiseGradients = $property->getName() === 'background-image' && $this->configuration->getCompressColors();
-        $removeQuotes = $property->getName() === 'font' || $property->getName() === 'font-family';
+        $compressFontWeight = $optimiseGradients = $removeQuotes = false;
+
+        switch ($property->getName()) {
+            case 'font-weight':
+                $compressFontWeight = $this->configuration->getCompressFontWeight();
+                break;
+
+            case 'background-image':
+                $optimiseGradients = $this->configuration->getCompressColors();
+                break;
+
+            case 'font':
+            case 'font-family':
+                $removeQuotes = true;
+                break;
+        }
 
         foreach ($property->subValues as &$subValue) {
 
             if ($compressFontWeight) {
                 $subValue = $this->compressFontWeight($subValue);
+                continue;
             } else if ($optimiseGradients) {
                 $subValue = $this->optimizeGradients($subValue);
             } else if ($removeQuotes) {
@@ -99,6 +113,7 @@ class Value
 
             if (substr_compare($subValue, 'url(', 0, 4, true) === 0) {
                 $subValue = "url(" . $this->removeQuotes(substr($subValue, 4, -1)) . ')';
+                continue;
             }
 
             $subValue = $this->optimiseNumber->optimise($property->getName(), $subValue);
@@ -207,6 +222,10 @@ class Value
             'repeating-radial-gradient' => 2,
             'radial-gradient' => 2,
         );
+
+        if (!isset($string{16})) {
+            return $string;
+        }
 
         $originalType = strstr($string, '(', true);
         $type = $this->removeVendorPrefix($originalType);
